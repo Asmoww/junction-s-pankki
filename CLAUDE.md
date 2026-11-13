@@ -76,8 +76,9 @@ scripts/fetch_data.sh                          # dataset into data/raw/ (hash-ch
 - `app/verify.py` verified numbers: every € and % in an answer is matched to tool results (verified / rounded / suggestion / unverified).
 - `app/main.py` password gate, `/api/home|overview|chat|game|traps|personas`, asset versioning (Cloudflare caches /static).
 - `app/web/` mobile UI, tabs Home / Coach / Learn; `i18n.js` holds every UI string in en, fi, sv.
-  Design E (money ribbon) at `/e`: `e.html` + `e.css`, same `app.js` with `window.UI = "e"` (`renderHomeE`, `ribbonHero`);
-  data from `insights.ribbon()` in `/api/home`. `/` keeps the original design until the team picks one.
+  Design E is the main page `/` (`e.html` + `e.css` + `e.js`, same `app.js` with `window.UI = "e"`): balance graph with
+  forecast, AI notes (`future.annotations`), what-if scenarios (`future.parse_whatif`, `future.simulate`). The first
+  design is at `/classic`; `/e` redirects to `/`.
 - `app/bench_statfin.json` Statistics Finland 2022 table 14q4 (open data), rebuilt by `scripts/fetch_benchmarks.py`.
 - `tests/traps/cases.py` + `scripts/run_traps.py` trap suite against the live coach (~$0.15/run) -> `state/traps.json`, shown on Learn.
   Nightly: user timer `spankki-traps.timer` (03:17).
