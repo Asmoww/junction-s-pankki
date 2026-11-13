@@ -79,3 +79,11 @@ def test_verify_statuses():
     fi = verify.check("Säästät 47,10 € kuussa, saldo 699,85 €.", [{"tool": "x", "error": False,
                       "result": {"s": 47.1}}], [], "fi", {"balance": 699.85})
     assert [n["status"] for n in fi] == ["verified", "verified"]
+
+
+def test_forecast_puts_rent_on_its_day():
+    from app import insights
+    f = insights.payday_forecast(EMMA)
+    assert f["runs_out_around"] == "2026-10-03"  # 777 € rent on the 3rd is bigger than the 699.85 € balance
+    assert f["balance_at_payday_at_usual_pace_eur"] < 0
+    assert f["daily_path"][-1]["balance_eur"] == f["balance_at_payday_at_usual_pace_eur"]

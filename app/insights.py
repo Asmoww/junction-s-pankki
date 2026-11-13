@@ -75,24 +75,44 @@ def payday_pattern(cid: str, months: int = 6) -> dict:
 
 
 def payday_forecast(cid: str) -> dict:
-    """Balance at next payday if the usual pace continues (bills + essentials + surprises + usual extras)."""
+    """Balance day by day until next payday if the usual pace continues: bills on their usual day of the month,
+    essentials, surprises and extras spread evenly."""
     sts = money.get_safe_to_spend(cid)
     days = sts["days_until_payday"]
-    usual_extras = sts["your_usual_extras_per_week_eur"] / 7 * days
+    payday = TODAY + timedelta(days=days)
     bal = money.customer(cid)["balance"]
-    planned = -sum(s["eur"] for s in sts["steps"][2:])  # bills, essentials, surprise buffer
-    end = bal - planned - usual_extras
-    short_day = None
-    if end < 0:
-        per_day = (planned + usual_extras) / days
-        short_day = (TODAY + timedelta(days=int(bal // per_day) + 1)).isoformat() if per_day > 0 else None
+    daily = (-sts["steps"][3]["eur"] - sts["steps"][4]["eur"] + sts["your_usual_extras_per_week_eur"] / 7 * days) / days
+    due = {}
+    for b in sts["bills"]:
+        if b["still_to_come_eur"] <= 0:
+            continue
+        d = _q("SELECT median(day(tx_date)) d FROM tx WHERE customer_id = ? AND category = ? AND tx_date >= ?",
+               [cid, b["bill"], _month_start(TODAY, 5)])[0]["d"]
+        when = payday
+        for i in range(1, days + 1):
+            x = TODAY + timedelta(days=i)
+            if d is not None and x.day == int(d):  # earlier of two usual days: safer for a warning
+                when = x
+                break
+        due.setdefault(when, []).append({"bill": b["bill"], "eur": b["still_to_come_eur"], "date": when.isoformat()})
+    running, out_day, path = bal, None, [{"date": TODAY.isoformat(), "balance_eur": _r(bal)}]
+    for i in range(1, days + 1):
+        x = TODAY + timedelta(days=i)
+        running -= daily + sum(b["eur"] for b in due.get(x, []))
+        path.append({"date": x.isoformat(), "balance_eur": _r(running)})
+        if running < 0 and out_day is None:
+            out_day = x
+    planned = -sum(s["eur"] for s in sts["steps"][2:])
     return {"as_of": TODAY.isoformat(), "next_payday": sts["next_payday"], "days_until_payday": days,
             "balance_now_eur": _r(bal), "expected_costs_until_payday_eur": _r(planned),
-            "short_at_usual_pace_eur": _r(max(-end, 0)),
+            "usual_extras_until_payday_eur": _r(sts["your_usual_extras_per_week_eur"] / 7 * days),
+            "short_at_usual_pace_eur": _r(max(-running, 0)),
             "short_even_with_no_extras_eur": _r(max(-(bal - planned), 0)),
-            "usual_extras_until_payday_eur": _r(usual_extras), "balance_at_payday_at_usual_pace_eur": _r(end),
-            "runs_out_around": short_day,
-            "note": "Assumes bills, essentials and extras continue at your usual 90-day pace."}
+            "balance_at_payday_at_usual_pace_eur": _r(running),
+            "bills_ahead": [b for x in sorted(due) for b in due[x]],
+            "runs_out_around": out_day.isoformat() if out_day else None,
+            "daily_path": path,
+            "note": "Bills on their usual day of the month; essentials, surprises and extras at your usual 90-day pace."}
 
 
 def benchmark(cid: str) -> dict:

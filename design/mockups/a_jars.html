@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--snow:#f3f5f7;--ink:#1d2433;--moss:#2f5d3a;--blue:#3d4f9a;--cloud:#e5a13a;--lingon:#c7354a;--mute:#6b7280}
+*{box-sizing:border-box}body{margin:0;background:var(--snow);color:var(--ink);font:16px/1.45 "Instrument Sans",sans-serif;width:412px;min-height:915px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 0;font-size:14px;color:var(--mute)}
+.me{display:flex;gap:8px;align-items:center}.me i{width:30px;height:30px;border-radius:50%;background:var(--moss);color:#fff;display:grid;place-items:center;font-style:normal;font-weight:600}
+h1{font:800 34px/1.08 "Bricolage Grotesque";letter-spacing:-.8px;margin:18px 22px 6px}
+h1 span{color:var(--lingon)}
+.sub{margin:0 22px;color:var(--mute);font-size:15px}
+.jars{display:flex;justify-content:space-between;padding:26px 22px 4px;gap:10px}
+.jar{flex:1;text-align:center}
+.jar svg{width:100%;height:210px;display:block}
+.jar b{display:block;font:700 22px "Bricolage Grotesque";margin-top:6px}
+.jar small{display:block;color:var(--mute);font-size:13px;line-height:1.3}
+.days{margin:22px 22px 0;background:#fff;border-radius:22px;padding:16px 16px 14px}
+.days h2{font:700 17px "Bricolage Grotesque";margin:0 0 10px}
+.row{display:grid;grid-template-columns:repeat(15,1fr);gap:3px}
+.d{height:34px;border-radius:7px;background:#e3eee6;position:relative}
+.d.red{background:#f6d6db}.d.rent{background:var(--blue)}.d.pay{background:var(--moss)}.d.out{background:var(--lingon)}
+.legend{display:flex;justify-content:space-between;font-size:12px;color:var(--mute);margin-top:8px}
+.legend b{color:var(--ink)}
+.ask{position:absolute;left:16px;right:16px;bottom:22px;display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;gap:8px}.chip{background:#fff;border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;color:var(--moss);border:1.5px solid #dfe5e0}
+.input{background:var(--ink);color:#c9cfdb;border-radius:999px;padding:15px 20px;font-size:15px;display:flex;justify-content:space-between}
+.input span{color:#fff;font-weight:600}
+</style></head><body style="position:relative">
+<div class="top"><span>Wed 30 September</span><span class="me">Emma <i>E</i></span></div>
+<h1>Rent leaves on 3 Oct and takes you <span>below zero</span>.</h1>
+<p class="sub">Even with no extras you are 676 € short of payday. Your three jars for September; the dashed line is a usual month.</p>
+<div class="jars">
+ <div class="jar"><svg viewBox="0 0 100 200"><defs><pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#dfe3f2"/><rect width="3" height="8" fill="#b8c0e4"/></pattern><clipPath id="c1"><path d="M22 18h56v10c10 6 14 14 14 26v128a14 14 0 0 1-14 14H22a14 14 0 0 1-14-14V54c0-12 4-20 14-26z"/></clipPath></defs>
+  <g clip-path="url(#c1)"><rect x="0" y="0" width="100" height="200" fill="#fff"/><rect x="0" y="144" width="100" height="56" fill="var(--blue)"/><rect x="0" y="45" width="100" height="99" fill="url(#h)"/></g>
+  <path d="M22 18h56v10c10 6 14 14 14 26v128a14 14 0 0 1-14 14H22a14 14 0 0 1-14-14V54c0-12 4-20 14-26z" fill="none" stroke="#c9ced8" stroke-width="2.5"/><rect x="18" y="8" width="64" height="12" rx="4" fill="#c9ced8"/>
+  <line x1="4" x2="96" y1="38" y2="38" stroke="var(--ink)" stroke-dasharray="4 4" stroke-width="1.5"/></svg>
+  <b>450 €</b><small>Fixed must-pays<br>rent 763 € to come</small></div>
+ <div class="jar"><svg viewBox="0 0 100 200"><defs><clipPath id="c2"><path d="M22 18h56v10c10 6 14 14 14 26v128a14 14 0 0 1-14 14H22a14 14 0 0 1-14-14V54c0-12 4-20 14-26z"/></clipPath></defs>
+  <g clip-path="url(#c2)"><rect width="100" height="200" fill="#fff"/><rect y="64" width="100" height="136" fill="var(--cloud)"/></g>
+  <path d="M22 18h56v10c10 6 14 14 14 26v128a14 14 0 0 1-14 14H22a14 14 0 0 1-14-14V54c0-12 4-20 14-26z" fill="none" stroke="#c9ced8" stroke-width="2.5"/><rect x="18" y="8" width="64" height="12" rx="4" fill="#c9ced8"/>
+  <line x1="4" x2="96" y1="64" y2="64" stroke="var(--ink)" stroke-dasharray="4 4" stroke-width="1.5"/></svg>
+  <b>295 €</b><small>Surprises<br>a usual month</small></div>
+ <div class="jar"><svg viewBox="0 0 100 200"><defs><clipPath id="c3"><path d="M22 18h56v10c10 6 14 14 14 26v128a14 14 0 0 1-14 14H22a14 14 0 0 1-14-14V54c0-12 4-20 14-26z"/></clipPath></defs>
+  <g clip-path="url(#c3)"><rect width="100" height="200" fill="#fff"/><rect y="100" width="100" height="100" fill="var(--lingon)"/>
+  <g fill="#fff" opacity=".35"><circle cx="30" cy="130" r="5"/><circle cx="62" cy="118" r="4"/><circle cx="48" cy="160" r="6"/><circle cx="74" cy="176" r="4"/></g></g>
+  <path d="M22 18h56v10c10 6 14 14 14 26v128a14 14 0 0 1-14 14H22a14 14 0 0 1-14-14V54c0-12 4-20 14-26z" fill="none" stroke="#c9ced8" stroke-width="2.5"/><rect x="18" y="8" width="64" height="12" rx="4" fill="#c9ced8"/>
+  <line x1="4" x2="96" y1="38" y2="38" stroke="var(--ink)" stroke-dasharray="4 4" stroke-width="1.5"/></svg>
+  <b>618 €</b><small>Everyday extras<br>372 € under usual</small></div>
+</div>
+<div class="days"><h2>Your next 15 days</h2>
+ <div class="row"><div class="d"></div><div class="d"></div><div class="d out"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d red"></div><div class="d pay"></div></div>
+ <div class="legend"><span><b>3 Oct</b> rent 763 €, below zero</span><span><b>15 Oct</b> payday</span></div></div>
+<div class="ask"><div class="chips"><span class="chip">Help me reach payday</span><span class="chip">What's in my extras?</span></div>
+<div class="input">Ask about your money <span>Ask</span></div></div>
+</body></html>
