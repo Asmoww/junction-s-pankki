@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import insights, money, verify
+from . import homeplan, insights, live, money, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -87,6 +87,18 @@ TOOLS = [
      "description": "A friendly spender type label with the measured signals behind it. Use for 'what kind of "
                     "spender am I', together with get_spender_profile.",
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "check_purchase",
+     "description": "Live prices for something the user wants to buy, from Finnish online shops. Each price is "
+                    "confirmed on the shop's own product page (less than an hour old). Only the item name is sent. "
+                    "Use confirmed prices only; if none are confirmed, the price is unknown.",
+     "input_schema": {"type": "object", "properties": {"item": {"type": "string", "description": "Short item name, e.g. 'iPhone 17 256 GB'"}},
+                      "required": ["item"], "additionalProperties": False}},
+    {"name": "plan_home",
+     "description": "Home purchase plan: loan, equity and costs needed, months to the goal, extra collateral. Uses live "
+                    "rules (loan cap, transfer tax, Euribor) with their sources; anything not confirmed is unknown.",
+     "input_schema": {"type": "object", "properties": {"price": {"type": "number"},
+                      "property_type": {"type": "string", "enum": ["apartment", "house"]}},
+                      "required": ["price"], "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
                     "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
@@ -133,6 +145,8 @@ def calculate(cid: str, expression: str, what: str = "") -> dict:
 
 
 _FUNCS["calculate"] = calculate
+_FUNCS["check_purchase"] = lambda cid, item: live.check_purchase(item)
+_FUNCS["plan_home"] = homeplan.plan_home
 
 
 LANGS = {"en": "English. Format amounts like 1,234.50 €.",
@@ -156,6 +170,8 @@ Rules:
   Mention the basket when it helps the user understand where money goes.
 - Transfers to the customer's own savings or investments are saving, not spending.
 - If the user is short of money or overdrawn, say so kindly and plainly, with one concrete next step.
+- Prices of things to buy and outside rules (loan cap, transfer tax, Euribor) come only from check_purchase and
+  plan_home, with the shop or source named. If a value is unknown, say it is unknown; never use 0 or a guess.
 - Keep the two shortfalls apart: "at your usual pace" (get_payday_forecast, extras included) vs "even with no
   extras" (get_safe_to_spend). Say which one you mean.
 - Explain financial terms in plain language. Be warm and practical, never preachy.
@@ -176,8 +192,10 @@ def _run_tool(cid: str, name: str, args: dict) -> tuple[dict, bool]:
         return {"error": f"unknown tool {name}"}, True
     try:
         return fn(cid, **args), False
-    except money.ToolError as e:
+    except (money.ToolError, ValueError) as e:
         return {"error": str(e)}, True
+    except live.LiveUnavailable:
+        return {"error": "Live web data is not connected right now; prices and rules are unknown."}, True
     except TypeError as e:
         return {"error": f"bad arguments: {e}"}, True
 

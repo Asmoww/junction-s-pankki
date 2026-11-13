@@ -115,3 +115,26 @@ body.e .msg.user { background: var(--g700); }
   .g .scen { stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: drawl .7s ease-out forwards; }
   @keyframes drawl { to { stroke-dashoffset: 0; } }
 }
+
+/* Live web data (Context.dev) */
+.dock .chip.buy .spark { fill: var(--g700); color: var(--g700); }
+.dock .chip.buy.on .spark { fill: #fff; color: #fff; }
+.dock .offers { margin: 0 16px 10px; display: flex; flex-direction: column; gap: 6px; }
+.dock .offers[hidden] { display: none; }
+.offer { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.offer b { display: block; font-size: 18px; font-weight: 500; color: var(--g900); }
+.offer .src { display: block; font-size: 12px; color: var(--muted); }
+.offer .diff { display: block; font-size: 12px; color: var(--neg); }
+.offer .nm { font-size: 12px; color: var(--muted); max-width: 40%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omsg { margin: 4px 2px; font-size: 13px; color: var(--muted); } .omsg.small { font-size: 11px; }
+.own { display: flex; gap: 6px; } .own input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; font: inherit; }
+.own button { background: var(--g700); color: #fff; border-radius: 999px; padding: 8px 12px; font-size: 13px; }
+.mini.rules .rl { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.mini.rules .rl b { font-size: 18px; margin: 0; color: var(--g900); }
+.mini.rules .s { margin-top: auto; }
+.rulecard { display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: var(--g900); color: #fff; font-size: 13px; }
+.rulecard .spark { fill: var(--g300); }
+ul.rules { list-style: none; padding: 0; margin: 8px 0 0; }
+ul.rules li { padding: 10px 2px; border-bottom: 1px solid var(--line); }
+ul.rules .rh { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+ul.rules .rs { font-size: 12px; color: var(--muted); margin-top: 3px; } ul.rules a { color: var(--g700); }

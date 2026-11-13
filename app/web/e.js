@@ -1,7 +1,15 @@
 // Design E v2: the future as a graph. Code draws every number; the AI annotates the line and turns
 // "what if…" sentences into scenarios that redraw the future. Loaded after app.js on /e.
 const ES = {
-  en: { since: (a) => `${a} since payday`, today: "Today", pay: "Payday", forecast: "forecast", extras: "your extras",
+  en: { buy: "Check a purchase", buyPh: "e.g. iPhone 17 256 GB", checking: "Checking shop pages…",
+    checked: (m) => `price read from the shop page${m != null ? `, ${m} min old` : ""}`, claimDiff: (c) => `Search said ${c}; the page says otherwise`,
+    notConf: (n) => `${n} shop${n === 1 ? "" : "s"} couldn't be confirmed`, noneConf: "No price could be confirmed, so it stays unknown.",
+    own: "Use my own estimate", ownPh: "your estimate, €", ownLabel: "your estimate", notConnected: "Live prices aren't connected yet.",
+    rules: "Live rules", rulesTitle: "Rules from official sources", unknown: "unknown", asOf: (d) => `as of ${d}`, fetchedAt: (d) => `checked ${d}`,
+    effUnknown: "effective date not confirmed", recheck: "Re-check rules now", demo: "Demo controls", runMon: (n) => `Run monitor now: ${n}`,
+    setupMon: "Set up monitors", ruleChanged: "A rule changed", sourceOnly: "Only the item name or rule is sent, never your data.",
+    capShort: "Loan cap", euriborShort: "Euribor 12 m",
+    since: (a) => `${a} since payday`, today: "Today", pay: "Payday", forecast: "forecast", extras: "your extras",
     payResult: (d) => `On payday, ${d}`, whatIf: "What if…", whatIfPh: "e.g. concert tickets 150 € on Friday",
     pause: "Pause extras", eatLess: "Eat out −50 %", rentLater: "Rent after payday", ask: (d) => `Ask about ${d}`,
     askQ: (d) => `What did I spend on ${d}, and was it a lot for me?`, thinking: "Reading your words…",
@@ -9,7 +17,15 @@ const ES = {
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
     cards: { safe: "Safe this week", month: (m) => m, payday: "After payday", pot: "Surprises", fin: "vs Finland", psd2: "Other bank" },
     perMonth: "a month", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
-  fi: { since: (a) => `${a} palkkapäivästä`, today: "Tänään", pay: "Palkka", forecast: "ennuste", extras: "extrasi",
+  fi: { buy: "Tarkista ostos", buyPh: "esim. iPhone 17 256 Gt", checking: "Tarkistan kauppojen sivuja…",
+    checked: (m) => `hinta luettu kaupan sivulta${m != null ? `, ${m} min vanha` : ""}`, claimDiff: (c) => `Haku sanoi ${c}; sivu sanoo toisin`,
+    notConf: (n) => `${n} kauppaa ei voitu vahvistaa`, noneConf: "Hintaa ei voitu vahvistaa, joten se on tuntematon.",
+    own: "Käytä omaa arviotani", ownPh: "oma arvio, €", ownLabel: "oma arvio", notConnected: "Live-hinnat eivät ole vielä käytössä.",
+    rules: "Säännöt nyt", rulesTitle: "Säännöt virallisista lähteistä", unknown: "tuntematon", asOf: (d) => `tilanne ${d}`, fetchedAt: (d) => `tarkistettu ${d}`,
+    effUnknown: "voimaantulopäivä vahvistamatta", recheck: "Tarkista säännöt nyt", demo: "Demo-ohjaimet", runMon: (n) => `Aja seuranta nyt: ${n}`,
+    setupMon: "Ota seuranta käyttöön", ruleChanged: "Sääntö muuttui", sourceOnly: "Vain tuotteen nimi tai sääntö lähtee, ei koskaan tietojasi.",
+    capShort: "Lainakatto", euriborShort: "Euribor 12 kk",
+    since: (a) => `${a} palkkapäivästä`, today: "Tänään", pay: "Palkka", forecast: "ennuste", extras: "extrasi",
     payResult: (d) => `Palkkapäivänä ${d}`, whatIf: "Entä jos…", whatIfPh: "esim. konserttiliput 150 € perjantaina",
     pause: "Tauko extroille", eatLess: "Ulkona syöminen −50 %", rentLater: "Vuokra palkan jälkeen", ask: (d) => `Kysy päivästä ${d}`,
     askQ: (d) => `Mihin käytin rahaa ${d}, ja oliko se minulle paljon?`, thinking: "Luen pyyntöäsi…",
@@ -17,7 +33,15 @@ const ES = {
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
     cards: { safe: "Turvallisesti", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätykset", fin: "vs Suomi", psd2: "Toinen pankki" },
     perMonth: "kuussa", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
-  sv: { since: (a) => `${a} sedan lönedagen`, today: "I dag", pay: "Lön", forecast: "prognos", extras: "dina extra",
+  sv: { buy: "Kolla ett köp", buyPh: "t.ex. iPhone 17 256 GB", checking: "Kollar butikernas sidor…",
+    checked: (m) => `pris läst från butikens sida${m != null ? `, ${m} min gammalt` : ""}`, claimDiff: (c) => `Sökningen sa ${c}; sidan säger annat`,
+    notConf: (n) => `${n} butiker kunde inte bekräftas`, noneConf: "Inget pris kunde bekräftas, så det är okänt.",
+    own: "Använd min egen uppskattning", ownPh: "din uppskattning, €", ownLabel: "egen uppskattning", notConnected: "Livepriser är inte anslutna än.",
+    rules: "Regler nu", rulesTitle: "Regler från officiella källor", unknown: "okänt", asOf: (d) => `per ${d}`, fetchedAt: (d) => `kollat ${d}`,
+    effUnknown: "ikraftträdande inte bekräftat", recheck: "Kolla reglerna nu", demo: "Demokontroller", runMon: (n) => `Kör bevakning nu: ${n}`,
+    setupMon: "Sätt upp bevakning", ruleChanged: "En regel ändrades", sourceOnly: "Bara varans namn eller regeln skickas, aldrig dina data.",
+    capShort: "Lånetak", euriborShort: "Euribor 12 m",
+    since: (a) => `${a} sedan lönedagen`, today: "I dag", pay: "Lön", forecast: "prognos", extras: "dina extra",
     payResult: (d) => `På lönedagen ${d}`, whatIf: "Tänk om…", whatIfPh: "t.ex. konsertbiljetter 150 € på fredag",
     pause: "Pausa extra", eatLess: "Äta ute −50 %", rentLater: "Hyran efter lön", ask: (d) => `Fråga om ${d}`,
     askQ: (d) => `Vad spenderade jag den ${d}, och var det mycket för mig?`, thinking: "Läser det du skrev…",
@@ -28,7 +52,10 @@ const ES = {
 };
 const E = () => ES[lang] || ES.en;
 const SPARK = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
-let fut = null, notes = null, active = null, scen = null, picked = null;
+let fut = null, notes = null, active = null, scen = null, picked = null, liveSt = null, buyRes = null;
+const CART = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h2l1.6 7.2a1 1 0 0 0 1 .8h6.2a1 1 0 0 0 1-.8L14 5H4.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="13" r="1.2"/><circle cx="12" cy="13" r="1.2"/></svg>`;
+const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const when = (iso) => iso ? new Date(iso).toLocaleString(T().locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 
 // Smooth line through points (Catmull-Rom → cubic Bézier), never overshooting much.
 function smooth(p) {
@@ -133,12 +160,26 @@ function dock() {
   const chips = [];
   if (picked !== null) chips.push(`<button class="chip ask" data-pick>${SPARK}${esc(E().ask(day(picked)))}</button>`);
   chips.push(`<button class="chip ai ${active === "ai" ? "on" : ""}" data-whatif>${SPARK}${active === "ai" && scen ? esc(scen.parsed.label) + ` <span class="x">×</span>` : E().whatIf}</button>`);
+  chips.push(`<button class="chip buy ${active === "buy" ? "on" : ""}" data-buy>${CART}${active === "buy" && scen ? esc(scen.label) + ` <span class="x">×</span>` : E().buy}</button>`);
   chips.push(`<button class="chip ${active === "pause" ? "on" : ""}" data-sc="pause">${E().pause}</button>`);
   if ((fut.extras_by_category_until_payday || {}).Restaurants) chips.push(`<button class="chip ${active === "eat" ? "on" : ""}" data-sc="eat">${E().eatLess}</button>`);
   if (fut.bills.some((b) => b.bill === "Housing" && b.date !== fut.next_payday)) chips.push(`<button class="chip ${active === "rent" ? "on" : ""}" data-sc="rent">${E().rentLater}</button>`);
   return `<div class="dock"><div class="chips">${chips.join("")}</div>
     <form class="wi" hidden><span>${SPARK}</span><input maxlength="200" placeholder="${esc(E().whatIfPh)}"><button class="go" aria-label="Go">→</button></form>
-    <div class="wimsg" hidden></div></div>`;
+    <div class="wimsg" hidden></div>
+    <form class="wi buyf" hidden><span>${CART}</span><input maxlength="100" placeholder="${esc(E().buyPh)}"><button class="go" aria-label="Go">→</button></form>
+    <div class="offers" ${buyRes ? "" : "hidden"}>${buyRes ? offersHtml(buyRes) : ""}</div></div>`;
+}
+
+function offersHtml(r) {
+  if (r.error) return `<p class="omsg">${esc(r.error)}</p>`;
+  const rows = r.confirmed.map((o) => `<button class="offer" data-url="${esc(o.url)}"><span><b>${eur(o.price_eur)}</b>
+      <span class="src">${esc(o.domain)} · ${esc(E().checked(o.page_age_minutes))}</span>
+      ${o.claim_differed ? `<span class="diff">${esc(E().claimDiff(eur0(o.claimed_price_eur)))}</span>` : ""}</span>
+      <span class="nm">${esc(o.name || "")}</span></button>`).join("");
+  const none = r.confirmed.length ? "" : `<p class="omsg">${E().noneConf}</p><form class="own"><input inputmode="decimal" placeholder="${esc(E().ownPh)}"><button>${E().own}</button></form>`;
+  const nc = r.not_confirmed.length ? `<p class="omsg small">${E().notConf(r.not_confirmed.length)}</p>` : "";
+  return rows + none + nc + `<p class="omsg small">${E().sourceOnly}</p>`;
 }
 
 function strip() {
@@ -172,7 +213,16 @@ function strip() {
       <span class="s">${esc(E().vsFin(eur0(big.finland_same_age_per_month_eur)))}</span>
       <div class="pair"><i style="width:${(big.you_per_month_eur / mx) * 100}%"></i><i class="fi" style="width:${(big.finland_same_age_per_month_eur / mx) * 100}%"></i></div></button>`);
   }
-  return `<div class="strip">${cards.join("")}</div>`;
+  if (liveSt) {
+    const cap = liveSt.rules.loan_cap_general, eu = liveSt.rules.euribor_12m;
+    const v = (r) => (r && r.status === "confirmed" ? `${nf(r.unit === "%" ? 3 : 0).format(r.value).replace(/[.,]?0+$/, "")} %` : E().unknown);
+    cards.push(`<button class="mini rules" data-rules><span class="t">${E().rules}</span>
+      <span class="rl"><span>${E().capShort}</span><b>${v(cap)}</b></span><span class="rl"><span>${E().euriborShort}</span><b>${v(eu)}</b></span>
+      <span class="s">${cap && cap.source_url ? esc(host(cap.source_url)) : E().unknown}</span></button>`);
+  }
+  const lc = liveSt && liveSt.cards && liveSt.cards[0];
+  const top = lc ? `<button class="rulecard" data-rules>${SPARK}<span><b>${E().ruleChanged}</b> ${esc(lc.rule.replace(/_/g, " "))}: ${lc.before ?? "?"} → ${lc.after ?? "?"} · ${esc(host(lc.source_url))}</span></button>` : "";
+  return top + `<div class="strip">${cards.join("")}</div>`;
 }
 
 function bindGraph(G) {
@@ -203,7 +253,23 @@ function bindDock() {
   const d = $(".dock"); if (!d) return;
   d.querySelectorAll("[data-sc]").forEach((b) => b.addEventListener("click", () => runPreset(b.dataset.sc)));
   const pk = d.querySelector("[data-pick]"); if (pk) pk.addEventListener("click", () => ask(E().askQ(day(picked))));
-  const form = d.querySelector(".wi"), msg = d.querySelector(".wimsg");
+  const form = d.querySelector(".wi:not(.buyf)"), msg = d.querySelector(".wimsg");
+  const bf = d.querySelector(".buyf"), offers = d.querySelector(".offers");
+  d.querySelector("[data-buy]").addEventListener("click", (e) => {
+    if (active === "buy" && e.target.classList.contains("x")) { active = null; scen = null; return redraw(); }
+    bf.hidden = !bf.hidden; if (!bf.hidden) bf.querySelector("input").focus();
+  });
+  bf.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const item = bf.querySelector("input").value.trim(); if (!item) return;
+    offers.hidden = false; offers.innerHTML = `<p class="omsg"><span class="typing"><i></i><i></i><i></i></span> ${E().checking}</p>`;
+    try {
+      const r = await fetch("/api/live/purchase", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ item }) });
+      buyRes = r.ok ? await r.json() : { error: r.status === 503 ? E().notConnected : E().failed };
+    } catch { buyRes = { error: E().failed }; }
+    offers.innerHTML = offersHtml(buyRes); bindOffers();
+  });
+  bindOffers();
   d.querySelector("[data-whatif]").addEventListener("click", (e) => {
     if (active === "ai" && e.target.classList.contains("x")) { active = null; scen = null; return redraw(); }
     form.hidden = !form.hidden; if (!form.hidden) form.querySelector("input").focus();
@@ -223,6 +289,25 @@ function bindDock() {
   });
 }
 
+function bindOffers() {
+  const o = $(".dock .offers"); if (!o || !buyRes || buyRes.error) return;
+  o.querySelectorAll(".offer").forEach((b) => b.addEventListener("click", async () => {
+    const r = await api("/api/live/purchase/apply", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer_id: cid, item: buyRes.item, url: b.dataset.url }) });
+    scen = { ...r, label: r.label }; active = "buy"; buyRes = null; redraw();
+  }));
+  const own = o.querySelector(".own");
+  if (own) own.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const v = parseFloat(own.querySelector("input").value.replace(",", "."));
+    if (!(v > 0)) return;
+    const t = new Date(); t.setDate(t.getDate() + 1);
+    const r = await api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer_id: cid, scenario: { one_offs: [{ label: buyRes.item, amount: v, date: home.ribbon.past.at(-1).date }] } }) });
+    scen = { ...r, label: `${buyRes.item} ${eur0(v)} (${E().ownLabel})` }; active = "buy"; buyRes = null; redraw();
+  });
+}
+
 async function runPreset(k) {
   if (active === k) { active = null; scen = null; return redraw(); }
   const sc = { pause: { pause_extras: true }, eat: { cuts: [{ category: "Restaurants", percent: 50 }] },
@@ -237,19 +322,46 @@ function redraw() {
   layoutNotes(); bindGraph(G); bindDock();
 }
 
+function rulesSheet() {
+  const rows = Object.values(liveSt.rules).map((r) => `<li><div class="rh"><b>${esc(r.label)}</b><span>${r.status === "confirmed" ? `${r.value} ${esc(r.unit)}` : E().unknown}</span></div>
+    <div class="rs">${r.source_url ? `<a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(host(r.source_url))}</a>` : ""}
+    ${r.source_date ? ` · ${esc(E().asOf(r.source_date))}` : ""}${r.fetched_at ? ` · ${esc(E().fetchedAt(when(r.fetched_at)))}` : ""}
+    ${r.key === "loan_cap_general" && r.status === "confirmed" && !r.effective_from ? ` · <i>${E().effUnknown}</i>` : ""}</div></li>`).join("");
+  const mons = Object.entries(liveSt.monitors || {});
+  const s = sheet(`<h2>${E().rulesTitle}</h2><ul class="rules">${rows}</ul><p class="note left">${E().sourceOnly}</p>
+    <div class="label" style="margin:14px 4px 8px">${E().demo}</div>
+    <div class="actions"><button class="btn ghost" data-re>${E().recheck}</button>
+    ${mons.length ? mons.map(([k, m]) => `<button class="btn ghost" data-run="${esc(k)}">${E().runMon(esc(k.replace("_", " ")))}</button>`).join("")
+      : `<button class="btn ghost" data-setup>${E().setupMon}</button>`}</div><p class="omsg" data-out></p>`);
+  const out = s.querySelector("[data-out]");
+  const call = async (url, msg) => {
+    out.innerHTML = `<span class="typing"><i></i><i></i><i></i></span>`;
+    const r = await fetch(url, { method: "POST" });
+    if (!r.ok) { out.textContent = r.status === 503 ? E().notConnected : E().failed; return; }
+    const j = await r.json(); out.textContent = msg(j);
+    liveSt = await api("/api/live/status"); window.renderHomeE();
+  };
+  s.querySelector("[data-re]").addEventListener("click", () => call("/api/live/rules/refresh", () => "✓"));
+  s.querySelectorAll("[data-run]").forEach((b) => b.addEventListener("click", () => call(`/api/live/monitors/${b.dataset.run}/run`,
+    (j) => `${j.status}${j.change_detected ? ` · ${j.before ?? "?"} → ${j.after ?? "?"}` : ""}`)));
+  const st = s.querySelector("[data-setup]"); if (st) st.addEventListener("click", () => call("/api/live/monitors/setup", () => "✓"));
+}
+
 window.renderHomeE = async function () {
   const o = home.overview, r = home.ribbon;
   $("#greet").textContent = `${persona().name} · ${day(o.customer.as_of)}`;
   const [whole, dec] = nf(2).format(o.customer.balance).split(/[.,](?=\d{2}$)/);
   const ch = o.customer.balance - r.past[0].balance_eur;
   $("#balance").innerHTML = `${esc(whole)}<small>${lang === "en" ? "." : ","}${esc(dec)} €</small><span class="delta">${esc(E().since(`${ch < 0 ? "−" : "+"}${eur0(Math.abs(ch))}`))}</span>`;
-  if (!fut || fut.cid !== cid) { fut = await api(`/api/future/${cid}`); fut.cid = cid; active = null; scen = null; picked = null; }
+  if (!fut || fut.cid !== cid) { fut = await api(`/api/future/${cid}`); fut.cid = cid; active = null; scen = null; picked = null; buyRes = null; }
+  if (!liveSt) { try { liveSt = await api("/api/live/status"); } catch { liveSt = null; } }
   notes = null;
   $("#view-home").innerHTML = `<section id="hero"></section>` + strip() + `<p class="ainote">${SPARK}${E().aiNote}</p>`;
   redraw();
   bindAsks($("#view-home"));
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
+  $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
   const fc = home.cards.find((c) => c.id === "forecast");
   if (fc && !notifShown[cid]) { notifShown[cid] = true; showNotif(fc); }
   const want = `${cid}:${lang}`;

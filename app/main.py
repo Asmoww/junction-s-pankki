@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, insights, money  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -32,7 +32,7 @@ PASSWORD = os.environ.get("DEMO_PASSWORD", "")
 WEB = Path(__file__).resolve().parent / "web"
 _COOKIE = "sp_session"
 _token = hmac.new(PASSWORD.encode(), b"sp-session", hashlib.sha256).hexdigest() if PASSWORD else ""
-OPEN_PATHS = {"/login", "/healthz", "/static/style.css", "/static/icon.svg"}
+OPEN_PATHS = {"/login", "/healthz", "/static/style.css", "/static/icon.svg", "/hooks/context"}
 
 app = FastAPI(title="S-Pankki money coach (demo)", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=WEB), name="static")
@@ -173,6 +173,110 @@ def _warm_notes():
 def warm():
     import threading
     threading.Thread(target=_warm_notes, daemon=True).start()
+
+
+# ---------------------------------------------------------------- live web data (Context.dev)
+
+def _live(fn, *a, **kw):
+    try:
+        return fn(*a, **kw)
+    except live.LiveUnavailable as e:
+        raise HTTPException(503, f"Live web data is not connected: {e}")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/live/status")
+def live_status():
+    return {"connected": bool(os.environ.get("CONTEXT_DEV_API_KEY")), "rules": live.registry(),
+            "monitors": {k: {f: m.get(f) for f in ("monitor_id", "url", "rule", "created_at", "webhook")}
+                         for k, m in live.monitors().items()}, "cards": live.cards()[:5]}
+
+
+class PurchaseIn(BaseModel):
+    item: str = Field(min_length=2, max_length=120)
+
+
+@app.post("/api/live/purchase")
+def live_purchase(body: PurchaseIn):
+    return _live(live.check_purchase, body.item)
+
+
+class ApplyIn(BaseModel):
+    customer_id: str
+    item: str
+    url: str
+    date: str | None = None
+
+
+@app.post("/api/live/purchase/apply")
+def live_apply(body: ApplyIn):
+    """Put a CONFIRMED price into the forecast. The amount is looked up server-side, never taken from the client."""
+    saved = json.loads((ROOT / "state" / "live_purchases.json").read_text()) if (ROOT / "state" / "live_purchases.json").exists() else {}
+    check = saved.get(body.item.lower())
+    offer = next((o for o in (check or {}).get("confirmed", []) if o["url"] == body.url), None)
+    if not offer:
+        raise HTTPException(404, "That price was not confirmed; it can't enter the plan.")
+    when = body.date or (money.TODAY + __import__("datetime").timedelta(days=1)).isoformat()
+    res = future.future(_cid(body.customer_id), {"one_offs": [{"label": body.item, "amount": offer["price_eur"], "date": when}]})
+    return {**res, "offer": offer, "label": f"{body.item} {offer['price_eur']:.0f} €"}
+
+
+@app.get("/api/live/home/{cid}")
+def live_home(cid: str, price: float, property_type: str = "apartment"):
+    try:
+        return homeplan.plan_home(_cid(cid), price, property_type)
+    except money.ToolError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/live/rules/refresh")
+def live_rules_refresh():
+    return {k: _live(live.refresh_rule, k) for k in live.RULES}
+
+
+@app.post("/api/live/monitors/setup")
+def live_monitors_setup():
+    hook = "https://spankki.psavela.com/hooks/context"
+    return {k: _live(live.ensure_monitor, k, hook) for k in live.MONITOR_SPECS}
+
+
+@app.post("/api/live/monitors/{key}/run")
+def live_monitor_run(key: str):
+    """Labelled demo control: run a monitor now instead of waiting for its daily schedule."""
+    if key not in live.MONITOR_SPECS:
+        raise HTTPException(404, "unknown monitor")
+    return _live(live.run_monitor_now, key)
+
+
+@app.post("/hooks/context")
+async def context_webhook(request: Request):
+    """Signed Context.dev monitor webhook: verify HMAC before parsing, dedupe on X-Context-Id, react to changes."""
+    raw = await request.body()
+    sig = request.headers.get("x-context-signature", "")
+    mons = live.monitors()
+    if not any(live.verify_signature(raw, sig, m.get("webhook_secret", "")) for m in mons.values()):
+        return JSONResponse({"detail": "bad signature"}, status_code=401)
+    try:
+        ev = json.loads(raw)
+    except ValueError:
+        return JSONResponse({"detail": "bad json"}, status_code=400)
+    if ev.get("id") != request.headers.get("x-context-id") or ev.get("event") != request.headers.get("x-context-event"):
+        return JSONResponse({"detail": "envelope mismatch"}, status_code=400)
+    if live.seen_event(ev["id"]):
+        return JSONResponse({}, status_code=204)
+    change = (ev.get("data") or {}).get("change") or {}
+    m = next((m for m in mons.values() if m.get("monitor_id") == change.get("monitor_id")), None)
+    if ev.get("event") == "change.detected" and m:
+        before = live.registry()[m["rule"]].get("value")
+        try:
+            after = live.refresh_rule(m["rule"], url=m["url"]).get("value")
+        except Exception as e:  # noqa: BLE001 (record and acknowledge; the card says it couldn't re-read)
+            logging.getLogger("hooks").warning("rule refresh after change failed: %s", e)
+            after = None
+        live.add_card({"kind": "rule_change", "rule": m["rule"], "before": before, "after": after, "source_url": m["url"],
+                       "at": live.now_iso(), "change_id": change.get("id"), "via": "webhook"})
+    return JSONResponse({}, status_code=204)
 
 
 @app.get("/api/game/{cid}")
