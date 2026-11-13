@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;500;700&display=swap" rel="stylesheet">
+<style>:root{--g900:#003d25;--g700:#00703c;--g500:#2e9c5e;--g300:#8fd0a8;--g100:#d7efe0;--g50:#eef8f2;--white:#fff;--ink:#0f2219;--mute:#5f7268;--neg:#c2402f;}*{box-sizing:border-box}body{margin:0;width:412px;min-height:915px;background:var(--white);font:16px/1.45 Geologica,sans-serif;color:var(--ink);position:relative}
+.top{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 0}.logo{width:30px;height:30px;border-radius:9px;background:var(--g700);color:#fff;display:grid;place-items:center;font-weight:700}
+.who{font-size:14px;color:var(--mute)}
+.now{padding:22px 20px 0}.now .lbl{font-size:14px;color:var(--mute)}.now .v{font:300 54px/1 Geologica;letter-spacing:-2px;color:var(--g900)}.now .v small{font-size:24px;letter-spacing:0}
+.chart{position:relative;margin-top:10px}
+.pin{position:absolute;transform:translate(-50%,-100%);font-size:12px;font-weight:500;background:var(--g900);color:#fff;border-radius:10px;padding:5px 9px;white-space:nowrap}
+.pin::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:var(--g900)}
+.pin.neg{background:var(--neg)}.pin.neg::after{border-top-color:var(--neg)}.pin.lite{background:var(--g100);color:var(--g900)}.pin.lite::after{border-top-color:var(--g100)}
+.scrub{display:flex;justify-content:space-between;padding:0 20px;font-size:12px;color:var(--mute);margin-top:-4px}
+.say{margin:22px 20px 0;padding:18px;border-radius:24px;background:var(--g50)}.say b{color:var(--g900)}
+.say p{margin:0;font-size:17px}.say .acts{display:flex;gap:8px;margin-top:14px}
+.btn{padding:10px 16px;border-radius:999px;background:var(--g700);color:#fff;font-weight:500;font-size:14px}.btn.o{background:#fff;color:var(--g700);box-shadow:inset 0 0 0 1.5px var(--g300)}
+.bar{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;padding:12px 0 22px;border-top:1px solid var(--g100);font-size:12px;color:var(--mute)}.bar b{color:var(--g700)}
+</style></head><body>
+<div class="top"><div class="logo">S</div><div class="who">Emma · 30 Sep</div></div>
+<div class="now"><div class="lbl">On your account now</div><div class="v">699<small>,85 €</small></div></div>
+<div class="chart"><svg width="412" height="360" viewBox="0 0 412 360">
+<defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2e9c5e" stop-opacity=".28"/><stop offset="1" stop-color="#2e9c5e" stop-opacity="0"/></linearGradient></defs>
+<rect x="0" y="218.6" width="412" height="141.4" fill="none"/>
+<line x1="16" x2="396" y1="218.6" y2="218.6" stroke="#d7efe0" stroke-width="2"/>
+<text x="396" y="212.6" text-anchor="end" font-size="11" fill="#5f7268">0 €</text>
+<polygon points="16.0,218.6 16.0,26.4 28.7,48.9 41.3,55.0 54.0,58.9 79.3,73.3 117.3,90.0 130.0,103.3 142.7,117.2 168.0,137.6 206.0,141.4 206.0,218.6" fill="url(#ga)"/>
+<polyline points="16.0,26.4 28.7,48.9 41.3,55.0 54.0,58.9 79.3,73.3 117.3,90.0 130.0,103.3 142.7,117.2 168.0,137.6 206.0,141.4" fill="none" stroke="#00703c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="206.0,141.4 218.7,147.9 231.3,154.4 244.0,245.0 256.7,251.5 269.3,258.0 282.0,264.5 294.7,271.0 307.3,277.5 320.0,284.0 332.7,290.5 345.3,297.0 358.0,303.5 370.7,310.0 383.3,316.5 396.0,328.7" fill="none" stroke="#c2402f" stroke-width="4" stroke-dasharray="1 9" stroke-linecap="round"/>
+<circle cx="206.0" cy="141.4" r="11" fill="#fff" stroke="#00703c" stroke-width="5"/>
+</svg>
+<div class="pin lite" style="left:16px;top:44px;transform:translate(-5%,22px)">Payday 1 773 €</div>
+<div class="pin" style="left:206px;top:127px">Today</div>
+<div class="pin neg" style="left:244px;top:279px;transform:translate(-30%,0)">Rent 763 € · 3 Oct</div>
+<div class="pin lite" style="left:390px;top:349px;transform:translate(-85%,0)">Payday 15 Oct</div>
+</div>
+<div class="scrub"><span>15 Sep</span><span>drag along the line</span><span>15 Oct</span></div>
+<div class="say"><p>Rent takes you <b>below zero on 3 Oct</b>. At your usual pace you'd reach payday about <b>997 €</b> short.</p>
+<div class="acts"><span class="btn">Plan my way to payday</span><span class="btn o">Why?</span></div></div>
+<div class="bar"><b>Today</b><span>Coach</span><span>Month</span><span>Learn</span></div>
+</body></html>

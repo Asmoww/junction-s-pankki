@@ -60,7 +60,38 @@ impact: the design should teach the three baskets and make the user want to poke
   money go".
 - Risk: a single-screen idea; best as the monthly summary inside A, B or C rather than the whole app.
 
+## Brand constraint (Pyry, 2026-11-13): S-Pankki green and white
+
+Every direction stays in green and white. Palette: `#003d25` deep, `#00703c` S-green, `#2e9c5e`, `#8fd0a8`,
+`#d7efe0`, `#eef8f2`, white; one muted red `#c2402f` only for "below zero". Baskets are shades of green
+(fixed = deep, surprises = mid, extras = light). A-D re-coloured in `design/mockups/green/`; live at /design/green/.
+
+## Four more directions (green and white)
+
+### E. Money ribbon
+Your balance as one thick green line from payday to payday: solid for what happened, dotted red for the forecast;
+pins for payday, today and rent. Drag along it to any day. The single most "glanceable" home: you see the cliff.
+
+### F. Your pay, sliced
+The 15 Sep salary (1,772.88 €) as one tall column cut into what it paid for: overdraft cover, extras, must-pays,
+surprises, what's left. Rent (762.79 €) hangs off the bottom as a dashed block, and the part that doesn't fit is
+hatched red: "62,94 € short". Teaches the three baskets and the shortfall in one picture.
+
+### G. Tappable sentence
+The home screen is one large sentence about you with the amounts as green pills: "Emma, you have 699,85 €.
+Rent 763 € leaves on 3 Oct, so you'll be below zero until payday on 15 Oct." Tap a pill to open its breakdown;
+three big answers below. Most personal and most minimal; type does the work.
+
+### H. Card deck
+Today's insights as a stack of green cards; the top one is tilted and says one thing ("−63 €: rent is bigger than
+what's left"), with a 15-day strip and two actions. Swipe for the payday-week effect, surprise pot, spender type.
+Most "app-like" and fun on stage; risks hiding things behind swipes.
+
 ## Recommendation
+
+Updated after the green set: **G or E as the home** (one personal sentence or one line, both readable in two
+seconds), **F as the "where did my pay go" screen**, **A's jars** for the baskets, **B's toggles** inside the payday
+plan, **D** as the month summary. Earlier proposal kept below for reference.
 
 Combine **C as the home** (the coach greets you with today's one thing) with **A's jars** as the baskets view and
 **B's toggles** inside the "help me make it to payday" answer, and use **D** as the monthly summary screen. That gives one
