@@ -115,3 +115,22 @@ body.e .msg.user { background: var(--g700); }
   .g .scen { stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: drawl .7s ease-out forwards; }
   @keyframes drawl { to { stroke-dashoffset: 0; } }
 }
+
+/* Coach and Learn tabs in design E: compact header, clean bubbles, no leftover negative margins */
+body.e:not([data-tab="home"]) .etop .balance { font-size: 28px; letter-spacing: -.5px; }
+body.e:not([data-tab="home"]) .etop .balance small { font-size: 15px; }
+body.e:not([data-tab="home"]) .etop .balance .delta { display: none; }
+body.e:not([data-tab="home"]) .etop .greet { margin-top: 10px; }
+body.e #view-coach { padding-top: 6px; }
+body.e #view-coach .section-title { background: none; margin: 8px 0 2px; padding: 0; font-size: 16px; font-weight: 500; color: var(--g900); border-radius: 0; }
+body.e #view-coach .chips { background: none; box-shadow: none; border-radius: 0; margin: 0 -16px 6px; padding: 6px 16px 10px; }
+body.e #view-coach .chips .chip { background: var(--g50); border: 0; font-weight: 500; }
+body.e .msg { font-size: 15px; }
+body.e .msg.bot { background: var(--g50); box-shadow: none; border-radius: 6px 20px 20px 20px; }
+body.e .msg.user { border-radius: 20px 20px 6px 20px; }
+body.e .msg.bot .vbadge { background: #fff; }
+body.e .msg.bot details.how { border-top-color: var(--g100); }
+body.e .composer { background: rgba(255, 255, 255, .96); border-top-color: var(--line); }
+body.e .composer input { border-color: var(--g100); }
+body.e .composer input:focus { border-color: var(--g500); }
+body.e #view-learn { padding-top: 10px; }
