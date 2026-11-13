@@ -87,6 +87,32 @@ Today's insights as a stack of green cards; the top one is tilted and says one t
 what's left"), with a 15-day strip and two actions. Swipe for the payday-week effect, surprise pot, spender type.
 Most "app-like" and fun on stage; risks hiding things behind swipes.
 
+## Five more (green and white): engagement and S-mobiili fit
+
+### I. Month mosaic
+Every day of the pay month as a tile: shade = how much you spent, outlined = no-spend day, dashed = forecast (~59 €
+a day), red = rent and the below-zero days after it. Shows patterns at a glance (6 no-spend days, big days after
+payday) and invites tapping a day. Pairs with no-spend-day nudges.
+
+### J. Wallet pockets
+Until payday as a stack of wallet cards: rent and bills 814,54 €, groceries and commuting 397,73 €, surprise buffer
+163,30 €, extras (paused), and the account card at the bottom: you have 699,85 €, pockets need 1 375,57 €, about
+676 € short. It is safe-to-spend made physical, and it feels like a banking app.
+
+### K. Spending bubbles
+September as packed circles sized by spend and shaded by basket. Tap a bubble to burst it into its purchases (MyData
+exploration). The insight under it is computed: eating out 508 € in 10 visits.
+
+### L. Road to payday
+The next 15 days as a winding road with stops (today 699,85 €, rent on 3 Oct, below zero from there, payday −997 €).
+Route chips (usual pace / pause extras / move rent) redraw the road. Playful, aimed at young adults; the literacy
+angle is "where on the road does it go wrong".
+
+### M. Lock screen and widgets
+How the coach lives in S-mobiili outside the app: a lock-screen notification ("Rent 762,79 € leaves on Saturday"),
+a no-spend-day note, a days-to-payday ring and a rent widget. Strongest for the "fit with S-mobiili" criterion; use
+it as a slide or the opening shot of the demo.
+
 ## Recommendation
 
 Updated after the green set: **G or E as the home** (one personal sentence or one line, both readable in two
