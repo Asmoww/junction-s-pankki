@@ -189,6 +189,8 @@ def _live(fn, *a, **kw):
 @app.get("/api/live/status")
 def live_status():
     return {"connected": bool(os.environ.get("CONTEXT_DEV_API_KEY")), "rules": live.registry(),
+            "deliveries": (json.loads((ROOT / "state" / "live_deliveries.json").read_text())[:5]
+                           if (ROOT / "state" / "live_deliveries.json").exists() else []),
             "monitors": {k: {f: m.get(f) for f in ("monitor_id", "url", "rule", "created_at", "webhook")}
                          for k, m in live.monitors().items()}, "cards": live.cards()[:5]}
 
@@ -265,6 +267,7 @@ async def context_webhook(request: Request):
         return JSONResponse({"detail": "envelope mismatch"}, status_code=400)
     if live.seen_event(ev["id"]):
         return JSONResponse({}, status_code=204)
+    live.log_delivery(ev)
     change = (ev.get("data") or {}).get("change") or {}
     m = next((m for m in mons.values() if m.get("monitor_id") == change.get("monitor_id")), None)
     if ev.get("event") == "change.detected" and m:

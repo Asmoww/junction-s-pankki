@@ -130,3 +130,12 @@ def test_webhook_signature():
     assert not live.verify_signature(body + b" ", f"t={t},v1={v1}", secret, now=t)        # tampered body
     assert not live.verify_signature(body, f"t={t},v1={v1}", secret, now=t + 301)          # too old
     assert not live.verify_signature(body, f"t={t},v1={v1}", "whsec_other", now=t)         # wrong secret
+
+
+def test_rule_refresh_prefers_newest_release(fake):
+    old = "https://www.finanssivalvonta.fi/tiedotteet/2024/lainakatto-ennallaan/"
+    new = "https://www.finanssivalvonta.fi/tiedotteet/2026/lainakatto-nousee-95-prosenttiin/"
+    f = Fake(json_pages={new: {"value": 95, "as_of": "2026-06-30"}, old: {"value": 90, "as_of": "2024-06-28"}})
+    f.web.search = lambda **kw: NS(request_id="r", results=[NS(url=old), NS(url="https://www.finanssivalvonta.fi/en/"), NS(url=new)])
+    fake(f)
+    assert live.refresh_rule("loan_cap_general")["value"] == 95
