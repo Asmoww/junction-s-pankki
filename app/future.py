@@ -138,6 +138,8 @@ def parse_whatif(cid: str, text: str, lang: str = "en") -> dict:
               "no ISO dates, no technical words) in the label's language; otherwise null. "
               f"Write the label in {'Finnish' if lang == 'fi' else 'Swedish' if lang == 'sv' else 'English'}.")
     sc = _json_call(system, f"Context: {json.dumps(ctx)}\nWhat if: {text}", SCENARIO_SCHEMA)
+    if isinstance(sc.get("unsupported"), str):
+        sc["unsupported"] = sc["unsupported"].strip().strip("{}\"'").strip() or None
     # Amounts must come from the user's own words (verified the same way as coach answers).
     said = {float(x.replace(" ", "").replace(",", ".")) for x in re.findall(r"\d+(?:[.,]\d+)?", text)}
     for k in ("one_offs", "income"):
