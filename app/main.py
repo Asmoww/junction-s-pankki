@@ -4,6 +4,7 @@ Run: .venv/bin/uvicorn app.main:app --port 5202
 """
 import hashlib
 import hmac
+import json
 import html
 import logging
 import os
@@ -23,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, money  # noqa: E402  (after .env is loaded)
+from . import coach, insights, money  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -71,7 +72,7 @@ def healthz():
 
 
 # Cloudflare caches /static for hours: version asset URLs by content so each deploy is picked up at once.
-_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js"))).hexdigest()[:10]
+_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js"))).hexdigest()[:10]
 INDEX = (WEB / "index.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
 LOGIN = LOGIN.replace(".css\"", f".css?v={_ver}\"")
 
@@ -103,6 +104,25 @@ def overview(cid: str):
     return money.overview(_cid(cid))
 
 
+@app.get("/api/home/{cid}")
+def home(cid: str):
+    """Everything the home and learn screens need in one call."""
+    cid = _cid(cid)
+    return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
+            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid)}
+
+
+@app.get("/api/game/{cid}")
+def game(cid: str, seed: int | None = None):
+    return insights.basket_game(_cid(cid), seed=seed)
+
+
+@app.get("/api/traps")
+def traps():
+    f = ROOT / "state" / "traps.json"
+    return json.loads(f.read_text()) if f.exists() else {"runs": []}
+
+
 @app.get("/api/baskets/{cid}")
 def baskets(cid: str, period: str = "this_month"):
     try:
@@ -119,13 +139,14 @@ class Turn(BaseModel):
 class ChatIn(BaseModel):
     customer_id: str
     history: list[Turn] = Field(min_length=1, max_length=40)
+    lang: str = Field("en", pattern="^(en|fi|sv)$")
 
 
 @app.post("/api/chat")
 def chat(body: ChatIn):
     if body.history[-1].role != "user":
         raise HTTPException(400, "last turn must be the user's")
-    return coach.chat(_cid(body.customer_id), [t.model_dump() for t in body.history])
+    return coach.chat(_cid(body.customer_id), [t.model_dump() for t in body.history], body.lang)
 
 
 @app.exception_handler(404)

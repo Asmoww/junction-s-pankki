@@ -70,9 +70,15 @@ scripts/fetch_data.sh                          # dataset into data/raw/ (hash-ch
 
 ## Code map
 - `app/money.py` every number: spending, transactions, cashflow, three baskets, safe-to-spend, what-if cut, spender profile, overview. "Today" is 2026-09-30.
-- `app/coach.py` Claude tool-use loop (Sonnet 5.5, effort low, no fallback to bigger models; model logged per call); returns answer + tool trace.
-- `app/main.py` password gate (cookie), `/api/overview|baskets|chat|personas`, asset versioning (Cloudflare caches /static).
-- `app/web/` mobile UI: persona picker, safe-to-spend card with steps, month in three baskets, chat with "How I worked this out".
+- `app/insights.py` surprise pot, payday pattern + forecast, Statistics Finland benchmark, spender type, basket game, PSD2 signal, home cards.
+- `app/coach.py` Claude tool-use loop (Sonnet 5.5, effort low, no fallback to bigger models; model logged per call), `calculate` tool for any
+  arithmetic, charts/widgets built from tool results, usage + cost, privacy summary. EN/FI/SV answers.
+- `app/verify.py` verified numbers: every € and % in an answer is matched to tool results (verified / rounded / suggestion / unverified).
+- `app/main.py` password gate, `/api/home|overview|chat|game|traps|personas`, asset versioning (Cloudflare caches /static).
+- `app/web/` mobile UI, tabs Home / Coach / Learn; `i18n.js` holds every UI string in en, fi, sv.
+- `app/bench_statfin.json` Statistics Finland 2022 table 14q4 (open data), rebuilt by `scripts/fetch_benchmarks.py`.
+- `tests/traps/cases.py` + `scripts/run_traps.py` trap suite against the live coach (~$0.15/run) -> `state/traps.json`, shown on Learn.
+  Nightly: user timer `spankki-traps.timer` (03:17).
 - `app/personas.py` four demo customers (real ids, invented names).
 
 ## Deployment

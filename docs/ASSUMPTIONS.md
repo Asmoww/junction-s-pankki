@@ -69,3 +69,17 @@ full files (sha256 of the transactions CSV `49b3265d…6f1e63`).
 - `mtg_negotiation_history.csv`: event log per application (created, contact, property added, price updated,
   decision…) with free-text `note`.
 - Possible use: "can I afford a home?" coaching for those 200 customers. Not needed for the core challenge.
+
+## Benchmarks (Statistics Finland)
+- Source: Household budget survey 2022, table 14q4, consumption expenditure per consumption unit per month (EUR), by age of
+  the reference person. Fetched by `scripts/fetch_benchmarks.py` into `app/bench_statfin.json`. Total 2,363 €/month for all ages.
+- Mapping: Groceries -> 01 food, Restaurants -> 11.1 food & beverage serving, Transportation -> 07, Entertainment -> 09,
+  Health -> 06, Clothing/Fashion merchant types -> 03. Housing (04) is not compared: it includes imputed rent of owners.
+- The synthetic bank data is much higher than national figures (e.g. Emma, 23: restaurants 236 €/month vs 67 €). The coach
+  must present these as reference points; the trap suite checks that it cites the source.
+
+## Patterns used in insight cards (5,000 normal customers)
+- Surprise basket: median 255 €/month, present in 67 % of months, coefficient of variation 1.15 (~3,050 €/year).
+- Extras +30 % per day in the week after payday vs the week before; weekend days 1.45x weekdays.
+- Half of all negative-balance transactions happen within 7 days before payday.
+- Only 15 % of extras are under 10 €; median cafe/fast-food purchase 23 € (no "latte factor" in this data).

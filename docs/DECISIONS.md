@@ -14,3 +14,10 @@ One line per decision, with why. Newest last.
 - 2026-11-13 Demo personas are 4 ordinary customers (CUST01610, 04588, 00388, 00724) with invented names; CUST05001-05100 avoided as they carry most injected anomalies.
 - 2026-11-13 Mobile only (no desktop layout), deployed at spankki.psavela.com behind one password. Why: Pyry; S-Bank customers are on mobile.
 - 2026-11-13 App model capped at Sonnet: no server-side refusal fallback (it can retry on Opus). Why: Pyry, cost.
+- 2026-11-13 Verified numbers: code matches every € and % in an answer to tool results; percentages in a closing question are "suggestions" and not checked. Why: proof on screen instead of "trust the AI".
+- 2026-11-13 Coach gets a `calculate` tool and must use it for any arithmetic. Why: the trap suite caught the model inventing "1,000 € would cover it" from its own mental math.
+- 2026-11-13 Forecast and safe-to-spend give two different shortfalls on purpose: "at your usual pace" (extras included) vs "even with no extras". Both are labelled in UI and coach. Why: an unlabelled 997 € vs 676 € confused the first version.
+- 2026-11-13 Benchmarks: Statistics Finland 2022 table 14q4, per consumption unit per month by age. Housing not compared (includes owners' imputed rent). Synthetic data runs far above national figures, so always shown with caveats.
+- 2026-11-13 Insight card texts are templates filled with computed numbers (not model-written). Why: instant, translatable, and nothing to verify.
+- 2026-11-13 PSD2 is a consent mock only; no fake second-bank data. Why: invented transactions would undercut the "every number is real" story.
+- 2026-11-13 Trap suite runs nightly (~$0.15/run, Sonnet). Why: judges see measured reliability that stays current.

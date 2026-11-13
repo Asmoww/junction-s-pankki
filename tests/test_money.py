@@ -66,3 +66,16 @@ def test_bad_input_is_a_tool_error():
 def test_cashflow_gives_balance_change_so_the_model_never_subtracts():
     b = money.get_cashflow(JUSSI, "last_month")["balance_eur"]
     assert b["change"] == pytest.approx(b["end"] - b["start"], abs=0.01)
+
+
+def test_verify_statuses():
+    from app import verify
+    trace = [{"tool": "x", "error": False, "result": {"total_eur": 997.4, "share": 0.362}}]
+    got = {n["text"]: n["status"] for n in verify.check(
+        "You spent 997.40 €, about 1,000 €, 36.2% of it, and 12 €. Want to see a 30% cut?", trace, [], "en",
+        {"balance": 699.85})}
+    assert got == {"997.40 €": "verified", "1,000 €": "rounded", "36.2%": "verified", "12 €": "unverified",
+                   "30%": "suggestion"}
+    fi = verify.check("Säästät 47,10 € kuussa, saldo 699,85 €.", [{"tool": "x", "error": False,
+                      "result": {"s": 47.1}}], [], "fi", {"balance": 699.85})
+    assert [n["status"] for n in fi] == ["verified", "verified"]
