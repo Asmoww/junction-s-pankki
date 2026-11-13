@@ -47,7 +47,7 @@ async def password_gate(request: Request, call_next):
         return await call_next(request)
     if request.url.path.startswith("/api/"):
         return JSONResponse({"detail": "login required"}, status_code=401)
-    nxt = request.url.path if request.url.path in ("/", "/e") or request.url.path.startswith("/design") else "/"
+    nxt = request.url.path if request.url.path in ("/", "/e", "/classic") or request.url.path.startswith("/design") else "/"
     return RedirectResponse(f"/login?next={nxt}", status_code=303)
 
 
@@ -85,13 +85,20 @@ LOGIN = LOGIN.replace(".css\"", f".css?v={_ver}\"")
 E_PAGE = (WEB / "e.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
 
 
-@app.get("/e")
-def index_e():
+@app.get("/")
+def index():
+    """Design E (the future as a graph) is the main page."""
     return HTMLResponse(E_PAGE, headers={"Cache-Control": "no-cache"})
 
 
-@app.get("/")
-def index():
+@app.get("/e")
+def index_e():
+    return RedirectResponse("/", status_code=307)
+
+
+@app.get("/classic")
+def index_classic():
+    """The first design, kept for comparison."""
     return HTMLResponse(INDEX, headers={"Cache-Control": "no-cache"})
 
 
