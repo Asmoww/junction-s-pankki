@@ -11,7 +11,7 @@ MyData spirit: let users explore freely, not fixed charts. Optional: Statistics 
 Full brief: `docs/CHALLENGE.md`. Judging (20 % each): financial literacy impact, originality of AI integration,
 clarity of mobile UX, feasibility, potential to integrate into S-mobiili.
 
-## Architecture (proposed, see docs/DECISIONS.md)
+## Architecture
 ```
 Mobile web UI (embeddable in S-mobiili webview)
    │  chat + small inline charts
@@ -27,10 +27,10 @@ Numbers always come from the tools, never from the model. Claude chooses tools a
 ## Module ownership (fill in names)
 | Module | Owner | Folder |
 |---|---|---|
-| Data build + money tools | ? | `app/data/`, `app/tools/` |
-| Coach (Claude, prompts, tool use) | ? | `app/coach/` |
+| Data build + money tools | ? | `scripts/build_data.py`, `app/money.py`, `app/taxonomy.py` |
+| Coach (Claude, prompts, tool use) | ? | `app/coach.py` |
 | Mobile UI | ? | `app/web/` |
-| Benchmarks (open data) | ? | `app/bench/` |
+| Benchmarks (open data) | ? | (not started) |
 | Tests + trap suite | ? | `tests/` |
 | Demo script + pitch | ? | `docs/` |
 
@@ -59,8 +59,23 @@ and checks the hash. 3.6 M transactions, 5,100 customers (one account each), 202
 Quirks and handling: `docs/ASSUMPTIONS.md`.
 
 ## Stack and how to run
-Python 3.12, DuckDB, FastAPI, Anthropic SDK, pytest (proposed; commands added as code lands).
+Python 3.12, DuckDB over `data/tx.parquet`, FastAPI, Anthropic SDK, vanilla JS mobile UI, pytest.
 ```bash
-python3 -m venv .venv && .venv/bin/pip install duckdb   # current setup
-scripts/fetch_data.sh                                    # dataset into data/raw/
+python3 -m venv .venv && .venv/bin/pip install duckdb fastapi 'uvicorn[standard]' anthropic python-multipart pytest
+scripts/fetch_data.sh                          # dataset into data/raw/ (hash-checked)
+.venv/bin/python scripts/build_data.py         # data/tx.parquet + customers.parquet (fails if the balance chain breaks)
+.venv/bin/python -m pytest -q tests            # offline tests, no API calls
+.venv/bin/uvicorn app.main:app --port 5202     # local run (.env: ANTHROPIC_API_KEY, DEMO_PASSWORD)
 ```
+
+## Code map
+- `app/money.py` every number: spending, transactions, cashflow, three baskets, safe-to-spend, what-if cut, spender profile, overview. "Today" is 2026-09-30.
+- `app/coach.py` Claude tool-use loop (Sonnet 5.5, effort low, server-side refusal fallback); returns answer + tool trace.
+- `app/main.py` password gate (cookie), `/api/overview|baskets|chat|personas`, asset versioning (Cloudflare caches /static).
+- `app/web/` mobile UI: persona picker, safe-to-spend card with steps, month in three baskets, chat with "How I worked this out".
+- `app/personas.py` four demo customers (real ids, invented names).
+
+## Deployment
+https://spankki.psavela.com (password in team chat). User service `spankki-coach` (port 5202, MemoryMax 600M):
+`systemctl --user restart spankki-coach` after changes. Tunnel: user service `cloudflared`, config `~/.cloudflared/config.yml`
+(back it up before editing; a restart briefly drops every site on the tunnel).

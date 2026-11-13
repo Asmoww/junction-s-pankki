@@ -59,6 +59,10 @@ full files (sha256 of the transactions CSV `49b3265d…6f1e63`).
 - **Data ends 2026-09-30.** "Today" in the demo is 2026-09-30 (or a chosen date inside the data), not the real
   date. "Last month" = September 2026. Every answer states the period it used.
 
+## Special customers
+- `CUST05001`–`CUST05100` (100 customers, average age 55 vs 43) hold 124 of the 136 extreme one-offs and many odd
+  patterns. Probably injected edge cases. Handling: good for the trap suite; not used as demo personas.
+
 ## Mortgage files (probably out of scope)
 - `mtg_tx_customer_link_and_final_mtg_infio.csv`: 200 mortgage applications linked 1:1 to `customer_id`, with final
   decision, loan, equity, required monthly income, LTV (column typo `lfinal_loan_to_value`).
