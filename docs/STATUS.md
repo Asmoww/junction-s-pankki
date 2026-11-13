@@ -11,6 +11,8 @@ Update at the end of every session (or run `/handoff`).
 - Spending explorer screen (MyData: tap any category/month)
 - Mentor feedback on the basket rules (DECISIONS.md) and the safe-to-spend method
 
+- Pick the design: `/e` (money ribbon) vs `/`; then make it the default
+
 ## Blocked / waiting
 - Team: module owners
 
@@ -21,3 +23,4 @@ Update at the end of every session (or run `/handoff`).
   what-if slider, trap suite (18/18 twice, 80/80 numbers verified) shown in app + nightly run, basket sort game,
   EN/FI/SV, "What the AI saw" (model, tokens, cost, data sent), PSD2 connect mock for Jussi, spender type,
   Statistics Finland benchmark (Pyry's Claude)
+- 2026-11-14 Design E (money ribbon) live at /e: real balance since payday + forecast to next payday, drag readout, EN/FI/SV (Pyry's Claude)

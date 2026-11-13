@@ -1,6 +1,13 @@
 // UI strings in English, Finnish and Swedish. The coach answers in the chosen language itself.
 const I18N = {
   en: {
+    onAccount: "On your account now", dragHint: "drag along the line", rToday: "Today", rPayday: "Payday", forecastTag: "forecast",
+    billNames: { Housing: "Rent", Utilities: "Bills" },
+    ribbonOut: (bill, d, short) => `${bill} takes you <b class="neg">below zero on ${d}</b>. At your usual pace you'd reach payday about <b class="neg">${short}</b> short.`,
+    ribbonOutPace: (d, short) => `At your usual pace you go <b class="neg">below zero on ${d}</b> and reach payday about <b class="neg">${short}</b> short.`,
+    ribbonOk: (end, d) => `At your usual pace you'll still have about <b>${end}</b> when your pay arrives on ${d}.`,
+    planBtn: "Plan my way to payday", saveBtn: "See what I could save", whyBtn: "Why?", whyQ: "Why is my balance going down before payday?",
+    okQ: "How much could I save before payday?", 
     locale: "en-GB", tabs: ["Home", "Coach", "Learn"], balanceOn: (n) => `Hi ${n} · balance on 30 Sep 2026`,
     safeWeek: "Safe to spend this week", howCalc: "How is this calculated?", safeUntil: (d) => `Safe until payday (${d} days)`,
     perDay: (a, d, e) => `${a} a day until payday on ${d}. You usually spend ${e} a week on extras.`,
@@ -51,6 +58,13 @@ const I18N = {
     notif: "S-mobiili · now",
   },
   fi: {
+    onAccount: "Tililläsi nyt", dragHint: "liu'uta viivaa pitkin", rToday: "Tänään", rPayday: "Palkkapäivä", forecastTag: "ennuste",
+    billNames: { Housing: "Vuokra", Utilities: "Laskut" },
+    ribbonOut: (bill, d, short) => `${bill} vie tilisi <b class="neg">miinukselle ${d}</b>. Tavallisella tahdilla sinulta puuttuu palkkapäivänä noin <b class="neg">${short}</b>.`,
+    ribbonOutPace: (d, short) => `Tavallisella tahdilla tili menee <b class="neg">miinukselle ${d}</b>, ja palkkapäivänä puuttuu noin <b class="neg">${short}</b>.`,
+    ribbonOk: (end, d) => `Tavallisella tahdilla sinulla on vielä noin <b>${end}</b>, kun palkka tulee ${d}.`,
+    planBtn: "Suunnittele palkkapäivään", saveBtn: "Katso, paljonko voin säästää", whyBtn: "Miksi?", whyQ: "Miksi saldoni laskee ennen palkkapäivää?",
+    okQ: "Paljonko voisin säästää ennen palkkapäivää?", 
     locale: "fi-FI", tabs: ["Koti", "Valmentaja", "Opi"], balanceOn: (n) => `Hei ${n} · saldo 30.9.2026`,
     safeWeek: "Turvallisesti käytettävissä tällä viikolla", howCalc: "Miten tämä lasketaan?", safeUntil: (d) => `Turvallisesti palkkapäivään (${d} pv)`,
     perDay: (a, d, e) => `${a} päivässä palkkapäivään ${d} asti. Käytät yleensä ${e} viikossa arjen extroihin.`,
@@ -101,6 +115,13 @@ const I18N = {
     notif: "S-mobiili · nyt",
   },
   sv: {
+    onAccount: "På ditt konto nu", dragHint: "dra längs linjen", rToday: "I dag", rPayday: "Lönedag", forecastTag: "prognos",
+    billNames: { Housing: "Hyran", Utilities: "Räkningar" },
+    ribbonOut: (bill, d, short) => `${bill} tar dig <b class="neg">under noll den ${d}</b>. I din vanliga takt saknar du cirka <b class="neg">${short}</b> på lönedagen.`,
+    ribbonOutPace: (d, short) => `I din vanliga takt går du <b class="neg">under noll den ${d}</b> och saknar cirka <b class="neg">${short}</b> på lönedagen.`,
+    ribbonOk: (end, d) => `I din vanliga takt har du kvar cirka <b>${end}</b> när lönen kommer den ${d}.`,
+    planBtn: "Planera fram till lönedagen", saveBtn: "Se vad jag kan spara", whyBtn: "Varför?", whyQ: "Varför sjunker mitt saldo före lönedagen?",
+    okQ: "Hur mycket kunde jag spara före lönedagen?", 
     locale: "sv-FI", tabs: ["Hem", "Coach", "Lär dig"], balanceOn: (n) => `Hej ${n} · saldo 30.9.2026`,
     safeWeek: "Tryggt att spendera denna vecka", howCalc: "Hur räknas detta?", safeUntil: (d) => `Tryggt till lönedagen (${d} dagar)`,
     perDay: (a, d, e) => `${a} per dag till lönedagen ${d}. Du brukar spendera ${e} i veckan på vardagsextra.`,

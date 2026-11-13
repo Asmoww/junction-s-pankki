@@ -21,3 +21,5 @@ One line per decision, with why. Newest last.
 - 2026-11-13 Insight card texts are templates filled with computed numbers (not model-written). Why: instant, translatable, and nothing to verify.
 - 2026-11-13 PSD2 is a consent mock only; no fake second-bank data. Why: invented transactions would undercut the "every number is real" story.
 - 2026-11-13 Trap suite runs nightly (~$0.15/run, Sonnet). Why: judges see measured reliability that stays current.
+- 2026-11-14 Design E built as a second front end at /e, sharing app.js and the API; / unchanged. Why: try it without risking the working demo.
+- 2026-11-14 Login keeps the requested page (/login?next=), only local paths. Why: links to /e and /design survive the password gate.

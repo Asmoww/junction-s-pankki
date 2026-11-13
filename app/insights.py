@@ -115,6 +115,28 @@ def payday_forecast(cid: str) -> dict:
             "note": "Bills on their usual day of the month; essentials, surprises and extras at your usual 90-day pace."}
 
 
+def ribbon(cid: str) -> dict:
+    """Balance day by day from the last payday to today (real, end of day) and on to the next payday (forecast)."""
+    pay = _q("SELECT tx_date, amount FROM tx WHERE customer_id = ? AND category = 'Salary' AND tx_date <= ? "
+             "ORDER BY ts DESC LIMIT 1", [cid, TODAY])
+    start = pay[0]["tx_date"] if pay else TODAY - timedelta(days=30)
+    eod = {r["d"]: r["b"] for r in _q("SELECT tx_date d, arg_max(balance, seq) b FROM tx WHERE customer_id = ? "
+                                       "AND tx_date BETWEEN ? AND ? GROUP BY 1", [cid, start, TODAY])}
+    prev = _q("SELECT balance FROM tx WHERE customer_id = ? AND tx_date < ? ORDER BY seq DESC LIMIT 1", [cid, start])
+    bal = float(prev[0]["balance"]) if prev else 0.0
+    past = []
+    for i in range((TODAY - start).days + 1):
+        d = start + timedelta(days=i)
+        bal = float(eod.get(d, bal))
+        past.append({"date": d.isoformat(), "balance_eur": _r(bal)})
+    fc = payday_forecast(cid)
+    return {"last_payday": start.isoformat(), "salary_eur": _r(pay[0]["amount"]) if pay else None,
+            "next_payday": fc["next_payday"], "past": past, "future": fc["daily_path"][1:],
+            "bills_ahead": fc["bills_ahead"], "runs_out_around": fc["runs_out_around"],
+            "balance_at_payday_eur": fc["balance_at_payday_at_usual_pace_eur"],
+            "short_at_usual_pace_eur": fc["short_at_usual_pace_eur"]}
+
+
 def benchmark(cid: str) -> dict:
     """Monthly spending per area vs Statistics Finland 2022 for the same age group."""
     age = money.customer(cid)["age"]

@@ -47,22 +47,26 @@ async def password_gate(request: Request, call_next):
         return await call_next(request)
     if request.url.path.startswith("/api/"):
         return JSONResponse({"detail": "login required"}, status_code=401)
-    return RedirectResponse("/login", status_code=303)
+    nxt = request.url.path if request.url.path in ("/", "/e") or request.url.path.startswith("/design") else "/"
+    return RedirectResponse(f"/login?next={nxt}", status_code=303)
 
 
 LOGIN = (WEB / "login.html").read_text()
 
 
 @app.get("/login", response_class=HTMLResponse)
-def login_page(err: int = 0):
-    return LOGIN.replace("{err}", '<p class="err">Wrong password, try again.</p>' if err else "")
+def login_page(err: int = 0, next: str = "/"):
+    nxt = next if next.startswith("/") and not next.startswith("//") else "/"
+    return LOGIN.replace("{err}", '<p class="err">Wrong password, try again.</p>' if err else "").replace(
+        "{next}", html.escape(nxt, quote=True))
 
 
 @app.post("/login")
-def login(password: str = Form(...)):
+def login(password: str = Form(...), next: str = Form("/")):
+    nxt = next if next.startswith("/") and not next.startswith("//") else "/"
     if not PASSWORD or not secrets.compare_digest(password, PASSWORD):
-        return RedirectResponse("/login?err=1", status_code=303)
-    r = RedirectResponse("/", status_code=303)
+        return RedirectResponse(f"/login?err=1&next={nxt}", status_code=303)
+    r = RedirectResponse(nxt, status_code=303)
     r.set_cookie(_COOKIE, _token, httponly=True, secure=True, samesite="lax", max_age=14 * 86400)
     return r
 
@@ -73,9 +77,17 @@ def healthz():
 
 
 # Cloudflare caches /static for hours: version asset URLs by content so each deploy is picked up at once.
-_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js"))).hexdigest()[:10]
+_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js", "e.css"))).hexdigest()[:10]
 INDEX = (WEB / "index.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
 LOGIN = LOGIN.replace(".css\"", f".css?v={_ver}\"")
+
+
+E_PAGE = (WEB / "e.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
+
+
+@app.get("/e")
+def index_e():
+    return HTMLResponse(E_PAGE, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/")
@@ -110,7 +122,7 @@ def home(cid: str):
     """Everything the home and learn screens need in one call."""
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
-            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid)}
+            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid)}
 
 
 @app.get("/api/game/{cid}")

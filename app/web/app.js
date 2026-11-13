@@ -152,9 +152,77 @@ function benchCard(b) {
     ${compareChart({ items })}<p class="note left">${T().benchNote}</p></section>`;
 }
 
+function ribbonHero(r) {
+  const W = Math.min(window.innerWidth, 480), H = 300, padX = 22, top = 62, bottom = 58;
+  const pts = r.past.concat(r.future);
+  const vals = pts.map((p) => p.balance_eur);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (lo > 0 && lo < 0.35 * hi) lo = 0;
+  const span = Math.max(hi - lo, 1); lo -= span * 0.06; hi += span * 0.06;
+  const n = pts.length - 1, iToday = r.past.length - 1;
+  const X = (i) => padX + (i * (W - 2 * padX)) / n;
+  const Y = (v) => top + ((hi - v) / (hi - lo)) * (H - top - bottom);
+  const line = (a, b) => pts.slice(a, b + 1).map((p, k) => `${X(a + k).toFixed(1)},${Y(p.balance_eur).toFixed(1)}`).join(" ");
+  const neg = r.future.some((p) => p.balance_eur < 0);
+  const zero = lo < 0 && hi > 0 ? `<line x1="${padX}" x2="${W - padX}" y1="${Y(0)}" y2="${Y(0)}" stroke="#d7efe0" stroke-width="2"/>
+    <text x="${W - padX}" y="${Y(0) - 6}" text-anchor="end" font-size="11" fill="#5f7268">0 €</text>` : "";
+  const area = `${X(0)},${H - bottom} ${line(0, iToday)} ${X(iToday)},${H - bottom}`;
+  const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <defs><linearGradient id="rg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2e9c5e" stop-opacity=".25"/><stop offset="1" stop-color="#2e9c5e" stop-opacity="0"/></linearGradient></defs>
+    ${zero}<polygon points="${area}" fill="url(#rg)"/>
+    <polyline class="past" points="${line(0, iToday)}" fill="none" stroke="#00703c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${line(iToday, n)}" fill="none" stroke="${neg ? "#c2402f" : "#2e9c5e"}" stroke-width="4" stroke-dasharray="1 9" stroke-linecap="round"/>
+    <line class="guide" x1="0" x2="0" y1="${top - 30}" y2="${H - bottom + 20}" stroke="#003d25" stroke-width="1.5" stroke-dasharray="3 3" opacity="0"/>
+    <circle class="dot" cx="${X(iToday)}" cy="${Y(vals[iToday])}" r="11" fill="#fff" stroke="#00703c" stroke-width="5"/></svg>`;
+  const pins = [];
+  const pin = (i, text, cls, below = false) => {
+    const y = Y(vals[i]);
+    const side = i < n * 0.15 ? " left" : i > n * 0.85 ? " right" : "";
+    pins.push(`<div class="pin ${cls}${side}${below ? " below" : ""}" style="left:${X(i)}px;top:${below ? y + 16 : y - 14}px">${esc(text)}</div>`);
+  };
+  if (r.salary_eur) pin(0, `${T().rPayday} ${eur0(r.salary_eur)}`, "lite");
+  pin(iToday, T().rToday, "");
+  for (const b of r.bills_ahead) {
+    if (b.date === r.next_payday) continue;
+    const i = pts.findIndex((p) => p.date === b.date);
+    if (i > iToday) pin(i, `${T().billNames[b.bill] || b.bill} ${eur0(b.eur)} · ${day(b.date)}`, vals[i] < 0 ? "neg" : "", true);
+  }
+  pin(n, `${T().rPayday} ${day(r.next_payday)}`, "lite", true);
+  const out = r.runs_out_around, outBill = out && r.bills_ahead.find((b) => b.date === out);
+  const sentence = out ? (outBill ? T().ribbonOut(T().billNames[outBill.bill] || outBill.bill, day(out), eur0(r.short_at_usual_pace_eur))
+    : T().ribbonOutPace(day(out), eur0(r.short_at_usual_pace_eur))) : T().ribbonOk(eur0(r.balance_at_payday_eur), day(r.next_payday));
+  const planQ = out ? T().cards.forecast[2] : T().okQ;
+  return `<div class="ribbon" id="ribbon">${svg}${pins.join("")}<div class="readout" hidden></div></div>
+    <div class="scrub"><span>${day(r.last_payday)}</span><span>${T().dragHint}</span><span>${day(r.next_payday)}</span></div>
+    <section class="say"><p>${sentence}</p><div class="actions"><button class="btn" data-ask="${esc(planQ)}">${out ? T().planBtn : T().saveBtn}</button>
+    <button class="btn ghost" data-ask="${esc(T().whyQ)}">${T().whyBtn}</button></div></section>`;
+}
+
+function bindRibbon(r) {
+  const el = $("#ribbon"); if (!el) return;
+  const pts = r.past.concat(r.future), n = pts.length - 1, iToday = r.past.length - 1;
+  const svg = el.querySelector("svg"), W = +svg.getAttribute("width"), padX = 22;
+  const dot = svg.querySelector(".dot"), guide = svg.querySelector(".guide"), ro = el.querySelector(".readout");
+  const poly = [...svg.querySelectorAll("polyline")].flatMap((pl) => pl.getAttribute("points").split(" ").map((q) => q.split(",").map(Number)));
+  const yAt = (i) => (poly.find((q) => Math.abs(q[0] - (padX + (i * (W - 2 * padX)) / n)) < 0.2) || [0, 0])[1];
+  const show = (clientX) => {
+    const x = clientX - el.getBoundingClientRect().left;
+    const i = Math.max(0, Math.min(n, Math.round(((x - padX) / (W - 2 * padX)) * n)));
+    const px = padX + (i * (W - 2 * padX)) / n, p = pts[i];
+    dot.setAttribute("cx", px); dot.setAttribute("cy", yAt(i));
+    guide.setAttribute("x1", px); guide.setAttribute("x2", px); guide.setAttribute("opacity", "1");
+    ro.hidden = false; ro.style.left = `${Math.max(60, Math.min(W - 60, px))}px`;
+    ro.className = "readout" + (p.balance_eur < 0 ? " neg" : "");
+    ro.innerHTML = `${day(p.date)} · <b>${eur(p.balance_eur)}</b>${i > iToday ? ` · ${T().forecastTag}` : ""}`;
+  };
+  el.addEventListener("pointerdown", (e) => { el.setPointerCapture(e.pointerId); show(e.clientX); });
+  el.addEventListener("pointermove", (e) => { if (e.buttons || e.pointerType === "mouse") show(e.clientX); });
+}
+
 function renderHome() {
   if (!home) return;
   const o = home.overview, p = persona();
+  if (window.UI === "e") return renderHomeE();
   $("#greet").textContent = T().balanceOn(p.name);
   $("#balance").textContent = eur(o.customer.balance);
   const cards = home.cards;
@@ -163,6 +231,22 @@ function renderHome() {
   $("#view-home").innerHTML = top.map(insightCard).join("") + safeCard(o.safe_to_spend) + basketsCard(o) +
     rest.map(insightCard).join("") + benchCard(home.benchmark);
   bindAsks($("#view-home"));
+  $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
+  $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
+  const fc = cards.find((c) => c.id === "forecast");
+  if (fc && !notifShown[cid]) { notifShown[cid] = true; showNotif(fc); }
+}
+
+function renderHomeE() {
+  const o = home.overview, cards = home.cards;
+  $("#greet").textContent = `${T().onAccount} · ${day(o.customer.as_of)}`;
+  const [whole, dec] = nf(2).format(o.customer.balance).split(/[.,](?=\d{2}$)/);
+  $("#balance").innerHTML = `${esc(whole)}<small>${lang === "en" ? "." : ","}${esc(dec)} €</small>`;
+  const psd2 = cards.filter((c) => c.id === "psd2");
+  const rest = cards.filter((c) => c.id === "payday" || c.id === "pot");
+  $("#view-home").innerHTML = ribbonHero(home.ribbon) + psd2.map(insightCard).join("") + safeCard(o.safe_to_spend) +
+    basketsCard(o) + rest.map(insightCard).join("") + benchCard(home.benchmark);
+  bindAsks($("#view-home")); bindRibbon(home.ribbon);
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
   const fc = cards.find((c) => c.id === "forecast");

@@ -1,0 +1,59 @@
+/* Design E: money ribbon, S-Pankki green and white. Loaded after style.css on /e only. */
+body.e {
+  --green: #00703c; --green-2: #2e9c5e; --mint: #eef8f2; --ink: #0f2219; --muted: #5f7268; --line: #e3f1e8;
+  --bg: #ffffff; --b1: #003d25; --b2: #2e9c5e; --b3: #8fd0a8; --warn: #c2402f; --warn-bg: #fbeae7;
+  --g900: #003d25; --g300: #8fd0a8; --g100: #d7efe0;
+  font-family: Geologica, -apple-system, "Segoe UI", Roboto, sans-serif; background: #fff;
+}
+body.e main { margin-top: 0; }
+body.e[data-tab="coach"] #view-coach { margin-top: 0; }
+body.e #view-coach .section-title, body.e #view-coach .chips { background: var(--mint); box-shadow: none; }
+
+/* Header */
+.etop { padding: 16px 20px 6px; color: var(--g900); }
+.etop .top-row { display: flex; justify-content: space-between; align-items: center; }
+.etop .brand-mark { width: 32px; height: 32px; border-radius: 10px; background: var(--green); color: #fff; display: grid; place-items: center; font-weight: 700; }
+.etop .lang { background: var(--mint); color: var(--g900); }
+.etop .who { background: var(--mint); color: var(--g900); }
+.etop .who .avatar { background: var(--green); color: #fff; }
+.etop .greet { margin-top: 18px; font-size: 14px; color: var(--muted); }
+.etop .balance { font: 300 52px/1.05 Geologica, sans-serif; letter-spacing: -2px; color: var(--g900); }
+.etop .balance small { font-size: 24px; letter-spacing: 0; }
+
+/* Cards: quiet, no shadows; the ribbon is the one bold element */
+body.e .card { box-shadow: none; border: 1.5px solid var(--line); border-radius: 24px; }
+body.e .card.warn, body.e .insight.warning { border-color: #f3d3cd; }
+body.e .label { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; }
+body.e .big { font-weight: 500; letter-spacing: -1px; }
+body.e .btn { font-weight: 500; }
+body.e .tabbar { border-top-color: var(--line); }
+body.e .chip { color: var(--green); border-color: var(--line); }
+body.e .msg.user { background: var(--green); }
+
+/* Ribbon */
+.ribbon { position: relative; margin: 2px -14px 0; touch-action: pan-y; user-select: none; }
+.ribbon svg { display: block; }
+.ribbon .pin { position: absolute; transform: translate(-50%, -100%); font-size: 12px; font-weight: 500; background: var(--g900); color: #fff;
+  border-radius: 10px; padding: 5px 9px; white-space: nowrap; pointer-events: none; }
+.ribbon .pin::after { content: ""; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--g900); }
+.ribbon .pin.below { transform: translate(-50%, 0); }
+.ribbon .pin.below::after { bottom: auto; top: -5px; border-top: 0; border-bottom: 5px solid var(--g900); }
+.ribbon .pin.neg { background: var(--warn); } .ribbon .pin.neg::after { border-top-color: var(--warn); }
+.ribbon .pin.neg.below::after { border-bottom-color: var(--warn); border-top-color: transparent; }
+.ribbon .pin.lite { background: var(--g100); color: var(--g900); } .ribbon .pin.lite::after { border-top-color: var(--g100); }
+.ribbon .pin.lite.below::after { border-bottom-color: var(--g100); border-top-color: transparent; }
+.ribbon .pin.left { transform: translate(-12%, -100%); } .ribbon .pin.left::after { left: 12%; }
+.ribbon .pin.right { transform: translate(-88%, -100%); } .ribbon .pin.right::after { left: 88%; }
+.ribbon .pin.left.below { transform: translate(-12%, 0); } .ribbon .pin.right.below { transform: translate(-88%, 0); }
+.ribbon .readout { position: absolute; top: 0; transform: translateX(-50%); font-size: 12px; color: var(--g900); background: #fff;
+  border: 1.5px solid var(--line); border-radius: 10px; padding: 4px 8px; white-space: nowrap; pointer-events: none; }
+.ribbon .readout b { font-weight: 700; } .ribbon .readout.neg b { color: var(--warn); }
+.scrub { display: flex; justify-content: space-between; padding: 0 6px; font-size: 12px; color: var(--muted); margin: -2px 0 6px; }
+.say { padding: 18px; border-radius: 24px; background: var(--mint); }
+.say p { margin: 0; font-size: 17px; line-height: 1.45; color: var(--ink); }
+.say b { color: var(--g900); } .say b.neg { color: var(--warn); }
+.say .actions { margin-top: 14px; }
+@media (prefers-reduced-motion: no-preference) {
+  .ribbon .past { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: draw 1.1s ease-out forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+}
