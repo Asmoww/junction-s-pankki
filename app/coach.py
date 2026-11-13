@@ -124,10 +124,10 @@ def chat(cid: str, history: list[dict]) -> dict:
     client = _client()
     for _ in range(MAX_STEPS):
         try:
-            resp = client.beta.messages.create(
+            # No refusal fallback on purpose: it may retry on a bigger model, and the team caps the app at Sonnet.
+            resp = client.messages.create(
                 model=MODEL, max_tokens=4000, system=system, tools=TOOLS, messages=messages,
-                output_config={"effort": "low"},
-                betas=["server-side-fallback-2026-07-01"], fallbacks="default")
+                output_config={"effort": "low"})
         except anthropic.RateLimitError:
             return {"answer": "The coach is busy right now. Please try again in a moment.", "trace": trace, "error": True}
         except anthropic.APIStatusError as e:
@@ -138,6 +138,8 @@ def chat(cid: str, history: list[dict]) -> dict:
         if resp.stop_reason == "refusal":
             return {"answer": "I can't help with that one. Try asking about your spending, saving or bills.",
                     "trace": trace, "error": False}
+        log.info("coach model=%s stop=%s in=%s out=%s", resp.model, resp.stop_reason,
+                 resp.usage.input_tokens, resp.usage.output_tokens)
         messages.append({"role": "assistant", "content": resp.content})
         uses = [b for b in resp.content if b.type == "tool_use"]
         if resp.stop_reason != "tool_use" or not uses:

@@ -51,7 +51,7 @@ agreement; record the change in `docs/DECISIONS.md`.
 7. Discord update on real milestones only: a short title line, then one bullet per change. Concise,
    no emojis. Example: `python scripts/notify.py $'S-Pankki demo: safe-to-spend live\n- Added: weekly safe-to-spend\n- Tests: 20 offline, 8/8 traps'`
 8. Everything in English: code, comments, docs, commit messages, UI text.
-9. App model: Claude Sonnet 5.5 (`claude-sonnet-5-5`). Compare on a small eval before switching.
+9. App model: Claude Sonnet 5.5 (`claude-sonnet-5-5`) at most; never Opus (Pyry). Compare on a small eval before switching.
 
 ## Data
 Challenge data is challenge-only: it lives in `data/raw/` (gitignored). `scripts/fetch_data.sh` downloads it
@@ -70,7 +70,7 @@ scripts/fetch_data.sh                          # dataset into data/raw/ (hash-ch
 
 ## Code map
 - `app/money.py` every number: spending, transactions, cashflow, three baskets, safe-to-spend, what-if cut, spender profile, overview. "Today" is 2026-09-30.
-- `app/coach.py` Claude tool-use loop (Sonnet 5.5, effort low, server-side refusal fallback); returns answer + tool trace.
+- `app/coach.py` Claude tool-use loop (Sonnet 5.5, effort low, no fallback to bigger models; model logged per call); returns answer + tool trace.
 - `app/main.py` password gate (cookie), `/api/overview|baskets|chat|personas`, asset versioning (Cloudflare caches /static).
 - `app/web/` mobile UI: persona picker, safe-to-spend card with steps, month in three baskets, chat with "How I worked this out".
 - `app/personas.py` four demo customers (real ids, invented names).

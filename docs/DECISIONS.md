@@ -13,3 +13,4 @@ One line per decision, with why. Newest last.
 - 2026-11-13 Coach effort `low`, tools are strict enums for period/category/subcategory. Why: chat latency; enums stop the model inventing categories or dates.
 - 2026-11-13 Demo personas are 4 ordinary customers (CUST01610, 04588, 00388, 00724) with invented names; CUST05001-05100 avoided as they carry most injected anomalies.
 - 2026-11-13 Mobile only (no desktop layout), deployed at spankki.psavela.com behind one password. Why: Pyry; S-Bank customers are on mobile.
+- 2026-11-13 App model capped at Sonnet: no server-side refusal fallback (it can retry on Opus). Why: Pyry, cost.
