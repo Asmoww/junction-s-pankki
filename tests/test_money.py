@@ -87,3 +87,15 @@ def test_forecast_puts_rent_on_its_day():
     assert f["runs_out_around"] == "2026-10-03"  # 777 € rent on the 3rd is bigger than the 699.85 € balance
     assert f["balance_at_payday_at_usual_pace_eur"] < 0
     assert f["daily_path"][-1]["balance_eur"] == f["balance_at_payday_at_usual_pace_eur"]
+
+
+def test_future_engine_matches_forecast_and_safe_to_spend():
+    from app import future, insights
+    f = future.future(EMMA)
+    assert f["base"]["end_eur"] == pytest.approx(insights.payday_forecast(EMMA)["balance_at_payday_at_usual_pace_eur"], abs=0.05)
+    # pausing every extra lands exactly on the "even with no extras" shortfall
+    assert -f["no_extras"]["end_eur"] == pytest.approx(-money.get_safe_to_spend(EMMA)["safe_until_payday_eur"], abs=0.05)
+    s = future.future(EMMA, {"one_offs": [{"label": "Concert", "amount": 150, "date": "2026-10-02"}]})["scenario"]
+    assert s["delta_at_payday_eur"] == pytest.approx(-150, abs=0.01)
+    moved = future.future(EMMA, {"move_bills": [{"bill": "Housing", "date": "2026-10-16"}]})["scenario"]
+    assert moved["delta_at_payday_eur"] == pytest.approx(762.79, abs=0.05)

@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, insights, money  # noqa: E402  (after .env is loaded)
+from . import coach, future, insights, money  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -77,7 +77,7 @@ def healthz():
 
 
 # Cloudflare caches /static for hours: version asset URLs by content so each deploy is picked up at once.
-_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js", "e.css"))).hexdigest()[:10]
+_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js", "e.css", "e.js"))).hexdigest()[:10]
 INDEX = (WEB / "index.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
 LOGIN = LOGIN.replace(".css\"", f".css?v={_ver}\"")
 
@@ -123,6 +123,56 @@ def home(cid: str):
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
             "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid)}
+
+
+@app.get("/api/future/{cid}")
+def future_line(cid: str):
+    return future.future(_cid(cid))
+
+
+@app.get("/api/notes/{cid}")
+def notes(cid: str, lang: str = "en"):
+    return future.annotations(_cid(cid), lang if lang in ("en", "fi", "sv") else "en")
+
+
+class ScenarioIn(BaseModel):
+    customer_id: str
+    scenario: dict
+
+
+@app.post("/api/scenario")
+def scenario(body: ScenarioIn):
+    return future.future(_cid(body.customer_id), body.scenario)
+
+
+class WhatIfIn(BaseModel):
+    customer_id: str
+    text: str = Field(min_length=2, max_length=300)
+    lang: str = Field("en", pattern="^(en|fi|sv)$")
+
+
+@app.post("/api/whatif")
+def whatif(body: WhatIfIn):
+    try:
+        return future.parse_whatif(_cid(body.customer_id), body.text, body.lang)
+    except Exception as e:  # API error or refusal: tell the UI plainly
+        logging.getLogger("whatif").warning("whatif failed: %s", e)
+        raise HTTPException(503, "The what-if helper is not available right now.")
+
+
+def _warm_notes():
+    for p in PERSONAS:
+        for lg in ("en", "fi", "sv"):
+            try:
+                future.annotations(p["id"], lg)
+            except Exception as e:  # noqa: BLE001 (warm-up only)
+                logging.getLogger("notes").warning("warm-up failed for %s %s: %s", p["id"], lg, e)
+
+
+@app.on_event("startup")
+def warm():
+    import threading
+    threading.Thread(target=_warm_notes, daemon=True).start()
 
 
 @app.get("/api/game/{cid}")

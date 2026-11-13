@@ -124,11 +124,15 @@ def ribbon(cid: str) -> dict:
                                        "AND tx_date BETWEEN ? AND ? GROUP BY 1", [cid, start, TODAY])}
     prev = _q("SELECT balance FROM tx WHERE customer_id = ? AND tx_date < ? ORDER BY seq DESC LIMIT 1", [cid, start])
     bal = float(prev[0]["balance"]) if prev else 0.0
+    items: dict = {}
+    for r in _q("SELECT tx_date d, sub, -amount a FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? "
+                "AND kind = 'spend' ORDER BY amount", [cid, start, TODAY]):
+        items.setdefault(r["d"], []).append({"what": r["sub"], "eur": _r(r["a"])})
     past = []
     for i in range((TODAY - start).days + 1):
         d = start + timedelta(days=i)
         bal = float(eod.get(d, bal))
-        past.append({"date": d.isoformat(), "balance_eur": _r(bal)})
+        past.append({"date": d.isoformat(), "balance_eur": _r(bal), "items": items.get(d, [])[:3]})
     fc = payday_forecast(cid)
     return {"last_payday": start.isoformat(), "salary_eur": _r(pay[0]["amount"]) if pay else None,
             "next_payday": fc["next_payday"], "past": past, "future": fc["daily_path"][1:],
