@@ -36,6 +36,7 @@ OPEN_PATHS = {"/login", "/healthz", "/static/style.css", "/static/icon.svg"}
 
 app = FastAPI(title="S-Pankki money coach (demo)", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=WEB), name="static")
+app.mount("/design", StaticFiles(directory=ROOT / "design" / "mockups", html=True), name="design")
 
 
 @app.middleware("http")
