@@ -18,6 +18,7 @@
 | A8 | Explain −676 € ("even with no extras") vs −997 € ("at your usual pace") in one line each | **OPEN** | docs/REVIEW-UX-0510.md |
 | A9 | Every score bar and "What would lift it" step opens Coach with context `{part, value, target, gap_eur, points}` | partly DONE (steps have askQ); bars **OPEN** | `review/rasmus-health-score` docs/proposals/HEALTH-SCORE.md; NEXT-BUILD.md §3 |
 | A10 | "4 of 8 measured": 3-question check-in (debt, insurance) + "plan ahead" measured from a budget/goal → 7 of 8 | **OPEN** (lower priority) | NEXT-BUILD.md §3 |
+| A11 | **Goals with progress** (set a goal in words, feasibility vs safe-to-save, progress from real transfers, bar under the line, payday check-in, replay for the fixed demo clock). Planned in BUILD-BRIEF v3 and FRAMEWORK v0.2 but never had a tracker row, so it was never built | **OPEN** (high: retention + vision fit) | docs/PLAN-GOALS.md |
 
 ## B. Coach and numbers
 | # | Item | Status | Where |
