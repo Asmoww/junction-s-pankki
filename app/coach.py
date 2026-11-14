@@ -117,7 +117,7 @@ TOOLS = [
              "additionalProperties": False}},
          "pause_extras": {"type": "boolean"}}, "required": ["events"], "additionalProperties": False}},
     {"name": "money_health",
-     "description": "Rahakunto, a 0-100 money health score from four measured indicators (spend less than you earn, no "
+     "description": "The money fitness score (call it 'money fitness' in English, 'Rahakunto' in Finnish, 'Pengakondition' in Swedish), a 0-100 money health score from four measured indicators (spend less than you earn, no "
                     "days below zero, buffer before payday, long-term saving) with tier, trend and at most two next steps. "
                     "Use for 'how am I doing overall'. Never compare the person with others.",
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
@@ -275,11 +275,31 @@ def _run_tool(cid: str, name: str, args: dict) -> tuple[dict, bool]:
         return {"error": f"bad arguments: {e}"}, True
 
 
-def _attachments(trace: list[dict]) -> list[dict]:
+def _amount_forms(x: float) -> set[str]:
+    """How an amount can appear in an answer: 818.42 / 818,42 / 818 (EN, FI/SV, rounded)."""
+    two = f"{x:.2f}"
+    return {two, two.replace(".", ","), f"{round(x):d}", f"{x:,.2f}", f"{x:,.2f}".replace(",", " ").replace(".", ",")}
+
+
+def _pick_cut(trace: list[dict], answer: str) -> dict | None:
+    """The simulate_cut the answer is about: the one whose monthly saving appears in the answer text; if none or
+    several match, the last call. (Rasmus's Claude, feature/home-readiness: the slider showed restaurants while the
+    answer was about all extras.)"""
+    cuts = [t for t in trace if t["tool"] == "simulate_cut" and not t["error"]]
+    if not cuts:
+        return None
+    hits = [t for t in cuts if any(f in answer for f in _amount_forms(t["result"].get("saving_per_month_eur") or 0))]
+    return hits[-1] if hits else cuts[-1]
+
+
+def _attachments(trace: list[dict], answer: str = "") -> list[dict]:
     """Charts and widgets for the UI, built from tool results (never from model text)."""
     out, seen = [], set()
+    cut = _pick_cut(trace, answer)
     for t in reversed(trace):
         if t["error"] or t["tool"] in seen:
+            continue
+        if t["tool"] == "simulate_cut" and t is not cut:
             continue
         seen.add(t["tool"])
         r, kind = t["result"], None
@@ -328,6 +348,23 @@ def _privacy(trace: list[dict]) -> dict:
             "never_sent": "Name, customer id, account number, merchant names (not in the data)."}
 
 
+REFUSAL_TEXT = "I can't help with that one. Try asking about your spending, saving or bills."
+
+
+def _drop_refused(history: list[dict]) -> list[dict]:
+    """Remove refused exchanges (user turn + the refusal reply) so they are never resent to the model; the newest user
+    message is always kept. (Rasmus's Claude: one refused message made every later question fail.)"""
+    out, i = [], 0
+    while i < len(history):
+        h, nxt = history[i], history[i + 1] if i + 1 < len(history) else None
+        if h.get("role") == "user" and nxt and nxt.get("role") == "assistant" and nxt.get("text") == REFUSAL_TEXT:
+            i += 2
+            continue
+        out.append(h)
+        i += 1
+    return out
+
+
 def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, messages: list[dict]) -> dict:
     """The same coach on the open model we host in Europe (eu.py): same tools, same numbers check."""
     msgs = [{"role": "system", "content": system}] + [{"role": m["role"], "content": m["content"]} for m in messages]
@@ -352,7 +389,7 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
             numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
                                    {"balance": c["balance"], "age": c["age"]})
             return {"answer": text, "trace": trace, "error": False, "model": out["model"], "numbers": numbers,
-                    "attachments": _attachments(trace), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
+                    "attachments": _attachments(trace, text), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
         for call in calls:
             fn = call.get("function", {})
             try:
@@ -372,7 +409,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
     if not os.environ.get("ANTHROPIC_API_KEY") and not eu.active():
         return {"answer": "The coach is not connected yet (no API key on the server).", "trace": [], "error": True}
     c = money.customer(cid)
-    messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in history[-12:] if h.get("text")]
+    messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in _drop_refused(history)[-12:] if h.get("text")]
     lang = lang if lang in LANGS else "en"
     system = [{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}},
               {"type": "text", "text": f"App language: {LANGS[lang]} If the user's latest message is clearly written in "
@@ -400,8 +437,10 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
         except anthropic.APIConnectionError:
             return {"answer": "No connection to the coach right now. Please try again.", "trace": trace, "error": True}
         if resp.stop_reason == "refusal":
-            return {"answer": "I can't help with that one. Try asking about your spending, saving or bills.",
-                    "trace": trace, "error": False}
+            log.info("coach refusal (model-level) for customer %s", cid)
+            # refused=True: the client drops this turn from its history, so one refused message can't make every
+            # later question fail too
+            return {"answer": REFUSAL_TEXT, "trace": trace, "error": False, "refused": True}
         u = resp.usage
         usage["input_tokens"] += u.input_tokens
         usage["output_tokens"] += u.output_tokens
@@ -424,7 +463,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
             if bad:
                 log.warning("unverified numbers %s in answer to %r", [n["text"] for n in bad], history[-1]["text"][:80])
             return {"answer": text, "trace": trace, "error": False, "model": resp.model, "numbers": numbers,
-                    "attachments": _attachments(trace), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang}
+                    "attachments": _attachments(trace, text), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang}
         results = []
         for u in uses:
             out, is_err = _run_tool(cid, u.name, dict(u.input))

@@ -21,12 +21,12 @@ const ES = {
       bigDay: "Your biggest day", best: "Best month", tough: "Toughest month", leftOver: (a) => `${a} left over`, lowest: (a) => `lowest ${a}`,
       noSpend: "no-spend days", streak: (d) => `longest streak ${d} days`, payday: "more on extras the week after payday",
       twins: (n) => `${n} people like you never went below zero`, youX: "You", themX: "Them", extrasMonth: "Extras a month",
-      visits: (a, b) => `Eating out: they ${b}, you ${a} times a month`, score: "Rahakunto", next: "One thing for next year",
+      visits: (a, b) => `Eating out: they ${b}, you ${a} times a month`, score: "Money fitness", next: "One thing for next year",
       share: "Share image", done: "Done", shareText: (f) => `My money year: ${f.no_spend_days} no-spend days, a ${f.longest_no_spend_streak_days}-day streak and ${f.eat_out.visits} meals out. #MoneyWrapped`,
       tap: "Tap to continue", scoreWhat: "Your money fitness out of 100, from four habits.", sumK: "Your year in one picture", posterTitle: "My money\nyear", posterTag: "#MoneyWrapped", pTop: "Top extra", pNoSpend: "No-spend days", pStreak: "Longest streak", pDays: (d) => `${d} days`, pPlus: "Months in plus", pMeals: "Meals out", pType: "Money type", pBest: "Best month", twinsHead: (a) => `people aged ${a} with pay like yours never went below zero`, youBelow: (d) => d ? `You were below zero on ${d} days.` : "Neither did you.", eatTimes: "Meals out a month", eatEur: "Eating out a month", ateK: "Eating out cost you", workDays: "working days", ateSub: (n, e, h) => `${n} meals · ${e} · ${h} hours of your pay`, plusMonths: "months ended with money left over", guessK: "Quick guess", guessQ: "Which extra cost you the most this year?", right: "Spot on.",
       wrong: (x, n) => `It was ${x}: ${n} times.`, inL: "In", outL: "Out", monthsK: "What was left each month", bestIn: (m) => `Best: ${m}`,
       otherWeeks: "Other weeks", paydayWeek: "Payday week" },
-    hk: { name: "Rahakunto", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
+    hk: { name: "Money fitness", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
       tones: { comfort: "A tight year, and it can get better. One thing first.", encourage: (t) => `Up ${t} points in three months. Keep going.`,
         reassure: (t) => `Down ${t} points: surprise costs did that, and your buffer handled them.`, steady: "Steady. One thing could lift it.",
         gentle_warning: (t) => `Down ${t} points. Here's what slipped.`, celebrate: "Strong. Keep the habit." },
@@ -43,7 +43,7 @@ const ES = {
     rules: "Live rules", rulesTitle: "Rules from official sources", unknown: "unknown", asOf: (d) => `as of ${d}`, fetchedAt: (d) => `checked ${d}`,
     effUnknown: "effective date not confirmed", recheck: "Re-check rules now", demo: "Demo controls", runMon: (n) => `Run monitor now: ${n}`,
     setupMon: "Set up monitors", ruleChanged: "A rule changed", sourceOnly: "Only the item name or rule is sent, never your data.",
-    rng: { pay: "Pay month", m3: "3 months", m12: "12 months", m24: "2 years", label: "Show balance for" }, hChange: "Change", hLow: "Lowest", hBelow: (n) => `${n} days below zero`, hNet: "In minus out, per month", hNote: "Real balances only; the forecast is in the pay-month view.", capShort: "Loan cap", euriborShort: "Euribor 12 m",
+    rng: { pay: "Pay month", m3: "3 months", m12: "12 months", m24: "2 years", label: "Show balance for" }, hChange: "Change", hLow: "Lowest", hBelow: (n) => `${n} days below zero`, hNet: "In minus out, per month", hNote: "Real balances only; the forecast is in the pay-month view.", capShort: "Loan cap", euriborShort: "Euribor 12 m", homeCard: "Buying a home?", homeSub: "Today's rules and sources",
     since: (a) => `${a} since payday`, today: "Today", pay: "Payday", forecast: "forecast", extras: "your extras",
     payResult: (d) => `On payday, ${d}`, whatIf: "What if…", whatIfPh: "e.g. concert tickets 150 € on Friday",
     pause: "Pause extras", eatLess: "Eat out −50 %", rentLater: "Rent after payday", ask: (d) => `Ask about ${d}`,
@@ -109,7 +109,7 @@ const ES = {
     rules: "Säännöt nyt", rulesTitle: "Säännöt virallisista lähteistä", unknown: "tuntematon", asOf: (d) => `tilanne ${d}`, fetchedAt: (d) => `tarkistettu ${d}`,
     effUnknown: "voimaantulopäivä vahvistamatta", recheck: "Tarkista säännöt nyt", demo: "Demo-ohjaimet", runMon: (n) => `Aja seuranta nyt: ${n}`,
     setupMon: "Ota seuranta käyttöön", ruleChanged: "Sääntö muuttui", sourceOnly: "Vain tuotteen nimi tai sääntö lähtee, ei koskaan tietojasi.",
-    rng: { pay: "Palkkakuukausi", m3: "3 kk", m12: "12 kk", m24: "2 vuotta", label: "Näytä saldo ajalta" }, hChange: "Muutos", hLow: "Alin", hBelow: (n) => `${n} päivää miinuksella`, hNet: "Tulot miinus menot kuukausittain", hNote: "Vain toteutuneet saldot; ennuste on palkkakuukauden näkymässä.", capShort: "Lainakatto", euriborShort: "Euribor 12 kk",
+    rng: { pay: "Palkkakuukausi", m3: "3 kk", m12: "12 kk", m24: "2 vuotta", label: "Näytä saldo ajalta" }, hChange: "Muutos", hLow: "Alin", hBelow: (n) => `${n} päivää miinuksella`, hNet: "Tulot miinus menot kuukausittain", hNote: "Vain toteutuneet saldot; ennuste on palkkakuukauden näkymässä.", capShort: "Lainakatto", euriborShort: "Euribor 12 kk", homeCard: "Asunnon osto?", homeSub: "Säännöt nyt ja lähteet",
     since: (a) => `${a} palkkapäivästä`, today: "Tänään", pay: "Palkka", forecast: "ennuste", extras: "extrasi",
     payResult: (d) => `Palkkapäivänä ${d}`, whatIf: "Entä jos…", whatIfPh: "esim. konserttiliput 150 € perjantaina",
     pause: "Tauko extroille", eatLess: "Ulkona syöminen −50 %", rentLater: "Vuokra palkan jälkeen", ask: (d) => `Kysy päivästä ${d}`,
@@ -175,7 +175,7 @@ const ES = {
     rules: "Regler nu", rulesTitle: "Regler från officiella källor", unknown: "okänt", asOf: (d) => `per ${d}`, fetchedAt: (d) => `kollat ${d}`,
     effUnknown: "ikraftträdande inte bekräftat", recheck: "Kolla reglerna nu", demo: "Demokontroller", runMon: (n) => `Kör bevakning nu: ${n}`,
     setupMon: "Sätt upp bevakning", ruleChanged: "En regel ändrades", sourceOnly: "Bara varans namn eller regeln skickas, aldrig dina data.",
-    rng: { pay: "Lönemånad", m3: "3 mån", m12: "12 mån", m24: "2 år", label: "Visa saldo för" }, hChange: "Förändring", hLow: "Lägst", hBelow: (n) => `${n} dagar under noll`, hNet: "In minus ut per månad", hNote: "Endast verkliga saldon; prognosen finns i lönemånadsvyn.", capShort: "Lånetak", euriborShort: "Euribor 12 m",
+    rng: { pay: "Lönemånad", m3: "3 mån", m12: "12 mån", m24: "2 år", label: "Visa saldo för" }, hChange: "Förändring", hLow: "Lägst", hBelow: (n) => `${n} dagar under noll`, hNet: "In minus ut per månad", hNote: "Endast verkliga saldon; prognosen finns i lönemånadsvyn.", capShort: "Lånetak", euriborShort: "Euribor 12 m", homeCard: "Köpa bostad?", homeSub: "Dagens regler och källor",
     since: (a) => `${a} sedan lönedagen`, today: "I dag", pay: "Lön", forecast: "prognos", extras: "dina extra",
     payResult: (d) => `På lönedagen ${d}`, whatIf: "Tänk om…", whatIfPh: "t.ex. konsertbiljetter 150 € på fredag",
     pause: "Pausa extra", eatLess: "Äta ute −50 %", rentLater: "Hyran efter lön", ask: (d) => `Fråga om ${d}`,
@@ -495,11 +495,9 @@ function strip() {
   }
   const homeBuyer = cid === "CUST04138";
   if (liveSt && homeBuyer) {
-    const cap = liveSt.rules.loan_cap_general, eu = liveSt.rules.euribor_12m;
-    const v = (r) => (r && r.status === "confirmed" ? `${nf(r.unit === "%" ? 3 : 0).format(r.value).replace(/[.,]?0+$/, "")} %` : E().unknown);
-    cards.push(`<button class="mini rules" data-rules><span class="t">${E().rules}</span>
-      <span class="rl"><span>${E().capShort}</span><b>${v(cap)}</b></span><span class="rl"><span>${E().euriborShort}</span><b>${v(eu)}</b></span>
-      <span class="s">${cap && cap.source_url ? esc(host(cap.source_url)) : E().unknown}</span></button>`);
+    // A small entry, not a headline (Rasmus's TRACKER A1/A2): the sheet shows each rule with its own source and date
+    // (Euribor from Suomen Pankki, the loan cap from FIN-FSA), never one source for both.
+    cards.push(`<button class="mini rules" data-rules><span class="t">${E().homeCard}</span><span class="s">${E().homeSub} ›</span></button>`);
   }
   const lc = homeBuyer && liveSt && liveSt.cards && liveSt.cards[0];
   const top = lc ? `<button class="rulecard" data-rules>${SPARK}<span><b>${E().ruleChanged}</b> ${esc(lc.rule.replace(/_/g, " "))}: ${lc.before ?? "?"} → ${lc.after ?? "?"} · ${esc(host(lc.source_url))}</span></button>` : "";

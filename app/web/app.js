@@ -320,7 +320,7 @@ const TOOL_LABEL = {
   get_payday_pattern: "Compared spending before and after payday", get_payday_forecast: "Projected your balance to payday",
   get_benchmark: "Compared with Statistics Finland", get_spender_type: "Worked out your spender type", calculate: "Calculated",
   show_chart: "Drew a chart from your transactions", forecast_with_events: "Put your planned costs on their dates",
-  check_purchase: "Checked live prices on shop pages", plan_home: "Planned a home purchase with live rules", money_health: "Worked out your Rahakunto score",
+  check_purchase: "Checked live prices on shop pages", plan_home: "Planned a home purchase with live rules", money_health: "Worked out your money fitness score", get_safe_to_save: "Worked out what is safe to save", get_monthly_drains: "Found what drains your account monthly", get_other_accounts: "Read your other bank (PSD2, demo)",
 };
 function traceLine(t) {
   const r = t.result || {}, i = t.input || {};
@@ -378,7 +378,7 @@ async function ask(text) {
       body: JSON.stringify({ customer_id: cid, history, lang }) });
     pending.innerHTML = answerHtml(r);
     if (window.learnAfterAnswer) window.learnAfterAnswer(r, pending);  // Money Detective: a new question lights up the map
-    if (r.error) { pending.classList.add("err"); history.pop(); } else history.push({ role: "assistant", text: r.answer });
+    if (r.error) { pending.classList.add("err"); history.pop(); } else if (r.refused) { history.pop(); } else history.push({ role: "assistant", text: r.answer });
   } catch (e) {
     pending.classList.add("err"); pending.textContent = T().wentWrong; history.pop();
   }
