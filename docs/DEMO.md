@@ -3,9 +3,13 @@
 All numbers below were computed from the app on 14 Nov 02:40 (data as of 30 Sep 2026). Re-check after any change.
 
 ## The one story
-**"People don't run out of money because of coffee. They run out because of timing."** Half of all
-overdraft moments in the data happen in the last 7 days before payday; small purchases under 10 € are only
-15 % of extras. So the coach shows your money's **future**, explains it, and lets you **change it in words**.
+**"Emma isn't short because of coffee. She's short because of three things she can't see: rent lands before payday,
+extras add up, and she spends about 206 € a month more than she earns."** Cutting every extra still leaves her 676 €
+short; moving rent (if her landlord agrees) gets her through this month, but the rent is still owed and the monthly
+gap comes back. So the coach shows your money's **future**, explains **why**, and lets you **test a change** and see
+honestly what it fixes and what it doesn't. Half of all overdraft moments in the data happen in the last 7 days before
+payday; small purchases under 10 € are only 15 % of extras. (Codex review f858b77: don't sell "timing beats coffee" or
++87 € as solved finances.)
 
 ## P. Peer review, Sunday 15 Nov (5 minutes at the table, demo included)
 Be at the saved table by 10:30 (save it in the Junction Platform Teams tab first). Round 1 10:45, round 2 11:45. Half
@@ -14,15 +18,15 @@ Phone (or laptop in Chrome device mode), Emma, Finnish or English to match the r
 
 | Time | Do | Say (short) |
 |---|---|---|
-| 0:00 | Home, Emma | "People don't run out of money because of coffee. They run out because of timing. In S-Bank-style data, half of all overdrafts happen in the last week before payday." |
-| 0:30 | Read the **AI line** at the top, then point at the line: red zone, rent step, −997 € | "The first thing she sees is one sentence the AI wrote from her numbers: 997 € short, because 815 € of bills come first. Every number in it is checked; if one didn't match, code writes the sentence instead." |
-| 1:00 | **Play your next two weeks** → show the coach's plan, then play: swipe two extras away, taxi card → **Swap for HSL ticket** (live price from hsl.fi), rent card → **Pay after payday** | "Her likely next two weeks as cards, from her own habits. The three baskets are the rules: rent can't be skipped, surprises stay, extras are her choice. Skipping every coffee isn't enough. Timing is." |
-| 1:50 | Result **+13 € / +87 €** → **Show on my graph** | "She makes it to payday, and the plan lands on her real forecast." |
+| 0:00 | Home, Emma | "Emma, 23, first job. She's always short before payday, and she thinks it's the coffee. In S-Bank-style data, half of all overdrafts happen in the last week before payday. Let's ask her own money why." |
+| 0:30 | Read the **AI line** at the top, then point at the line: red zone, rent step, −997 € | "The first thing she sees is one sentence the AI wrote from her numbers: 997 € short, because 815 € of bills come first. Every number in it is matched to the calculations on her data; if one didn't match, code writes the sentence instead." |
+| 1:00 | **Play your next two weeks** → show the coach's plan, then play: swipe two extras away, taxi card → **Swap for HSL ticket** (live price from hsl.fi), rent card → **Pay after payday** | "Her likely next two weeks as cards, from her own habits. The three baskets are the rules: rent can't be skipped, surprises stay, extras are her choice. Skip every extra: still 676 € short. So it isn't the coffee. Rent can move past payday only if her landlord agrees, and it's still owed." |
+| 1:50 | Result **+13 € / +87 €**; point at the line under it → **Show on my graph** | "She gets through this month, and the app says straight away what that doesn't fix: her months run about 206 € short, so the gap comes back. That's the lesson: a cut helps, a delay buys time, only spending or income closes the gap." |
 | 2:10 | **Your three baskets → Sort with the AI**: answer the parking card | "Some spending only she can sort. The AI asks; her answer re-sorts her money everywhere." |
-| 2:45 | Back on Home: **Questions about your money** → tap "Why will I run short before payday?"; watch the steps tick; open **How I worked this out**. Then tap the **Rent** pill on the graph | "No chat box needed: the AI picked these three questions for Emma this week, and the answer opens right here. You can see what it's doing: code computes every number, and every number is matched to her data. Anything on the graph can be asked about: tap rent, and it explains rent." |
-| 3:20 | Point at the **AI in Finland** badge | "Every answer you've seen ran on Gemma 4 that we host on a Verda GPU in Finland: 21 of 22 trick questions, every number matched. A bank can keep the AI in Europe." |
+| 2:45 | Back on Home: **Questions about your money** → tap "Why will I run short before payday?"; watch the steps tick; open **How I worked this out**. Then tap the **Rent** pill on the graph | "No chat box needed: the AI picked these questions for Emma this week, and the answer opens right here. You can see what it's doing: code computes every number, and every number is matched to the calculation results from her data. Anything on the graph can be asked about: tap rent, and it explains rent." |
+| 3:20 | Point at the **AI in Finland** badge | "Every answer you've seen ran on Gemma 4 that we host on a Verda GPU in Finland: 22 of 24 trick questions passed. A bank can keep the AI in Europe." |
 | 3:50 | **Your money year** → guess slide → poster | "And once a year, her money year: shareable, without amounts." |
-| 4:30 | Close | "Built to drop into S-mobiili as a web view: about 2 cents an answer, nothing identifying leaves the bank. See your money's future, and change it." Then: "Questions?" |
+| 4:30 | Close | "Built to drop into S-mobiili as a web view (not integrated with S-Bank today; the other bank in PSD2 is demo data): the model sees totals, never names or account numbers. See your money's future, and change it." Then: "Questions?" |
 
 **Before each round (2 minutes):** Emma selected, Home tab, no scenario chip active, Sort answers cleared (Sort →
 "Undo my answers"), language matched to the reviewer, the "AI in Finland" badge visible. The presets, the coach plan and Wrapped are
@@ -38,13 +42,13 @@ Phone screen mirrored (or Chrome device mode, Pixel 7, zoom 125 %). Emma, Englis
 | 0:15 | Point at the rent marker | "Rent, 763 € on 3 Oct, takes her below zero. On payday she'd be 997 € short." |
 | 0:30 | Point at the AI notes | "The AI reads her line: biggest day 205 € right after payday. Every number in a note is checked against her data before it's shown." |
 | 0:45 | Tap **Play your next two weeks** | "Her likely next 15 days as cards. The three baskets are the rules: rent can't be skipped, surprises stay, extras are her choice." |
-| 0:55 | Skip a few extras (swipe left); the line moves but stays red | "Skip every coffee and dinner: still short. It's not the coffee." |
-| 1:05 | Rent card → **Pay after payday**; finish | "Timing is the lever. +87 € on payday, and the AI sums up what she did, every number checked." |
+| 0:55 | Skip a few extras (swipe left); the line moves but stays red | "Skip every coffee and dinner: still 676 € short. It's not the coffee." |
+| 1:05 | Rent card → **Ask to pay after payday**; finish | "If her landlord agrees, she gets through this month: +87 € on payday. But the app is honest: her months still run about 206 € short, so the gap comes back." |
 | 1:15 | **Show on my graph** | "Her plan lands on the real forecast." |
 | 1:25 | **Check a purchase** → "iPhone 17 256 GB" | "Can she buy a phone? We check live prices, and every price is read from the shop's own page. Search engines guessed 879 € for a page that says 999 €; we only trust the page." |
 | 1:45 | Tap the 879 € offer | "Line drops to −1,876 €. Not this month." |
-| 2:00 | Coach tab: "Why am I always short before payday?" | "The coach answers from her data, draws the chart, and shows its work." Open **How I worked this out** → **What the AI saw**: "about 2 cents an answer, no name or account number ever sent." |
-| 2:30 | Learn tab → report card → **See the questions** | "22 trick questions run against the live coach: 22/22, every number matched to her data." |
+| 2:00 | Coach tab: "Why am I always short before payday?" | "The coach answers from her data, draws the chart, and shows its work." Open **How I worked this out** → **What the AI saw**: "Gemma in Finland, totals only: no name or account number ever sent." |
+| 2:30 | Learn tab → report card → **See the questions** | "24 trick questions run against the live coach: 22 of 24 pass. The report shows the two it still fails." |
 | 2:45 | Close | "Built to live in S-mobiili: a push before payday, a card on the home screen, the rules from official sources. **See your money's future, and change it.**" |
 
 ## B. Table version (5-8 min, let the judge drive)
@@ -85,7 +89,7 @@ Phone screen mirrored (or Chrome device mode, Pixel 7, zoom 125 %). Emma, Englis
   matches every amount in an answer to the data; anything else is flagged on screen. Proof: the nightly trap suite.
 - **Privacy?** The model sees totals and the questions; never names, ids or account numbers. Live web lookups send
   only an item name or a rule.
-- **Cost?** About 2 cents per coach answer (Sonnet 5.5, logged per call); AI notes are cached per customer.
+- **Cost?** All AI runs on Gemma 4 on one rented GPU in Finland (Verda), so the cost is the GPU hour, not per answer; AI notes, briefings and plans are cached per customer. The Claude path (about 2 cents an answer on Sonnet 5.5) is in the code but switched off.
 - **How would S-Pankki ship it?** A web view inside S-mobiili on the bank's own transaction APIs; push for the
   payday warning; the model behind the bank's own API gateway.
 - **Why three baskets on a graph?** It's the brief's pedagogy made visible: you see which basket sinks the line.
