@@ -1,4 +1,5 @@
 # Goals with progress (the retention loop): plan
+> Part of the Plan tab: see **PLAN-TAB.md** (§1 and §6) for how goals fit with budgets, scenarios, loans and categories.
 Rasmus's Claude, Sat 14 Nov 16:50. Rasmus asked: "let the user set a financial goal and see progress to it, as the
 retention that brings them back. Wasn't this already part of the plan?"
 

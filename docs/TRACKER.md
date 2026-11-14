@@ -18,7 +18,7 @@
 | A8 | Explain −676 € ("even with no extras") vs −997 € ("at your usual pace") in one line each | **OPEN** | docs/REVIEW-UX-0510.md |
 | A9 | Every score bar and "What would lift it" step opens Coach with context `{part, value, target, gap_eur, points}` | partly DONE (steps have askQ); bars **OPEN** | `review/rasmus-health-score` docs/proposals/HEALTH-SCORE.md; NEXT-BUILD.md §3 |
 | A10 | "4 of 8 measured": 3-question check-in (debt, insurance) + "plan ahead" measured from a budget/goal → 7 of 8 | **OPEN** (lower priority) | NEXT-BUILD.md §3 |
-| A11 | **Goals with progress** (set a goal in words, feasibility vs safe-to-save, progress from real transfers, bar under the line, payday check-in, replay for the fixed demo clock). Planned in BUILD-BRIEF v3 and FRAMEWORK v0.2 but never had a tracker row, so it was never built | **OPEN** (high: retention + vision fit) | docs/PLAN-GOALS.md |
+| A11 | **Goals with progress** (set a goal in words, feasibility vs safe-to-save, progress from real transfers, bar under the line, payday check-in, replay for the fixed demo clock). Planned in BUILD-BRIEF v3 and FRAMEWORK v0.2 but never had a tracker row, so it was never built | **OPEN** (high: retention + vision fit) | docs/PLAN-GOALS.md | · **now one spec: docs/PLAN-TAB.md**
 
 ## B. Coach and numbers
 | # | Item | Status | Where |
@@ -36,9 +36,9 @@
 | # | Item | Status | Where |
 |---|---|---|---|
 | C1 | `home_readiness`: range, binding constraint, life after buying, next best question (money elsewhere, ASP, cheaper, save more), provenance; coach tool + `/api/readiness`; `plan_home` off the coach's tools | **ON BRANCH** (your review applied in 08cbb1e) | docs/HOME_READINESS.md |
-| C2 | Plan view/tab that uses `/api/readiness` (nothing in the UI uses it yet) + rules card moved there (A1) | **OPEN** | docs/HOME_READINESS.md "UI to build"; NEXT-BUILD.md §4 |
-| C3 | Budget folded into the plan ("monthly room after buying", basket-3 budget, backtest) | **OPEN** | NEXT-BUILD.md §4.1 |
-| C4 | Recategorise / regularity tag (monthly, now and then, one-time, everyday), one override table, reset | **OPEN** | NEXT-BUILD.md §4.4 |
+| C2 | Plan view/tab that uses `/api/readiness` (nothing in the UI uses it yet) + rules card moved there (A1) | **OPEN** | docs/HOME_READINESS.md "UI to build"; NEXT-BUILD.md §4 | · **now one spec: docs/PLAN-TAB.md**
+| C3 | Budget folded into the plan ("monthly room after buying", basket-3 budget, backtest) | **OPEN** | NEXT-BUILD.md §4.1 | · **now one spec: docs/PLAN-TAB.md**
+| C4 | Recategorise / regularity tag (monthly, now and then, one-time, everyday), one override table, reset | **OPEN** | NEXT-BUILD.md §4.4 | · **now one spec: docs/PLAN-TAB.md**
 
 ## D. Learn tab and evidence
 | # | Item | Status | Where |
@@ -56,7 +56,7 @@
 | F1 | **Safe to save** (brief names it; app had none): `app/saving.py`, tool `get_safe_to_save`, `/api/safe-to-save/{cid}` | **ON BRANCH** (UI line OPEN) | docs/BRIEF-FIT.md §3 |
 | F2 | Home decision line "spend up to X, save Z on payday" + real steps in "How I worked this out" | **OPEN** | §5.2 |
 | F3 | One learning check after a what-if / why answer | **OPEN** | §5.4 |
-| F5 | **Scenario planner** (Plan): months ahead as a range, suggested scenarios from the person's own habits/income, every assumption sourced and editable; `app/scenarios.py`, `/api/plan`, coach tool `plan_scenario` | **ON BRANCH** (UI OPEN) | docs/PLAN-SCENARIOS.md |
+| F5 | **Scenario planner** (Plan): months ahead as a range, suggested scenarios from the person's own habits/income, every assumption sourced and editable; `app/scenarios.py`, `/api/plan`, coach tool `plan_scenario` | **ON BRANCH** (UI OPEN) | docs/PLAN-SCENARIOS.md | · **now one spec: docs/PLAN-TAB.md**
 | F4 | S-mobiili integration story (identity, consent, data boundary, AI notice, fallback) | **OPEN** (Rasmus: slide) | §2, §5.5 |
 
 ## E. Research and pitch (reference, no code)
