@@ -36,7 +36,8 @@ Q = {
            "safe_week": "What is safe for me to spend this week?", "compare": "How does my spending on {a} compare with people my age?",
            "type": "What kind of spender am I?", "save": "How much can I safely save this payday?",
            "start_saving": "What would it take for me to start saving?", "drains": "What do my monthly drains cost me in a year?",
-           "other_bank": "How much of my money moves to my other bank?"},
+           "other_bank": "How much of my money moves to my other bank?",
+           "pause": "What if I paused all my extras until payday?", "buy": "Could I afford a new phone this month?"},
     "fi": {"short_payday": "Miksi rahani loppuvat ennen palkkapäivää?", "rent_after": "Entä jos vuokra menisi vasta palkkapäivän jälkeen?",
            "month_up": "Miksi {m1} maksoi enemmän kuin {m0}?", "month_down": "Miksi {m1} oli halvempi kuin {m0}?",
            "payday_week": "Miksi kulutan enemmän heti palkkapäivän jälkeen?", "habit": "{H} – pakko vai tapa minulle?",
@@ -44,7 +45,8 @@ Q = {
            "safe_week": "Paljonko voin turvallisesti käyttää tällä viikolla?", "compare": "Miten kulutukseni vertautuu ikäisiini: {a}?",
            "type": "Millainen kuluttaja olen?", "save": "Paljonko voin turvallisesti säästää tänä palkkapäivänä?",
            "start_saving": "Mitä tarvitsisin, jotta voisin alkaa säästää?", "drains": "Paljonko kuukausittaiset vuotoni maksavat vuodessa?",
-           "other_bank": "Paljonko rahoistani siirtyy toiseen pankkiini?"},
+           "other_bank": "Paljonko rahoistani siirtyy toiseen pankkiini?",
+           "pause": "Entä jos jättäisin kaikki extrat pois palkkapäivään asti?", "buy": "Onko minulla varaa uuteen puhelimeen tässä kuussa?"},
     "sv": {"short_payday": "Varför tar pengarna slut före lönen?", "rent_after": "Tänk om hyran gick först efter lönen?",
            "month_up": "Varför kostade {m1} mer än {m0}?", "month_down": "Varför var {m1} billigare än {m0}?",
            "payday_week": "Varför spenderar jag mer direkt efter lönen?", "habit": "{H} – ett måste eller en vana för mig?",
@@ -52,7 +54,8 @@ Q = {
            "safe_week": "Vad är säkert för mig att spendera den här veckan?", "compare": "Hur står sig mina utgifter mot andra i min ålder: {a}?",
            "type": "Vilken sorts spenderare är jag?", "save": "Hur mycket kan jag spara säkert den här lönen?",
            "start_saving": "Vad skulle krävas för att jag ska börja spara?", "drains": "Vad kostar mina månatliga läckor på ett år?",
-           "other_bank": "Hur mycket av mina pengar flyttar till min andra bank?"},
+           "other_bank": "Hur mycket av mina pengar flyttar till min andra bank?",
+           "pause": "Tänk om jag pausade alla extra fram till lönen?", "buy": "Har jag råd med en ny telefon den här månaden?"},
 }
 HABITS = {"en": {"eating_out": "eating out", "kiosks": "kiosk shopping", "taxis_parking": "taxis and parking"},
           "fi": {"eating_out": "ulkona syöminen", "kiosks": "kioskiostokset", "taxis_parking": "taksit ja pysäköinti"},
@@ -124,6 +127,9 @@ def findings(cid: str, lang: str = "en") -> dict:
         if h["habit"] == "eating_out":
             add("cut", "what_if", 6, q["cut"], habit_eur_month=h["eur_month"])
         add("drains", "where_money_goes", 5, q["drains"], top_habit_eur_year=h["eur_year"])
+    # What used to be the "What if…" and "Check a purchase" chips under the graph: now questions for the coach
+    add("pause", "what_if", 7 if end < 0 else 5, q["pause"])
+    add("buy", "big_decisions", 4 if end < 0 else 6, q["buy"])
     pot = insights.surprise_pot(cid)
     add("surprises", "irregular", 5, q["surprises"], surprises_avg_month_eur=pot["average_per_month_last_12_eur"])
     add("safe_week", "spending_room", 7 if end >= 0 else 4, q["safe_week"], safe_this_week_eur=sts.get("safe_this_week_eur"))

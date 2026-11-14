@@ -355,6 +355,16 @@ function resultRow() {
       : `<b class="${cls(b)}">${eur0(b)}</b>`}</span></div>`;
 }
 
+// The only chip left under the graph: the day you tapped ("What did I spend on 22 Sept?"), or the plan being shown
+// with a × to clear it. What-ifs and purchases are questions for the coach now (Home's questions and the Coach tab).
+function slot() {
+  const chips = [];
+  if (scen) {
+    const lbl = (scen.parsed && scen.parsed.label) || scen.label || E().pl.planLabel;
+    chips.push(`<button class="chip ai on" data-clear>${SPARK}${esc(lbl)} <span class="x">×</span></button>`);
+  } else if (picked !== null) chips.push(`<button class="chip ask" data-pick>${SPARK}${esc(E().ask(day(picked)))}</button>`);
+  return chips.length ? `<div class="dock"><div class="chips">${chips.join("")}</div></div>` : "";
+}
 function dock() {
   const chips = [];
   if (picked !== null) chips.push(`<button class="chip ask" data-pick>${SPARK}${esc(E().ask(day(picked)))}</button>`);
@@ -552,12 +562,14 @@ function bindGraph(G) {
   el.addEventListener("pointerup", (e) => {
     if (onWhy(e)) return;
     if (e.pointerType !== "mouse") hide();  // touch: the card goes away when the finger lifts
-    if (last && last.i <= G.iT && last.i > 0) { picked = last.p.date; $(".dock").outerHTML = dock(); bindDock(); }
+    if (last && last.i <= G.iT && last.i > 0) { picked = last.p.date; $(".dockw").innerHTML = slot(); bindDock(); }
   });
 }
 
 function bindDock() {
   const d = $(".dock"); if (!d) return;
+  const cl = d.querySelector("[data-clear]"); if (cl) cl.addEventListener("click", () => { active = null; scen = null; presets.clear(); redraw(); });
+  if (!d.querySelector("[data-buy]")) { const pk = d.querySelector("[data-pick]"); if (pk) pk.addEventListener("click", () => askHere(E().askQ(day(picked)))); return; }
   d.querySelectorAll("[data-sc]").forEach((b) => b.addEventListener("click", () => runPreset(b.dataset.sc)));
   const pk = d.querySelector("[data-pick]"); if (pk) pk.addEventListener("click", () => askHere(E().askQ(day(picked))));
   const form = d.querySelector(".wi:not(.buyf)"), msg = d.querySelector(".wimsg");
@@ -665,7 +677,7 @@ function redraw() {
   if (range !== "pay" && !scen) return drawLong();
   range = "pay";                                       // a scenario (play, what-if, buy) always shows on the pay-month graph
   const G = graph();
-  $("#hero").innerHTML = G.html + rangeBar() + resultRow() + dock();
+  $("#hero").innerHTML = G.html + rangeBar() + (scen ? resultRow() : "") + `<div class="dockw">${slot()}</div>`;
   layoutNotes(); bindGraph(G); bindDock(); bindRange();
 }
 

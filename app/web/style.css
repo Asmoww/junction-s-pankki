@@ -320,3 +320,6 @@ body:not([data-tab="coach"]) main { padding-bottom: calc(90px + var(--safe-botto
 .cbars.pairs .hval { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
 .cbars.pairs .hval small { font-weight: 500; color: var(--muted); font-size: 11px; }
 .anext .chip { white-space: normal; max-width: 100%; }
+.runleg { margin-top: 4px; } .runleg b { font-weight: 700; margin-left: 4px; }
+.runleg i.usual { background: none; border-top: 2.5px dotted #c2402f; border-radius: 0; height: 0; width: 16px; vertical-align: middle; }
+.runleg i.change { background: #003d25; height: 3px; border-radius: 2px; width: 16px; vertical-align: middle; }

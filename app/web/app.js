@@ -108,7 +108,10 @@ function chartSvg(spec) {
       ${spec.past && spec.past.length ? `<polyline points="${path(spec.past)}" fill="none" stroke="#00703c" stroke-width="3" stroke-linejoin="round"/>` : ""}
       <polyline points="${path(spec.future)}" fill="none" stroke="${neg ? "#c2402f" : "#2e9c5e"}" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round" opacity="${spec.scenario && spec.scenario.length ? 0.5 : 1}"/>
       ${spec.scenario && spec.scenario.length ? `<polyline points="${path(spec.scenario)}" fill="none" stroke="#003d25" stroke-width="2.5"/>` : ""}
-      <text x="${L}" y="${H - 6}" class="ctk">${pts.length ? day(pts[0].x) : ""}</text><text x="${W - R}" y="${H - 6}" class="ctk" text-anchor="end">${pts.length ? day(pts[pts.length - 1].x) : ""}</text></svg>`;
+      <text x="${L}" y="${H - 6}" class="ctk">${pts.length ? day(pts[0].x) : ""}</text><text x="${W - R}" y="${H - 6}" class="ctk" text-anchor="end">${pts.length ? day(pts[pts.length - 1].x) : ""}</text></svg>
+      ${spec.scenario && spec.scenario.length && spec.future && spec.future.length ? `<div class="legend runleg">
+        <span><i class="usual"></i>${esc(T().usualPace)} <b>${eur0(spec.future.at(-1).v)}</b></span>
+        <span><i class="change"></i>${esc(T().withChange)} <b>${eur0(spec.scenario.at(-1).v)}</b></span></div>` : ""}`;
   }
   const ms = spec.series[0].points.map((p) => p.x), n = ms.length, bw = (W - L - R) / n;
   const X = (i) => L + bw * i + bw / 2;
