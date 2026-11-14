@@ -129,5 +129,5 @@ Rasmus: gamified retention has worked before and fits the challenge, so build it
 **Demo (30 s):** Coach: "Why am I always short before payday?" → pill "New on your money map: Payday and forecast" →
 open "How I worked this out" → second dot → Learn tab: the lit map → tap "Saving" → coach answers → third corner lit.
 
-**To ship:** Pyry merges this branch into `feature/context-dev` (it already contains it, so a fast-forward-free
-merge with no conflicts as of e4b919a) and restarts `spankki-coach`. Ask Asmoww first.
+**To ship:** this branch contains `feature/context-dev` (e4b919a), so Pyry can `git merge --ff-only
+origin/feature/learning-progress` on the live branch and restart `spankki-coach`. Ask Asmoww first.
