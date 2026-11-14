@@ -243,7 +243,6 @@ function psd2Sheet() {
 }
 
 /* ---------- learn ---------- */
-let game = null;
 function renderLearn() {
   if (!home) return;
   const t = home.type, [tname, tsum] = T().types[t.type] || [t.type, t.summary];
@@ -251,41 +250,12 @@ function renderLearn() {
     : k === "transactions_while_overdrawn" ? v : `${Math.round(v * 100)} %`);
   const sig = Object.entries(t.signals).map(([k, v]) => `<li><span>${esc(T().signals[k] || k)}</span><span class="amt">${fmtSig(k, v)}</span></li>`).join("");
   $("#view-learn").innerHTML = `
+    ${window.openSort ? sortCard().replace("mini sortcard", "card sortcard learn") : ""}
     <section class="card typecard"><div class="label">${T().typeTitle}</div><div class="type">${esc(tname)}</div><p class="lead">${esc(tsum)}</p>
       <details class="how"><summary>${T().typeSignals}</summary><ul class="steps">${sig}</ul></details></section>
-    ${window.openSort ? sortCard().replace("mini sortcard", "card sortcard learn") : ""}
-    <section class="card" id="game"></section>
     <section class="card" id="trust"><div class="label">${T().trustTitle}</div><div class="skeleton"></div></section>`;
   $("#view-learn").querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", window.openSort));
-  renderGame();
   renderTrust();
-}
-
-function renderGame() {
-  const el = $("#game"); if (!el) return;
-  if (!game) {
-    el.innerHTML = `<div class="label">${T().gameTitle}</div><p class="lead">${T().gameIntro}</p><button class="btn" id="g-start">${T().gameStart}</button>`;
-    $("#g-start").onclick = async () => { const g = await api(`/api/game/${cid}?seed=${Date.now() % 100000}`); game = { items: g.items, i: 0, score: 0, answered: false }; renderGame(); };
-    return;
-  }
-  if (game.i >= game.items.length) {
-    el.innerHTML = `<div class="label">${T().gameTitle}</div><div class="big">${T().gameScore(game.score, game.items.length)}</div><button class="btn" id="g-again">${T().gameAgain}</button>`;
-    $("#g-again").onclick = () => { game = null; renderGame(); $("#g-start").click(); };
-    return;
-  }
-  const it = game.items[game.i];
-  el.innerHTML = `<div class="label">${T().gameTitle} · ${game.i + 1}/${game.items.length}</div>
-    <div class="tx"><div><b>${esc(label(it.merchant_type))}</b><div class="sub">${day(it.date)}</div></div><div class="amount">${eur(it.amount_eur)}</div></div>
-    <div class="choices">${[1, 2, 3].map((b) => `<button class="choice" data-b="${b}"><i style="background:${BASKET_COLORS[b]}"></i>${esc(T().baskets[b][0])}</button>`).join("")}</div>
-    <div class="feedback"></div>`;
-  el.querySelectorAll(".choice").forEach((c) => c.addEventListener("click", () => {
-    if (game.answered) return; game.answered = true;
-    const b = +c.dataset.b, right = b === it.basket;
-    if (right) game.score++;
-    el.querySelectorAll(".choice").forEach((x) => { if (+x.dataset.b === it.basket) x.classList.add("right"); else if (x === c) x.classList.add("wrong"); });
-    el.querySelector(".feedback").innerHTML = `<p><b>${right ? T().gameRight : esc(T().gameWrong(T().baskets[it.basket][0]))}</b> ${esc(it.why)}</p><button class="btn" id="g-next">${T().gameNext}</button>`;
-    $("#g-next").onclick = () => { game.i++; game.answered = false; renderGame(); };
-  }));
 }
 
 async function renderTrust() {
@@ -293,10 +263,12 @@ async function renderTrust() {
   let d; try { d = await api("/api/traps"); } catch { return; }
   const run = d.runs && d.runs[0];
   if (!run) { el.innerHTML = `<div class="label">${T().trustTitle}</div><p class="sub">${T().trustNone}</p>`; return; }
+  // One compact card; the full question list (test evidence, not customer content) opens only on tap
   el.innerHTML = `<div class="label">${T().trustTitle}</div><div class="big">${T().passed(run.passed, run.total)}</div>
-    <p class="sub">${T().trustSub}</p><p class="note left">${esc(run.at)} · ${esc(run.model)} · ${T().verified(run.numbers_verified, run.numbers_total)}</p>
+    <p class="sub">${T().trustSub}</p><button class="link" id="trust-see">${T().trustSee} ›</button>`;
+  $("#trust-see").onclick = () => sheet(`<h2>${T().trustTitle}</h2><p class="note left">${esc(run.at)} · ${T().verified(run.numbers_verified, run.numbers_total)}</p>
     <ul class="traps">${run.cases.map((c) => `<li class="${c.ok ? "ok" : "bad"}"><span class="mark">${c.ok ? "✓" : "✗"}</span><span><b>${esc(c.trap)}</b><br>
-      <span class="sub">“${esc(c.question)}”</span>${c.ok ? "" : `<br><span class="why">${esc(c.failed.join("; "))}</span>`}</span></li>`).join("")}</ul>`;
+      <span class="sub">“${esc(c.question)}”</span>${c.ok ? "" : `<br><span class="why">${esc(c.failed.join("; "))}</span>`}</span></li>`).join("")}</ul>`);
 }
 
 /* ---------- coach ---------- */
@@ -415,7 +387,7 @@ function showPicker() {
     <p class="note">${T().namesNote}</p>`);
   s.querySelectorAll(".persona").forEach((b) => b.addEventListener("click", () => {
     cid = b.dataset.id; localStorage.setItem("cid", cid); closeSheet();
-    history = []; game = null; $("#thread").innerHTML = ""; load();
+    history = []; $("#thread").innerHTML = ""; load();
   }));
 }
 
