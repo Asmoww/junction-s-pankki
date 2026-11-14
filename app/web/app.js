@@ -362,8 +362,10 @@ function describeSource(n, trace) {
   const catLabel = (c) => (c === "Restaurants" ? D.eatingOut : label(c));  // category Restaurants = all eating out
   const flabel = inp.subcategory ? label(inp.subcategory) : inp.category ? catLabel(inp.category) : inp.basket ? T().baskets[inp.basket][0] : D.all;
   const list = (extra = {}, p = per) => (p ? { ...filt, ...extra, start: p.start, end: p.end } : null);
+  const mon = per ? per.months_with_data || per.months : 0;
+  const tot = (total) => (mon > 1 ? { total, months: mon } : null);  // a total over several months also shows "a month"
   if (t.tool === "get_spending") {
-    if (path === "total_eur") return { what: flabel, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions };
+    if (path === "total_eur") return { what: flabel, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions, tot: tot(res.total_eur) };
     if (path === "average_per_month_eur") return { what: `${D.avg}: ${flabel}`, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions,
       avg: { total: res.total_eur, months: per.months_with_data || per.months } };
     if (path.startsWith("one_off_large_purchases")) return { what: D.oneoff, meta: [periodText(per), D.pays(res.one_off_large_purchases.count)] };
@@ -372,9 +374,9 @@ function describeSource(n, trace) {
     if (m && res.breakdown && res.breakdown[+m[1]]) {
       const row = res.breakdown[+m[1]], gb = inp.group_by, pays = D.pays(row.transactions), count = row.transactions;
       if (gb === "month") { const p = monthRange(row.key, per); return { what: flabel, meta: [periodText(p), pays], list: list({}, p), count }; }
-      if (gb === "category") return { what: catLabel(row.key), meta: [periodText(per), pays], list: list({ category: row.key }), count };
-      if (gb === "subcategory") return { what: label(row.key), meta: [periodText(per), pays], list: list({ subcategory: row.key }), count };
-      if (gb === "basket") { const b = basketNo(row.key); return { what: b ? T().baskets[b][0] : row.key, meta: [periodText(per), pays], list: b ? list({ basket: b }) : null, count }; }
+      if (gb === "category") return { what: catLabel(row.key), meta: [periodText(per), pays], list: list({ category: row.key }), count, tot: tot(row.total_eur) };
+      if (gb === "subcategory") return { what: label(row.key), meta: [periodText(per), pays], list: list({ subcategory: row.key }), count, tot: tot(row.total_eur) };
+      if (gb === "basket") { const b = basketNo(row.key); return { what: b ? T().baskets[b][0] : row.key, meta: [periodText(per), pays], list: b ? list({ basket: b }) : null, count, tot: tot(row.total_eur) }; }
       if (gb === "weekday") {
         const w = WEEKDAYS.indexOf(row.key), wd = w >= 0 ? new Date(2026, 0, 5 + w).toLocaleDateString(T().locale, { weekday: "long" }) : row.key;
         return { what: `${flabel}, ${D.onDays(wd)}`, meta: [periodText(per), pays] };
@@ -394,9 +396,9 @@ function describeSource(n, trace) {
     if (bk) {
       const lb = { basket: bk.basket, start: per.start, end: per.end };
       if (m[2] !== undefined && bk.top[+m[2]]) { const tp = bk.top[+m[2]];
-        return { what: label(tp.merchant_type), meta: [periodText(per), D.pays(tp.transactions)], list: { ...lb, subcategory: tp.merchant_type }, count: tp.transactions }; }
+        return { what: label(tp.merchant_type), meta: [periodText(per), D.pays(tp.transactions)], list: { ...lb, subcategory: tp.merchant_type }, count: tp.transactions, tot: tot(tp.total_eur) }; }
       const avg = path.includes("per_month") ? { total: bk.total_eur, months: per.months_with_data || per.months } : null;
-      return { what: (avg ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)], avg, list: lb, count: bk.transactions };
+      return { what: (avg ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)], avg, list: lb, count: bk.transactions, tot: avg ? null : tot(bk.total_eur) };
     }
   }
   if (t.tool === "get_safe_to_spend") {
@@ -420,8 +422,11 @@ function dataSheet(n, trace) {
   const D = T().ds, d = describeSource(n, trace);
   const partRows = [];
   if (n.rounded_from !== undefined) partRows.push(`<div><span>${D.rounded}</span><span>${eur(n.rounded_from)}</span></div>`);
-  if (d.avg && d.avg.months) partRows.push(`<div><span>${D.avgTotal}</span><span>${eur(d.avg.total)}</span></div>`,
-    `<div><span></span><span>${esc(D.div(d.avg.months))}</span></div>`, `<div class="sum"><span>${D.perMonth}</span><span>${eur(n.rounded_from ?? n.value)}</span></div>`);
+  // Averages show total ÷ months; totals over several months show the same split, so both views are one tap away.
+  const split = d.avg && d.avg.months ? { ...d.avg, perMonth: n.rounded_from ?? n.value }
+    : d.tot ? { ...d.tot, perMonth: Math.round((d.tot.total / d.tot.months) * 100) / 100 } : null;
+  if (split) partRows.push(`<div><span>${D.avgTotal}</span><span>${eur(split.total)}</span></div>`,
+    `<div><span></span><span>${esc(D.div(split.months))}</span></div>`, `<div class="sum"><span>${D.perMonth}</span><span>${eur(split.perMonth)}</span></div>`);
   if (n.parts && n.parts.length) {
     for (const p of n.parts) {
       const pd = describeSource({ ...p, source: "" }, trace);
