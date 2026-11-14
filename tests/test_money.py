@@ -257,3 +257,16 @@ def test_monthly_drains_add_up_and_stay_honest():
     eat = next(h for h in d["habits"] if h["habit"] == "eating_out")
     assert "Restaurants" in eat["merchant_types"]
     assert {b["bill"] for b in d["bills"]} <= {"Housing", "Utilities"}
+
+
+def test_psd2_full_picture_is_consented_labelled_and_revocable(monkeypatch, tmp_path):
+    from app import psd2
+    monkeypatch.setattr(psd2, "STATE", tmp_path / "psd2.json")
+    jussi = "CUST00724"
+    assert not psd2.status(jussi)["connected"] and psd2.status(jussi)["relevant"]   # salary moves to another bank
+    assert psd2.get_other_accounts(jussi)["connected"] is False
+    psd2.connect(jussi, "Nordea")
+    o = psd2.get_other_accounts(jussi)
+    assert o["connected"] and "demo" in o["source"] and o["total_eur"] == pytest.approx(o["s_bank_balance_eur"] + o["other_balance_eur"], abs=0.01)
+    psd2.revoke(jussi)
+    assert not psd2.status(jussi)["connected"]

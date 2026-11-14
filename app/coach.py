@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import charts, drains, eu, homeplan, insights, live, money, saving, verify
+from . import charts, drains, eu, homeplan, insights, live, money, psd2, saving, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -134,6 +134,12 @@ TOOLS = [
                     "'what subscriptions do I have', 'what drains my account', 'recurring payments'. Brand names are "
                     "not in the data.",
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "get_other_accounts",
+     "description": "The customer's account in another bank, if they connected it with PSD2 consent: its balance (demo "
+                    "data from a mock API; say so), this account's balance, the total, and how much moves there each "
+                    "month. If nothing is connected it says so. Use for 'how much money do I have in total', 'my other "
+                    "bank', 'the whole picture'.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
                     "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
@@ -182,6 +188,7 @@ def calculate(cid: str, expression: str, what: str = "") -> dict:
 _FUNCS["calculate"] = calculate
 _FUNCS["get_safe_to_save"] = saving.get_safe_to_save
 _FUNCS["get_monthly_drains"] = drains.drains
+_FUNCS["get_other_accounts"] = psd2.get_other_accounts
 _FUNCS["show_chart"] = charts.show_chart
 _FUNCS["money_health"] = insights.money_health
 _FUNCS["forecast_with_events"] = charts.forecast_with_events
@@ -217,8 +224,10 @@ Rules:
   plan_home, with the shop or source named. If a value is unknown, say it is unknown; never use 0 or a guess.
 - Quick loans and payday loans: say plainly they are expensive (high interest and fees), suggest talking to S-Bank
   first, and show a cheaper way through the numbers.
-- Money the user says they have elsewhere (another account or bank) is not visible to you: say you can only see
-  this account, never add it to any figure, and offer to connect the other bank (PSD2) so it can be counted.
+- Money the user says they have elsewhere (another account or bank) is not visible to you: check get_other_accounts.
+  If no bank is connected, say you can only see this account, never add the claimed money to any figure, and offer to
+  connect the other bank (PSD2). If one is connected, use its balance only as the full picture, say it is demo data,
+  and keep it out of safe-to-spend and forecasts.
 - Keep the two shortfalls apart: "at your usual pace" (get_payday_forecast, extras included) vs "even with no
   extras" (get_safe_to_spend). Say which one you mean.
 - Explain financial terms in plain language. Be warm and practical, never preachy.

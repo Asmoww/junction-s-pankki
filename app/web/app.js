@@ -246,9 +246,11 @@ function psd2Sheet() {
     <div class="label" style="margin:14px 4px 8px">${T().chooseBank}</div>
     <div class="banks">${BANKS.map((b, i) => `<label><input type="radio" name="bank" value="${b}" ${i ? "" : "checked"}><span>${b}</span></label>`).join("")}</div>
     <p class="note">${T().demoNote}</p><button class="btn wide" data-allow>${T().psd2Allow}</button>`);
-  s.querySelector("[data-allow]").addEventListener("click", () => {
+  s.querySelector("[data-allow]").addEventListener("click", async () => {
     const bank = s.querySelector("input[name=bank]:checked").value;
-    localStorage.setItem(psd2Key(), bank); closeSheet(); toast(esc(T().psd2Done(bank)), 5000); renderHome();
+    try { await api(`/api/psd2/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bank }) }); }
+    catch { toast(T().wentWrong); return; }
+    closeSheet(); toast(esc(T().psd2Done(bank)), 5000); fut = null; load();  // the full picture now appears on Home
   });
 }
 

@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, drains, eu, future, homeplan, insights, live, money, play, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, drains, eu, future, homeplan, insights, live, money, play, psd2, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -151,7 +151,7 @@ def home(cid: str):
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
             "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid),
             "health": insights.money_health(cid), "year": wrapped.calendar(cid), "surprise_example": live.surprise_example(),
-            "save": saving.get_safe_to_save(cid), "drains": drains.drains(cid)}
+            "save": saving.get_safe_to_save(cid), "drains": drains.drains(cid), "psd2": psd2.status(cid)}
 
 
 class PlayIn(BaseModel):
@@ -171,6 +171,24 @@ def play_deal(cid: str, lang: str = "en"):
 @app.post("/api/play/{cid}")
 def play_finish(cid: str, body: PlayIn):
     return play.finish(_cid(cid), body.kept, body.move_rent, body.lang if body.lang in ("en", "fi", "sv") else "en", body.swap)
+
+
+class Psd2In(BaseModel):
+    bank: str
+
+
+@app.post("/api/psd2/{cid}")
+def psd2_connect(cid: str, body: Psd2In):
+    """Consent to read the customer's other bank (PSD2, demo): bank, 90 days, read-only."""
+    try:
+        return psd2.connect(_cid(cid), body.bank)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/psd2/{cid}")
+def psd2_revoke(cid: str):
+    return psd2.revoke(_cid(cid))
 
 
 class SortIn(BaseModel):

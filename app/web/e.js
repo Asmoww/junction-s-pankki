@@ -50,14 +50,17 @@ const ES = {
     askQ: (d) => `What did I spend on ${d}, and was it a lot for me?`, thinking: "Reading your words…",
     aiNote: "Notes written by AI from your numbers", noAmount: "Tell me an amount, e.g. 150 €.", failed: "Couldn't do that one. Try again.",
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
-    cards: { save: "Safe to save on payday", drains: "Monthly drains", safe: "Free to spend this week", month: (m) => m, payday: "After payday", pot: "Surprise costs", fin: "vs Finland", psd2: "Other bank" },
-    perMonth: "a month", fitMonths: (k, n) => `fitted ${k} of ${n} months`, gapFirst: "close the monthly gap first", yr: "yr",
+    cards: { full: "Full picture", save: "Safe to save on payday", drains: "Monthly drains", safe: "Free to spend this week", month: (m) => m, payday: "After payday", pot: "Surprise costs", fin: "vs Finland", psd2: "Other bank" },
+    perMonth: "a month", fullSub: (b, d) => `with ${b} (demo) · consent ${d} days`, connectCta: "Connect it for the full picture ›", fromData: "this account",
+      demoBal: "demo data from a mock PSD2 API", fullLead: (a, b, m) => `About ${a} moves from your salary to ${b} each payday (${m} of the last 12 months). Now the coach sees both accounts.`,
+      fullRule: "The other bank's balance is shown as the full picture only; safe-to-spend and the forecast still use this account.",
+      fullAsk: "Ask about my whole picture", fullAskQ: "How much money do I have in total, across both banks?", revoke: "Revoke consent", consentLeft: (d) => `Read-only consent, ${d} days left. No payments can be made.`,  fitMonths: (k, n) => `fitted ${k} of ${n} months`, gapFirst: "close the monthly gap first", yr: "yr",
       saveLead: (a, k, n) => `Moving ${a} to savings on payday would have fitted in ${k} of your last ${n} pay months, with a buffer left for surprise costs.`,
       saveZero: "In most pay months your money ran down to the buffer or below before the next salary. Close the monthly gap first; then saving can start.",
       saveChart: "Room left in each pay month after a buffer for surprises (red: below the buffer).", stretch: (a, k) => `Stretch: ${a} would have fitted in ${k} months.`,
       already: (a) => `You already move about ${a} a month to savings or investments.`, saveSetup: (a, d) => `Move ${a} to savings on payday (${d})`,
       saveDone: (a) => `In S-mobiili this sets up a ${a} transfer to savings on every payday.`, askGap: "How do I close the monthly gap?", askGapQ: "How could I close my monthly gap so I can start saving?",
-      drainSub: (y) => `${y} a year`, drainCap: (n) => `${n} habits that recur like subscriptions`, drainsTitle: "What leaves your account every month",
+      drainSub: (y) => `${y} a year`, drainCap: (n) => (n === 1 ? "1 habit that recurs like a subscription" : `${n} habits that recur like subscriptions`), drainsTitle: "What leaves your account every month",
       drainsLead: (m, y, h) => `Habits that recur almost every month take ${m} a month: ${y} a year, about ${h} hours of your work each month. Nobody signed up for them.`,
       habitsT: "Habits that work like a subscription", subsT: "Subscriptions", billsT: "Bills (must-pays)",
       habitMeta: (m, t, h) => `${m}/12 months · ${t}× a month${h ? ` · ${h} h of work` : ""}`, subMeta: (m) => `steady charge, ${m}/12 months`,
@@ -113,14 +116,17 @@ const ES = {
     askQ: (d) => `Mihin käytin rahaa ${d}, ja oliko se minulle paljon?`, thinking: "Luen pyyntöäsi…",
     aiNote: "Tekoälyn muistiinpanot lukujesi pohjalta", noAmount: "Kerro summa, esim. 150 €.", failed: "Tämä ei onnistunut. Yritä uudelleen.",
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
-    cards: { save: "Säästettävissä palkkapäivänä", drains: "Kuukausittaiset vuodot", safe: "Vapaata käyttöön tällä viikolla", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätysmenot", fin: "vs Suomi", psd2: "Toinen pankki" },
-    perMonth: "kuussa", fitMonths: (k, n) => `sopi ${k}/${n} kuukauteen`, gapFirst: "ensin kuukausivaje kiinni", yr: "v",
+    cards: { full: "Koko kuva", save: "Säästettävissä palkkapäivänä", drains: "Kuukausittaiset vuodot", safe: "Vapaata käyttöön tällä viikolla", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätysmenot", fin: "vs Suomi", psd2: "Toinen pankki" },
+    perMonth: "kuussa", fullSub: (b, d) => `mukana ${b} (demo) · suostumus ${d} pv`, connectCta: "Yhdistä, niin näet koko kuvan ›", fromData: "tämä tili",
+      demoBal: "demodataa PSD2-testirajapinnasta", fullLead: (a, b, m) => `Palkastasi siirtyy noin ${a} pankkiin ${b} joka palkkapäivä (${m}/12 kuukautena). Nyt valmentaja näkee molemmat tilit.`,
+      fullRule: "Toisen pankin saldo näytetään vain koko kuvana; vapaa käyttövara ja ennuste laskevat yhä tämän tilin pohjalta.",
+      fullAsk: "Kysy koko kuvasta", fullAskQ: "Paljonko minulla on rahaa yhteensä molemmissa pankeissa?", revoke: "Peru suostumus", consentLeft: (d) => `Vain luku -suostumus, ${d} päivää jäljellä. Maksuja ei voi tehdä.`,  fitMonths: (k, n) => `sopi ${k}/${n} kuukauteen`, gapFirst: "ensin kuukausivaje kiinni", yr: "v",
       saveLead: (a, k, n) => `Jos olisit siirtänyt ${a} säästöön palkkapäivänä, se olisi sopinut ${k} kuukauteen viimeisistä ${n}, ja puskuria olisi jäänyt yllätysmenoihin.`,
       saveZero: "Useimpina kuukausina rahat hupenivat puskuriin tai sen alle ennen seuraavaa palkkaa. Kurota ensin kuukausivaje umpeen, sitten säästäminen voi alkaa.",
       saveChart: "Liikkumavara kunakin palkkakuukautena yllätysmenojen puskurin jälkeen (punainen: puskurin alle).", stretch: (a, k) => `Venyttäen: ${a} olisi sopinut ${k} kuukauteen.`,
       already: (a) => `Siirrät jo noin ${a} kuussa säästöön tai sijoituksiin.`, saveSetup: (a, d) => `Siirrä ${a} säästöön palkkapäivänä (${d})`,
       saveDone: (a) => `S-mobiilissa tämä asettaa ${a} siirron säästöön joka palkkapäivä.`, askGap: "Miten saan kuukausivajeen kiinni?", askGapQ: "Miten voisin kuroa kuukausivajeen umpeen, jotta voin alkaa säästää?",
-      drainSub: (y) => `${y} vuodessa`, drainCap: (n) => `${n} tapaa, jotka toistuvat kuin tilaukset`, drainsTitle: "Mikä valuu tililtä joka kuukausi",
+      drainSub: (y) => `${y} vuodessa`, drainCap: (n) => (n === 1 ? "1 tapa, joka toistuu kuin tilaus" : `${n} tapaa, jotka toistuvat kuin tilaukset`), drainsTitle: "Mikä valuu tililtä joka kuukausi",
       drainsLead: (m, y, h) => `Lähes joka kuukausi toistuvat tavat vievät ${m} kuussa: ${y} vuodessa, noin ${h} tuntia työtäsi kuukaudessa. Kukaan ei tilannut niitä.`,
       habitsT: "Tavat, jotka toimivat kuin tilaus", subsT: "Tilaukset", billsT: "Laskut (pakolliset)",
       habitMeta: (m, t, h) => `${m}/12 kk · ${t}× kuussa${h ? ` · ${h} h työtä` : ""}`, subMeta: (m) => `tasainen veloitus, ${m}/12 kk`,
@@ -176,14 +182,17 @@ const ES = {
     askQ: (d) => `Vad spenderade jag den ${d}, och var det mycket för mig?`, thinking: "Läser det du skrev…",
     aiNote: "Anteckningar skrivna av AI utifrån dina siffror", noAmount: "Ange ett belopp, t.ex. 150 €.", failed: "Det gick inte. Försök igen.",
     bills: { Housing: "Hyra", Utilities: "Räkningar" }, nothing: "Inga köp",
-    cards: { save: "Kan sparas på lönedagen", drains: "Månatliga läckor", safe: "Fritt att använda i veckan", month: (m) => m, payday: "Efter lön", pot: "Oväntade kostnader", fin: "vs Finland", psd2: "Annan bank" },
-    perMonth: "i månaden", fitMonths: (k, n) => `passade ${k} av ${n} månader`, gapFirst: "täpp först månadsunderskottet", yr: "år",
+    cards: { full: "Hela bilden", save: "Kan sparas på lönedagen", drains: "Månatliga läckor", safe: "Fritt att använda i veckan", month: (m) => m, payday: "Efter lön", pot: "Oväntade kostnader", fin: "vs Finland", psd2: "Annan bank" },
+    perMonth: "i månaden", fullSub: (b, d) => `med ${b} (demo) · samtycke ${d} dagar`, connectCta: "Koppla den för hela bilden ›", fromData: "det här kontot",
+      demoBal: "demodata från ett PSD2-testgränssnitt", fullLead: (a, b, m) => `Cirka ${a} av lönen flyttas till ${b} varje lönedag (${m} av de senaste 12 månaderna). Nu ser coachen båda kontona.`,
+      fullRule: "Den andra bankens saldo visas bara som hela bilden; fritt att använda och prognosen räknas fortfarande på det här kontot.",
+      fullAsk: "Fråga om hela bilden", fullAskQ: "Hur mycket pengar har jag totalt i båda bankerna?", revoke: "Återkalla samtycket", consentLeft: (d) => `Endast läsning, ${d} dagar kvar. Inga betalningar kan göras.`,  fitMonths: (k, n) => `passade ${k} av ${n} månader`, gapFirst: "täpp först månadsunderskottet", yr: "år",
       saveLead: (a, k, n) => `Att flytta ${a} till sparande på lönedagen hade passat ${k} av dina senaste ${n} lönemånader, med en buffert kvar för oväntade kostnader.`,
       saveZero: "De flesta lönemånader tog pengarna slut ner till bufferten eller under före nästa lön. Täpp först till underskottet, sedan kan sparandet börja.",
       saveChart: "Utrymme kvar varje lönemånad efter en buffert för överraskningar (rött: under bufferten).", stretch: (a, k) => `Med marginal: ${a} hade passat ${k} månader.`,
       already: (a) => `Du flyttar redan cirka ${a} i månaden till sparande eller investeringar.`, saveSetup: (a, d) => `Flytta ${a} till sparande på lönedagen (${d})`,
       saveDone: (a) => `I S-mobiili ställer detta in en överföring på ${a} till sparande varje lönedag.`, askGap: "Hur täpper jag till månadsunderskottet?", askGapQ: "Hur kan jag täppa till mitt månadsunderskott så att jag kan börja spara?",
-      drainSub: (y) => `${y} per år`, drainCap: (n) => `${n} vanor som återkommer som prenumerationer`, drainsTitle: "Vad som lämnar kontot varje månad",
+      drainSub: (y) => `${y} per år`, drainCap: (n) => (n === 1 ? "1 vana som återkommer som en prenumeration" : `${n} vanor som återkommer som prenumerationer`), drainsTitle: "Vad som lämnar kontot varje månad",
       drainsLead: (m, y, h) => `Vanor som återkommer nästan varje månad tar ${m} i månaden: ${y} per år, cirka ${h} timmar av ditt arbete i månaden. Ingen tecknade dem.`,
       habitsT: "Vanor som fungerar som en prenumeration", subsT: "Prenumerationer", billsT: "Räkningar (måsten)",
       habitMeta: (m, t, h) => `${m}/12 mån · ${t}× i månaden${h ? ` · ${h} h arbete` : ""}`, subMeta: (m) => `jämn debitering, ${m}/12 mån`,
@@ -430,6 +439,20 @@ function drainsSheet() {
   s.querySelectorAll("[data-ask]").forEach((b) => b.addEventListener("click", () => { closeSheet(); ask(b.dataset.ask); }));
 }
 
+// Full picture after PSD2 consent: both banks, the other balance labelled as demo data, consent and revoke
+function fullPicSheet() {
+  const ps = home.psd2, o = ps.other_account, here = home.overview.customer.balance, S = E();
+  const s = sheet(`<h2>${S.cards.full}</h2><div class="sbig">${eur0(here + o.balance_eur)}</div>
+    <ul class="drains"><li><span class="de">🟢</span><div><b>S-Pankki</b><span>${esc(S.fromData)}</span></div><div class="dv"><b>${eur0(here)}</b></div></li>
+      <li><span class="de">🏦</span><div><b>${esc(o.bank)} · ${esc(o.iban_masked)}</b><span>${esc(S.demoBal)}</span></div><div class="dv"><b>${eur0(o.balance_eur)}</b></div></li></ul>
+    <p class="lead">${esc(S.fullLead(eur0(ps.flows.typical_month_eur), o.bank, ps.flows.months_with_transfers))}</p>
+    <p class="note left">${esc(S.fullRule)}</p>
+    <div class="actions"><button class="btn" data-ask>${S.fullAsk}</button><button class="btn ghost" data-revoke>${S.revoke}</button></div>
+    <p class="note">${esc(S.consentLeft(ps.days_left))}</p>`);
+  s.querySelector("[data-ask]").onclick = () => { closeSheet(); ask(S.fullAskQ); };
+  s.querySelector("[data-revoke]").onclick = async () => { await fetch(`/api/psd2/${cid}`, { method: "DELETE" }); closeSheet(); fut = null; load(); };
+}
+
 function strip() {
   // Five cards, in order of what helps decide: play the next two weeks, what's safe, surprises, the three baskets, the year.
   // Persona-specific extras only where they belong (PSD2 for the customer whose salary moves away, live rules for the home buyer).
@@ -454,9 +477,20 @@ function strip() {
   cards.push(drainsCard());
   cards.push(sortCard());
   cards.push(wrapCard());
-  const psd2 = home.cards.find((c) => c.id === "psd2");
-  if (psd2) cards.push(`<button class="mini" data-act="psd2"><span class="t">${E().cards.psd2}</span><b>${eur0(psd2.numbers.moved_to_other_bank_eur)}</b><span class="s">${E().moved}</span>
-    <div class="flow"><i style="width:${Math.round(psd2.numbers.share_of_income * 100)}%"></i></div></button>`);
+  // PSD2: before consent, how much moves to the other bank; after it, the full picture across both banks
+  const ps = home.psd2;
+  if (ps && ps.connected) {
+    const o = ps.other_account, here = home.overview.customer.balance, tot = here + o.balance_eur;
+    cards.splice(1, 0, `<button class="mini fullpic" data-act="fullpic"><span class="t">${E().cards.full}</span><b>${eur0(tot)}</b>
+      <span class="s">${esc(E().fullSub(o.bank, ps.days_left))}</span>
+      <span class="fp"><i style="flex:${here}"></i><i class="o" style="flex:${o.balance_eur}"></i></span>
+      <span class="fpl"><span>S-Pankki ${eur0(here)}</span><span>${esc(o.bank)} ${eur0(o.balance_eur)}*</span></span></button>`);
+  } else if (ps && ps.relevant) {
+    const f = ps.flows, share = f.salary_eur ? Math.min(f.typical_month_eur / f.salary_eur, 1) : 0;
+    cards.splice(1, 0, `<button class="mini" data-act="psd2"><span class="t">${E().cards.psd2}</span><b>${eur0(f.typical_month_eur)}<small>/${E().mo}</small></b>
+      <span class="s">${E().moved}</span><div class="flow"><i style="width:${Math.round(share * 100)}%"></i></div>
+      <span class="cap">${esc(E().connectCta)}</span></button>`);
+  }
   const homeBuyer = cid === "CUST04138";
   if (liveSt && homeBuyer) {
     const cap = liveSt.rules.loan_cap_general, eu = liveSt.rules.euribor_12m;
@@ -819,6 +853,7 @@ window.renderHomeE = async function () {
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
   $("#view-home").querySelectorAll("[data-act=save]").forEach((b) => b.addEventListener("click", saveSheet));
   $("#view-home").querySelectorAll("[data-act=drains]").forEach((b) => b.addEventListener("click", drainsSheet));
+  $("#view-home").querySelectorAll("[data-act=fullpic]").forEach((b) => b.addEventListener("click", fullPicSheet));
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
   $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
   $("#view-home").querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
