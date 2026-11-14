@@ -18,7 +18,7 @@ from pathlib import Path
 
 import anthropic
 
-from . import eu, insights, live, money, verify
+from . import eu, insights, live, money, style, verify
 from .money import TODAY, _month_start, _q, _r
 
 log = logging.getLogger("future")
@@ -141,7 +141,7 @@ def parse_whatif(cid: str, text: str, lang: str = "en") -> dict:
               "money coming in = income. Moving rent = move_bills Housing (only if that bill is before payday). If it can't "
               "be done (amount missing, no such bill), set unsupported to ONE short plain sentence (max 90 characters, "
               "no ISO dates, no technical words) in the label's language; otherwise null. "
-              f"Write the label in {'Finnish' if lang == 'fi' else 'Swedish' if lang == 'sv' else 'English'}.")
+              f"Write the label in {'Finnish' if lang == 'fi' else 'Swedish' if lang == 'sv' else 'English'}." + style.guide(lang))
     sc = _json_call(system, f"Context: {json.dumps(ctx)}\nWhat if: {text}", SCENARIO_SCHEMA)
     if isinstance(sc.get("unsupported"), str):
         sc["unsupported"] = sc["unsupported"].strip().strip("{}\"'").strip() or None
@@ -182,14 +182,6 @@ NO_PRICE = {"en": "I couldn't confirm a price for {item}. Add the amount, e.g. '
 
 
 FACTS_HELP = "Facts are computed from the customer's data; every number you write must appear in them."
-NOTES_SCHEMA = {
-    "type": "object", "additionalProperties": False, "required": ["notes"],
-    "properties": {"notes": {"type": "array", "items": {
-        "type": "object", "additionalProperties": False, "required": ["date", "text"],
-        "properties": {"date": {"type": "string"}, "text": {"type": "string", "description": "2-4 words, max 22 characters."}}}}},
-}
-
-
 BILL_NAMES = {"Housing": {"en": "Rent", "fi": "Vuokra", "sv": "Hyra"}, "Utilities": {"en": "Bills", "fi": "Laskut", "sv": "Räkningar"}}
 
 
@@ -211,14 +203,62 @@ def line_facts(cid: str, lang: str = "en") -> dict:
             "balance_at_payday_usual_pace_eur": rib["balance_at_payday_eur"], "next_payday": rib["next_payday"]}
 
 
-def _fallback_notes(f: dict) -> list[dict]:
-    notes = []
+# The AI chooses what to point at (kind + date); code fills in the value from the facts and the words from this table,
+# so the labels are always correct in every language and on every model.
+NOTE_PHRASES = {
+    "en": {"biggest_day": "Biggest day {v} €", "big_day": "Big day {v} €", "no_spend_days": "{n} no-spend days",
+           "payday_week": "Payday week +{p} %", "below_zero": "Below zero here", "payday": "Payday {v} €"},
+    "fi": {"biggest_day": "Suurin menopäivä {v} €", "big_day": "Iso menopäivä {v} €", "no_spend_days": "{n} ostotonta päivää",
+           "payday_week": "Palkkaviikko +{p} %", "below_zero": "Tästä miinukselle", "payday": "Palkkapäivä {v} €"},
+    "sv": {"biggest_day": "Största dagen {v} €", "big_day": "Stor dag {v} €", "no_spend_days": "{n} köpfria dagar",
+           "payday_week": "Löneveckan +{p} %", "below_zero": "Här blir det minus", "payday": "Lönedag {v} €"},
+}
+NOTE_KINDS = list(NOTE_PHRASES["en"])
+
+
+def _eur_whole(x: float, lang: str) -> str:
+    s = f"{round(x):,}"
+    return s if lang == "en" else s.replace(",", "\u00a0")
+
+
+def _render_note(kind: str, d: str, f: dict, lang: str) -> dict | None:
+    """One note as text, or None if the facts don't support it on that date."""
+    ph = NOTE_PHRASES.get(lang, NOTE_PHRASES["en"])
+    days = {x["date"]: x for x in f["biggest_spending_days"]}
+    if kind in ("biggest_day", "big_day"):
+        if d not in days:
+            return None
+        kind = "biggest_day" if f["biggest_spending_days"][0]["date"] == d else "big_day"
+        return {"date": d, "kind": kind, "text": ph[kind].format(v=_eur_whole(days[d]["total_eur"], lang))}
+    if kind == "no_spend_days":
+        n = f["no_spend_days_since_payday"]
+        return {"date": d, "kind": kind, "text": ph[kind].format(n=n)} if n >= 2 and d <= f["today"] else None
+    if kind == "payday_week":
+        p = f["extras_per_day_week_after_vs_before_payday_percent"]
+        return {"date": d, "kind": kind, "text": ph[kind].format(p=round(p))} if p is not None and p >= 10 and d <= f["today"] else None
+    if kind == "below_zero":
+        return {"date": d, "kind": kind, "text": ph[kind]} if d == f["goes_below_zero_on"] else None
+    if kind == "payday":
+        return ({"date": d, "kind": kind, "text": ph[kind].format(v=_eur_whole(f["salary_eur"], lang))}
+                if d == f["last_payday"] and f.get("salary_eur") else None)
+    return None
+
+
+def _fallback_notes(f: dict, lang: str = "en") -> list[dict]:
+    picks = []
     if f["biggest_spending_days"]:
-        b = f["biggest_spending_days"][0]
-        notes.append({"date": b["date"], "text": f"Biggest day {round(b['total_eur'])} €"})
+        picks.append(("biggest_day", f["biggest_spending_days"][0]["date"]))
     if f["goes_below_zero_on"]:
-        notes.append({"date": f["goes_below_zero_on"], "text": "Below zero here"})
-    return notes
+        picks.append(("below_zero", f["goes_below_zero_on"]))
+    return [n for n in (_render_note(k, d, f, lang) for k, d in picks) if n]
+
+
+NOTES_PICK_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["notes"],
+    "properties": {"notes": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False, "required": ["date", "kind"],
+        "properties": {"date": {"type": "string"}, "kind": {"type": "string", "enum": NOTE_KINDS}}}}},
+}
 
 
 def annotations(cid: str, lang: str = "en") -> dict:
@@ -228,28 +268,26 @@ def annotations(cid: str, lang: str = "en") -> dict:
     if key in cache:
         return cache[key]
     f = line_facts(cid, lang)
-    lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
-    system = (f"You annotate a customer's balance line in a banking app with 2-3 tiny labels in {lname}, each pinned to a "
-              "date in the facts. Each label is 2-4 words and at most 22 characters, like a chart annotation: "
-              "'Biggest day 205 €', 'Payday splurge', '6 no-spend days', 'Below zero here'. No full sentences, no verbs "
-              "like 'pushes' or 'took'. Point at what explains the shape: big spending days, the payday-week effect, the "
-              "day it goes below zero, no-spend streaks. Don't name bills: the graph already labels them. "
-              f"Round amounts to whole euros, written like 205 €. {FACTS_HELP}")
+    system = ("You choose 2-3 annotations for a customer's balance line in a banking app: the moments that best explain "
+              "its shape. Kinds: biggest_day / big_day (a date from biggest_spending_days), no_spend_days (a past date, "
+              "only if there are several), payday_week (a date in the week after last_payday, only if extras rise a lot "
+              "after payday), below_zero (exactly goes_below_zero_on), payday (exactly last_payday). Prefer what a "
+              "person would want explained: the big days, the payday-week effect, where it goes below zero. Spread the "
+              "dates out; no two on the same date. Return kind and date only; the app writes the labels.")
     try:
-        notes = _json_call(system, json.dumps(f, default=str), NOTES_SCHEMA)["notes"]
-        trace = [{"tool": "facts", "error": False, "result": f}]
-        ok = []
-        valid_dates = {f["last_payday"], f["today"], f["next_payday"]} | {d["date"] for d in f["biggest_spending_days"]} | \
-                      {b["date"] for b in f["bills_ahead"]} | ({f["goes_below_zero_on"]} if f["goes_below_zero_on"] else set())
-        for n in notes[:3]:
-            nums = verify.check(n["text"], trace, [], lang)
-            if len(n["text"]) <= 24 and n["date"] in valid_dates and all(x["status"] != "unverified" for x in nums):
-                ok.append(n)
+        picks = _json_call(system, json.dumps(f, default=str), NOTES_PICK_SCHEMA)["notes"]
+        ok, seen = [], set()
+        for pk in picks:
+            n = _render_note(pk.get("kind"), str(pk.get("date")), f, lang)
+            if n and n["date"] not in seen and (n["kind"] == "big_day" or n["kind"] not in {x["kind"] for x in ok}):
+                ok.append(n); seen.add(n["date"])
+            if len(ok) == 3:
+                break
         source = "ai"
     except Exception as e:  # API down or refused: deterministic notes, clearly marked
         log.warning("annotations fallback: %s", e)
-        ok, source = _fallback_notes(f), "rules"
-    out = {"notes": ok or _fallback_notes(f), "source": source if ok else "rules", "model": MODEL}
+        ok, source = _fallback_notes(f, lang), "rules"
+    out = {"notes": ok or _fallback_notes(f, lang), "source": source if ok else "rules", "model": eu.label() if eu.active() else MODEL}
     with _lock:
         cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
         cache[key] = out

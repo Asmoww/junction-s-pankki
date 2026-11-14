@@ -13,7 +13,7 @@ import logging
 import threading
 from pathlib import Path
 
-from . import eu, future, insights, live, money, verify
+from . import eu, future, insights, live, money, style, verify
 from .money import TODAY, _month_start, _q, _r
 from .taxonomy import BASKETS
 
@@ -92,9 +92,10 @@ def questions(cid: str, lang: str = "en") -> dict:
             "From the items, pick the 5 whose basket is most genuinely unclear and that teach the most (mix one-time "
             "purchases and habits; use weekday and hour as hints, e.g. weekday mornings suggest a commute). For each: a "
             "short friendly question (max 90 characters) that helps the person decide; answer_1/2/3 are short answers "
-            "(max 32 characters) that mean basket 1, 2 and 3 for this item; lesson is one line (max 90 characters) on "
+            "(max 32 characters) in the person's own voice that mean basket 1, 2 and 3 for this item, never the basket "
+            "names (for parking: 'I drive to work every day', 'Only when something comes up', 'Mostly convenience'); lesson is one line (max 90 characters) on "
             "why the difference matters for their money. The card already shows the amount, date and merchant type: "
-            "write NO digits anywhere. Never judge. Use the item ids exactly.")
+            "write NO digits anywhere. Never judge. Use the item ids exactly." + style.guide(lang))
         try:
             got = future._json_call(system, json.dumps(list(pool.values())), Q_SCHEMA, max_tokens=2000)["questions"]
             qs = [q for q in got if q["id"] in pool and
@@ -104,6 +105,9 @@ def questions(cid: str, lang: str = "en") -> dict:
             qs = []
         if not qs:
             return {"cards": [], "source": "none"}
+        fields = ("question", "answer_1", "answer_2", "answer_3", "lesson")
+        pr = style.proofread({f"{n}|{f}": q[f] for n, q in enumerate(qs) for f in fields}, lang)
+        qs = [{**q, **{f: pr.get(f"{n}|{f}", q[f]) for f in fields}} for n, q in enumerate(qs)]
         cache[key] = qs
         _write(QUESTIONS, cache)
     saved = _read(ANSWERS).get(cid, {})
@@ -174,10 +178,11 @@ def answer(cid: str, answers: dict[str, int], lang: str = "en") -> dict:
               "their spending into the three baskets (1 fixed must-pays, 2 surprise must-pays, 3 everyday extras). Say "
               "what it means, e.g. if a habit is really a must-pay, there is less room for extras than it looked. At most "
               "one number, from the facts, rounded to whole euros like 1,437 €. If nothing moved, say their sorting "
-              "matches ours. Warm, never judging.")
+              "matches ours. Warm, never judging." + style.guide(lang))
     trace = [{"tool": "sorted", "error": False, "result": facts}]
     try:
         t = future._json_call(system, json.dumps(facts), TAKEAWAY_SCHEMA, max_tokens=400)["takeaway"]
+        t = style.proofread({"t": t}, lang).get("t", t)
         if len(t) <= 170 and all(n["status"] not in ("unverified",) for n in verify.check(t, trace, [], lang)):
             out["takeaway"] = t
     except Exception as e:  # noqa: BLE001

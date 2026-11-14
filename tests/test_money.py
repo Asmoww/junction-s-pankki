@@ -233,3 +233,16 @@ def test_eu_mode_routes_json_jobs_and_coach(monkeypatch):
     assert all(n["status"] != "unverified" for n in r["numbers"])
     assert sent[1]["tools"][0]["type"] == "function"
     assert eu.cache_tag() == ""  # back to Claude outside the request
+
+
+def test_graph_notes_are_rendered_from_facts_in_proper_finnish():
+    # The AI only picks kind + date; text and value come from code (no "Kuluin eniten", no invented amounts).
+    from app import future
+    f = future.line_facts(EMMA, "fi")
+    top = f["biggest_spending_days"][0]
+    n = future._render_note("big_day", top["date"], f, "fi")  # the biggest day is always called the biggest
+    assert n["kind"] == "biggest_day" and n["text"].startswith("Suurin menopäivä ") and n["text"].endswith(" €")
+    assert future._render_note("below_zero", "2026-10-01", f, "fi") is None or f["goes_below_zero_on"] == "2026-10-01"
+    assert future._render_note("biggest_day", "1999-01-01", f, "fi") is None
+    bz = future._render_note("below_zero", f["goes_below_zero_on"], f, "sv")
+    assert bz["text"] == "Här blir det minus"

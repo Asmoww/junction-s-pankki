@@ -20,7 +20,7 @@ import threading
 from datetime import timedelta
 from pathlib import Path
 
-from . import eu, future, live, money, verify
+from . import eu, future, live, money, style, verify
 from .money import TODAY, _q, _r
 
 log = logging.getLogger("play")
@@ -148,7 +148,8 @@ def tip(cid: str, lang: str = "en") -> dict | None:
                   "smallest plan that reaches payday at or above zero, keeping the extras that look most valued (frequent "
                   "habits) where possible. If skipping extras can't get there, say so and suggest moving rent. Return the "
                   "ids to skip, move_rent, and tip: one friendly line (max 110 characters) with NO digits, explaining the "
-                  "idea (e.g. timing beats coffee).")
+                  "idea (e.g. timing beats coffee). The tip must match the plan: if move_rent is true, say rent moves to "
+                  "after payday; never suggest paying rent early." + style.guide(lang))
         facts = {k: d[k] for k in ("keep_all_end_eur", "skip_all_end_eur", "next_payday")}
         facts["cards"] = [{k: c.get(k) for k in ("id", "kind", "label", "date", "amount_eur", "movable")} for c in d["cards"]]
         facts["swap"] = ({k: d["swap"][k] for k in ("price_eur", "replaces", "replaced_eur", "covers_until")} if d["swap"] else None)
@@ -157,6 +158,7 @@ def tip(cid: str, lang: str = "en") -> dict | None:
         except Exception as e:  # noqa: BLE001
             log.warning("play tip failed: %s", e)
             return None
+        t["tip"] = style.proofread({"tip": t["tip"]}, lang).get("tip", t["tip"])
         if any(ch.isdigit() for ch in t["tip"]) or len(t["tip"]) > 160:
             return None
         cache[key] = t
@@ -181,12 +183,13 @@ def finish(cid: str, kept: list[str], move_rent: bool, lang: str = "en", swap: b
     lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
     system = (f"In {lname}, write ONE short sentence (max 140 characters) summing up a customer's plan until payday: what "
               "they skipped, swapped or moved and where they land. If they land below zero, be kind and name the one lever that "
-              "would help most. At most two numbers, from the facts, rounded to whole euros like 87 €. Never judge.")
+              "would help most. At most two numbers, from the facts, rounded to whole euros like 87 €. Never judge." + style.guide(lang))
     facts = {k: v for k, v in o.items() if k != "scenario"}
     trace = [{"tool": "plan", "error": False, "result": facts}]
     o["summary"] = None
     try:
         s = future._json_call(system, json.dumps(facts), SUM_SCHEMA, max_tokens=300)["summary"]
+        s = style.proofread({"s": s}, lang).get("s", s)
         if len(s) <= 180 and all(n["status"] != "unverified" for n in verify.check(s, trace, [], lang)):
             o["summary"] = s
     except Exception as e:  # noqa: BLE001

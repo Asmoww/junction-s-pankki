@@ -10,7 +10,7 @@ import threading
 from datetime import date, timedelta
 from pathlib import Path
 
-from . import eu, future, insights, money, verify
+from . import eu, future, insights, money, style, verify
 from .money import TODAY, _month_start, _q, _r
 from .taxonomy import BASKETS
 
@@ -143,7 +143,7 @@ def captions(cid: str, lang: str = "en") -> dict:
               "caption per slide, max 50 characters, warm and a little playful, never shaming, never comparing the person "
               "to anyone except the 'twins' group in the facts. Each slide already shows its numbers as a chart, so write "
               "NO digits at all: say what it means or give a light nudge. 'guess' is about the first entry of top_extras "
-              "(shown after the person guesses; you don't know if they guessed right, so never say whether they did). 'habit' is about eating out costing hours of work: a gentle nudge to notice it, not praise. 'next' is one encouraging line about next_step.")
+              "(shown after the person guesses; you don't know if they guessed right, so never say whether they did). 'habit' is about eating out costing hours of work: a gentle nudge to notice it, not praise. 'next' is one encouraging line about next_step." + style.guide(lang))
     trace = [{"tool": "facts", "error": False, "result": f}]
     ok = lambda v: isinstance(v, str) and len(v) <= 60 and not any(ch.isdigit() for ch in v) and all(n["status"] != "unverified" for n in verify.check(v, trace, [], lang))
     try:
@@ -156,6 +156,7 @@ def captions(cid: str, lang: str = "en") -> dict:
             if all(caps.get(k) for k in CAPTIONS_SCHEMA["properties"]["captions"]["required"]):
                 break
         caps = {k: caps.get(k) for k in CAPTIONS_SCHEMA["properties"]["captions"]["required"]}
+        caps.update({k: v for k, v in style.proofread({k: v for k, v in caps.items() if v}, lang).items() if ok(v)})
         source = "ai"
     except Exception as e:  # noqa: BLE001
         log.warning("wrapped captions fallback: %s", e)
