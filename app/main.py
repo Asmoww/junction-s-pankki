@@ -130,7 +130,7 @@ def home(cid: str):
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
             "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid),
-            "health": insights.money_health(cid)}
+            "health": insights.money_health(cid), "year": wrapped.calendar(cid)}
 
 
 class PlayIn(BaseModel):

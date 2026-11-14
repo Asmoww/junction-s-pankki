@@ -38,7 +38,7 @@ body.e .msg.user { background: var(--g700); }
 .g .band { fill: var(--g500); opacity: .10; }
 .g .band.neg { fill: var(--neg); opacity: .08; }
 .g .scen { fill: none; stroke: var(--g900); stroke-width: 3.5; stroke-linecap: round; }
-.g .zero { stroke: var(--g100); stroke-width: 1.5; }
+.g .zero { stroke: #8aa597; stroke-width: 1.5; }
 .g .tick { font-size: 11px; fill: var(--muted); }
 .g .mk circle { fill: var(--g700); stroke: #fff; stroke-width: 3; }
 .g .mk path { fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -334,3 +334,16 @@ body.e #trust .link { padding: 0; margin-top: 8px; font-weight: 600; color: var(
 .pbtns { display: flex; gap: 10px; margin-top: 14px; } .pbtns button { flex: 1; padding: 16px 10px; border-radius: 999px; font-weight: 700; font-size: 16px; }
 .pbtns .pno { background: var(--g50); color: var(--ink); } .pbtns .pyes { background: #00843d; color: #fff; }
 @media (prefers-reduced-motion: reduce) { .pcard { animation: none; transition: none; } }
+
+/* Graph scale: zero always shown, euro gridlines, red zone below zero, payday amount at the line's end */
+#g .grid { stroke: #e3f1e8; stroke-width: 1; } #g .ylab { font-size: 11px; fill: #66786e; } #g .ylab.z { fill: #0f2219; font-weight: 600; }
+#g .redzone { fill: #c2402f; opacity: .06; } #g .endlab { font: 700 14px Geologica; fill: #00703c; } #g .endlab.neg { fill: #c2402f; }
+
+/* Money year card: a tiny calendar of the year, no-spend days lit */
+.mini.wrapcard { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; min-height: 118px; background: #003d25; }
+.mini.wrapcard .wtxt { display: flex; flex-direction: column; gap: 4px; } .mini.wrapcard b { font: 700 30px/1.05 Geologica; letter-spacing: -.5px; }
+.mini.wrapcard .go { align-self: flex-start; margin-top: 8px; padding: 7px 14px; border-radius: 999px; background: #fff; color: #003d25; font-size: 14px; font-weight: 700; }
+.ycal { display: flex; flex-direction: column; gap: 2px; flex: none; }
+.ycal span { display: flex; gap: 2px; } .ycal i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.14); }
+.ycal i.on { background: #8ee8b2; animation: wpop .3s var(--d) ease both; }
+@media (prefers-reduced-motion: reduce) { .ycal i.on { animation: none; } }

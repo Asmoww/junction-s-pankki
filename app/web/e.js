@@ -177,15 +177,23 @@ function graph() {
   const r = home.ribbon, W = Math.min(window.innerWidth, 480), H = 396, px = 20, top = 112, bot = 44;
   const past = r.past, base = fut.base.path, noext = fut.no_extras.path, sc = scen && scen.scenario ? scen.scenario.path : null;
   const all = [...past, ...base, ...noext, ...(sc || [])].map((p) => p.balance_eur);
-  let lo = Math.min(...all), hi = Math.max(...all);
-  if (lo > 0 && lo < 0.35 * hi) lo = 0;
-  const pad = Math.max(hi - lo, 1) * 0.08; lo -= pad; hi += pad;
+  // Zero is always on the scale, so the line's height means real money: a big balance sits high and flat, a shortfall
+  // dips into the red zone. Gridlines carry euro labels.
+  let lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const pad = Math.max(hi - lo, 1) * 0.08; lo -= lo < 0 ? pad : 0; hi += pad;
+  const step = (() => { const raw = (hi - lo) / 3, m = 10 ** Math.floor(Math.log10(raw)), f = raw / m; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * m; })();
   const n = past.length + base.length - 1, iT = past.length - 1;
   const X = (i) => px + (i * (W - 2 * px)) / n, Y = (v) => top + ((hi - v) / (hi - lo)) * (H - top - bot);
   const P = (arr, off) => arr.map((p, k) => [X(off + k), Y(p.balance_eur)]);
   const pPast = P(past, 0), todayPt = pPast[iT];
   const pBase = [todayPt, ...P(base, iT + 1)], pNo = [todayPt, ...P(noext, iT + 1)];
-  const neg = fut.base.runs_out, zeroY = lo < 0 && hi > 0 ? Y(0) : null;
+  const neg = fut.base.runs_out, zeroY = Y(0);
+  const grid = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    if (Math.abs(v) < step / 2) continue;
+    const lab = Math.abs(Y(v) - Y(past[0].balance_eur)) > 16;
+    grid.push(`<line class="grid" x1="${px}" x2="${W - px}" y1="${Y(v)}" y2="${Y(v)}"/>${lab ? `<text class="ylab" x="${px + 14}" y="${Y(v) - 4}">${v < 0 ? "−" : ""}${eur0(Math.abs(v))}</text>` : ""}`);
+  }
   const band = smooth(pNo) + " L" + [...pBase].reverse().map((q) => q.map((v) => v.toFixed(1)).join(",")).join(" L") + " Z";
   const ticks = [];
   for (let i = 0; i <= n; i += 7) ticks.push(`<text x="${X(i)}" y="${H - 14}" text-anchor="middle" class="tick">${day((past[i] || base[i - past.length]).date)}</text>`);
@@ -199,6 +207,8 @@ function graph() {
   }
   const end = pBase[pBase.length - 1];
   marks.push(`<g class="mk pay" transform="translate(${end[0]},${end[1]})"><circle r="9"/><path d="M0 4V-4M-3.5 -0.5L0 -4 3.5 -0.5"/></g>`);
+  const endV = (sc || base).at(-1).balance_eur, endY = sc ? Y(endV) : end[1];
+  marks.push(`<text class="endlab ${endV < 0 ? "neg" : ""}" x="${end[0] - 14}" y="${endY + (endY > zeroY - 30 && endV >= 0 ? -14 : 24)}" text-anchor="end">${endV < 0 ? "−" : ""}${eur0(Math.abs(endV))}</text>`);
   // AI notes: laid out after render in lanes above the line (layoutNotes), with a leader to the point.
   const nl = [];
   (notes ? notes.notes : []).forEach((nt) => {
@@ -210,8 +220,9 @@ function graph() {
   const scLine = sc ? `<path class="scen" d="${smooth([todayPt, ...P(sc, iT + 1)])}"/>` : "";
   const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
     <defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2e9c5e" stop-opacity=".22"/><stop offset="1" stop-color="#2e9c5e" stop-opacity="0"/></linearGradient></defs>
-    ${zeroY !== null ? `<line class="zero" x1="${px}" x2="${W - px}" y1="${zeroY}" y2="${zeroY}"/><text class="tick" x="${W - px}" y="${zeroY - 6}" text-anchor="end">0 €</text>` : ""}
-    <path d="${smooth(pPast)} L${todayPt[0]},${H - bot} L${pPast[0][0]},${H - bot} Z" fill="url(#ga)"/>
+    ${zeroY < H - bot ? `<rect class="redzone" x="${px}" y="${zeroY}" width="${W - 2 * px}" height="${H - bot - zeroY}"/>` : ""}
+    ${grid.join("")}<line class="zero" x1="${px}" x2="${W - px}" y1="${zeroY}" y2="${zeroY}"/><text class="ylab z" x="${px}" y="${zeroY - 4}">0 €</text>
+    <path d="${smooth(pPast)} L${todayPt[0]},${zeroY} L${pPast[0][0]},${zeroY} Z" fill="url(#ga)"/>
     <path class="band ${neg ? "neg" : ""}" d="${band}"/>
     <path class="base ${neg ? "neg" : ""} ${sc ? "dim" : ""}" d="${smooth(pBase)}"/>
     ${scLine}
@@ -287,6 +298,21 @@ function offersHtml(r) {
   return rows + none + nc + `<p class="omsg small">${E().sourceOnly}</p>`;
 }
 
+// Money year card: the whole year as a tiny calendar, one dot per day, no-spend days lit (a teaser for Wrapped)
+function wrapCard() {
+  const y = home.year || { start: "2025-10-01", days: "" }, d0 = new Date(y.start + "T12:00:00");
+  let rows = "", k = 0;
+  for (let mo = 0; mo < 12 && k < y.days.length; mo++) {
+    const n = new Date(d0.getFullYear(), d0.getMonth() + mo + 1, 0).getDate();
+    let dots = "";
+    for (let dd = 0; dd < n && k < y.days.length; dd++, k++) dots += y.days[k] === "1" ? `<i class="on" style="--d:${k * 2}ms"></i>` : "<i></i>";
+    rows += `<span>${dots}</span>`;
+  }
+  const yr = `${d0.getFullYear()}–${String(d0.getFullYear() + 1).slice(2)}`;
+  return `<button class="mini wrapcard" data-wrapped><span class="wtxt"><span class="t">${E().wr.card}</span><b>${yr}</b>
+    <span class="go">▶ ${E().wr.open}</span></span><span class="ycal" aria-hidden="true">${rows}</span></button>`;
+}
+
 function strip() {
   // Five cards, in order of what helps decide: play the next two weeks, what's safe, surprises, the three baskets, the year.
   // Persona-specific extras only where they belong (PSD2 for the customer whose salary moves away, live rules for the home buyer).
@@ -302,7 +328,7 @@ function strip() {
   cards.push(`<button class="mini" data-act="pot"><span class="t">${E().cards.pot}</span><b>${eur0(pot.average_per_month_last_12_eur)}</b><span class="s">${E().perMonth}</span>
     <div class="spark12">${pot.months.slice(-12).map((x) => `<i style="height:${Math.max(4, (x.eur / mx) * 100)}%"></i>`).join("")}<u style="bottom:${(pot.average_per_month_last_12_eur / mx) * 100}%"></u></div></button>`);
   cards.push(sortCard());
-  cards.push(`<button class="mini wrapcard" data-wrapped><span class="t">${E().wr.card}</span><b>${esc(day("2025-10-01"))} – ${esc(day(home.overview.customer.as_of))}</b><span class="go">${E().wr.open} ›</span></button>`);
+  cards.push(wrapCard());
   const psd2 = home.cards.find((c) => c.id === "psd2");
   if (psd2) cards.push(`<button class="mini" data-act="psd2"><span class="t">${E().cards.psd2}</span><b>${eur0(psd2.numbers.moved_to_other_bank_eur)}</b><span class="s">${E().moved}</span>
     <div class="flow"><i style="width:${Math.round(psd2.numbers.share_of_income * 100)}%"></i></div></button>`);

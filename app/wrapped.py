@@ -24,6 +24,15 @@ def _period():
     return _month_start(TODAY, 11), TODAY
 
 
+def calendar(cid: str) -> dict:
+    """The year as one character per day: "1" = no spending that day. Drawn on the Home card and in Wrapped."""
+    start, end = _period()
+    spend = {r["d"] for r in _q("SELECT DISTINCT tx_date d FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND kind = 'spend'",
+                                [cid, start, end])}
+    n = (end - start).days + 1
+    return {"start": start.isoformat(), "days": "".join("0" if (start + timedelta(days=i)) in spend else "1" for i in range(n))}
+
+
 def twins(cid: str, salary: float, age: int, start, end) -> dict | None:
     """People like you (same age decade, similar pay), split by whether they ever went below zero. Groups only."""
     lo_age = (age // 10) * 10
