@@ -434,3 +434,10 @@ body.e .detective .lmap { gap: 6px; margin: 10px 0 4px; } body.e .ltile { min-he
 body.e .detective .lmore { padding: 0; margin-top: 8px; font-weight: 600; color: var(--g700); text-align: left; }
 .pgap { margin: 4px 0 12px; padding: 12px 14px; border-radius: 14px; background: #fff7e6; border: 1px solid #f1d39b; }
 .pgap p { margin: 0 0 6px; font-size: 14px; line-height: 1.4; } .pgap .link { padding: 0; font-weight: 700; color: var(--g700); }
+/* Money fitness entry on Learn */
+.card.healthcard { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 14px 16px; }
+.healthcard .ring { flex: none; } .healthcard .hct { display: flex; flex-direction: column; gap: 2px; }
+.healthcard .t { font-size: 12px; color: var(--muted); } .healthcard b { font-size: 18px; } .healthcard .go { font-size: 14px; font-weight: 600; color: var(--g700); }
+#g .billpill .hic path { fill: none; stroke: var(--g900); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#g .billpill.neg .hic path { stroke: var(--neg); } #g .billpill .bolt { fill: var(--g900); } #g .billpill.neg .bolt { fill: var(--neg); }
+.healthcard .ring { margin-top: 0; }

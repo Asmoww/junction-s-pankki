@@ -26,7 +26,7 @@ const ES = {
       tap: "Tap to continue", scoreWhat: "Your money fitness out of 100, from four habits.", sumK: "Your year in one picture", posterTitle: "My money\nyear", posterTag: "#MoneyWrapped", pTop: "Top extra", pNoSpend: "No-spend days", pStreak: "Longest streak", pDays: (d) => `${d} days`, pPlus: "Months in plus", pMeals: "Meals out", pType: "Money type", pBest: "Best month", twinsHead: (a) => `people aged ${a} with pay like yours never went below zero`, youBelow: (d) => d ? `You were below zero on ${d} days.` : "Neither did you.", eatTimes: "Meals out a month", eatEur: "Eating out a month", ateK: "Eating out cost you", workDays: "working days", ateSub: (n, e, h) => `${n} meals · ${e} · ${h} hours of your pay`, plusMonths: "months ended with money left over", guessK: "Quick guess", guessQ: "Which extra cost you the most this year?", right: "Spot on.",
       wrong: (x, n) => `It was ${x}: ${n} times.`, inL: "In", outL: "Out", monthsK: "What was left each month", bestIn: (m) => `Best: ${m}`,
       otherWeeks: "Other weeks", paydayWeek: "Payday week" },
-    hk: { name: "Money fitness", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
+    hk: { lift: "What would lift it", name: "Money fitness", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
       tones: { comfort: "A tight year, and it can get better. One thing first.", encourage: (t) => `Up ${t} points in three months. Keep going.`,
         reassure: (t) => `Down ${t} points: surprise costs did that, and your buffer handled them.`, steady: "Steady. One thing could lift it.",
         gentle_warning: (t) => `Down ${t} points. Here's what slipped.`, celebrate: "Strong. Keep the habit." },
@@ -92,7 +92,7 @@ const ES = {
       tap: "Napauta jatkaaksesi", scoreWhat: "Raha-asioidesi kunto asteikolla 0–100, neljästä tavasta.", sumK: "Vuotesi yhdessä kuvassa", posterTitle: "Minun\nrahavuoteni", posterTag: "#Rahavuosi", pTop: "Ykkösextra", pNoSpend: "Päivää ilman ostoja", pStreak: "Pisin putki", pDays: (d) => `${d} päivää`, pPlus: "Kuukautta plussalla", pMeals: "Kertaa ulkona syömässä", pType: "Rahatyyppi", pBest: "Paras kuukausi", twinsHead: (a) => `${a}-vuotiasta kaltaisellasi palkalla ei käynyt kertaakaan miinuksella`, youBelow: (d) => d ? `Sinä olit miinuksella ${d} päivänä.` : "Et sinäkään.", eatTimes: "Kertaa ulkona kuussa", eatEur: "Ulkona syöminen kuussa", ateK: "Ulkona syöminen maksoi sinulle", workDays: "työpäivää", ateSub: (n, e, h) => `${n} kertaa · ${e} · ${h} tuntia palkkaasi`, plusMonths: "kuukautta päättyi plussalle", guessK: "Arvaa", guessQ: "Mikä extra maksoi sinulle eniten tänä vuonna?", right: "Juuri niin.",
       wrong: (x, n) => `Se oli ${x}: ${n} kertaa.`, inL: "Tuli", outL: "Meni", monthsK: "Mitä jäi kuukausittain", bestIn: (m) => `Paras: ${m}`,
       otherWeeks: "Muut viikot", paydayWeek: "Palkkaviikko" },
-    hk: { name: "Rahakunto", tiers: { vulnerable: "Haavoittuva", coping: "Pärjäävä", healthy: "Hyvä" },
+    hk: { lift: "Mikä sitä nostaisi", name: "Rahakunto", tiers: { vulnerable: "Haavoittuva", coping: "Pärjäävä", healthy: "Hyvä" },
       tones: { comfort: "Tiukka vuosi, ja se voi parantua. Yksi asia ensin.", encourage: (t) => `${t} pistettä ylös kolmessa kuussa. Hyvä suunta.`,
         reassure: (t) => `${t} pistettä alas: yllättävät menot tekivät sen, ja puskurisi kesti ne.`, steady: "Vakaa. Yksi asia voisi nostaa sitä.",
         gentle_warning: (t) => `${t} pistettä alas. Tässä mikä lipsui.`, celebrate: "Vahva. Jatka samaan malliin." },
@@ -158,7 +158,7 @@ const ES = {
       tap: "Tryck för att fortsätta", scoreWhat: "Din pengakondition på 0–100, från fyra vanor.", sumK: "Ditt år i en bild", posterTitle: "Mitt\npengaår", posterTag: "#Pengaåret", pTop: "Största extra", pNoSpend: "Dagar utan köp", pStreak: "Längsta svit", pDays: (d) => `${d} dagar`, pPlus: "Månader på plus", pMeals: "Gånger ute och åt", pType: "Pengatyp", pBest: "Bästa månaden", twinsHead: (a) => `personer i åldern ${a} med lön som din gick aldrig under noll`, youBelow: (d) => d ? `Du var under noll ${d} dagar.` : "Det gjorde inte du heller.", eatTimes: "Gånger ute i månaden", eatEur: "Äta ute i månaden", ateK: "Att äta ute kostade dig", workDays: "arbetsdagar", ateSub: (n, e, h) => `${n} gånger · ${e} · ${h} timmar av din lön`, plusMonths: "månader slutade med pengar kvar", guessK: "Gissa", guessQ: "Vilken extra kostade dig mest i år?", right: "Helt rätt.",
       wrong: (x, n) => `Det var ${x}: ${n} gånger.`, inL: "In", outL: "Ut", monthsK: "Vad som blev över varje månad", bestIn: (m) => `Bäst: ${m}`,
       otherWeeks: "Andra veckor", paydayWeek: "Löneveckan" },
-    hk: { name: "Pengakondition", tiers: { vulnerable: "Sårbar", coping: "Klarar sig", healthy: "Bra" },
+    hk: { lift: "Vad skulle höja den", name: "Pengakondition", tiers: { vulnerable: "Sårbar", coping: "Klarar sig", healthy: "Bra" },
       tones: { comfort: "Ett tufft år, och det kan bli bättre. En sak först.", encourage: (t) => `Upp ${t} poäng på tre månader. Fortsätt så.`,
         reassure: (t) => `Ner ${t} poäng: oväntade kostnader gjorde det, och din buffert klarade dem.`, steady: "Stabilt. En sak kunde lyfta det.",
         gentle_warning: (t) => `Ner ${t} poäng. Här är vad som halkade.`, celebrate: "Starkt. Fortsätt så." },
@@ -263,8 +263,8 @@ function graph() {
   const groups = [];
   for (const b of [...fut.bills].filter((b) => b.date !== fut.next_payday).sort((a, b) => a.date.localeCompare(b.date))) {
     const g = groups.at(-1);
-    if (g && (new Date(b.date) - new Date(g.date)) / 864e5 <= 4) { g.names.push(E().bills[b.bill] || b.bill); g.eur += b.eur; }
-    else groups.push({ date: b.date, names: [E().bills[b.bill] || b.bill], eur: b.eur });
+    if (g && (new Date(b.date) - new Date(g.date)) / 864e5 <= 4) { g.names.push(E().bills[b.bill] || b.bill); g.eur += b.eur; g.housing = g.housing || b.bill === "Housing"; }
+    else groups.push({ date: b.date, names: [E().bills[b.bill] || b.bill], eur: b.eur, housing: b.bill === "Housing" });
   }
   for (const g of groups) {
     const i = base.findIndex((q) => q.date === g.date); if (i < 0) continue;
@@ -274,7 +274,9 @@ function graph() {
     const my = y1 - y0 >= 30 ? (y0 + y1) / 2 : y0 - 22;
     let lx = xb + 10; if (lx + tw > W - px) lx = xb - 10 - tw;
     marks.push(`<g class="billpill ${neg ? "neg" : ""}" transform="translate(${lx.toFixed(1)},${(my - ph / 2).toFixed(1)})">
-      <rect width="${tw.toFixed(1)}" height="${ph}" rx="12"/><path transform="translate(15,12.5)" d="M-4.5 2V-1.5L0 -5.5 4.5 -1.5V4.5H-4.5Z"/>
+      <rect width="${tw.toFixed(1)}" height="${ph}" rx="12"/>${g.housing
+        ? `<g class="hic" transform="translate(15,12.5)"><path d="M-6 -0.2 L0 -5.6 L6 -0.2"/><path d="M-4.4 -1.4 V5 H4.4 V-1.4"/><path d="M-1.3 5 V1.7 H1.3 V5"/></g>`
+        : `<path class="bolt" transform="translate(15,12.5)" d="M1.2 -6 L-3.6 0.8 H-0.2 L-1.2 6 L3.6 -0.8 H0.2 Z"/>`}
       <text x="27" y="16.5">${esc(txt)}</text></g>`);
   }
   const end = pBase[pBase.length - 1];
@@ -858,6 +860,15 @@ function stepText(st) {
   return h.long_term(eur0(st.gap_eur_month));
 }
 
+// Money fitness lives on Learn (off Home since the Home trim): a compact card that opens the full sheet
+window.healthCard = function () {
+  const hk = home && home.health; if (!hk) return "";
+  const ring = `conic-gradient(var(--g700) ${hk.score * 3.6}deg, var(--g100) 0)`;
+  return `<button class="card healthcard" data-health><div class="ring" style="background:${ring}"><span>${hk.score}</span></div>
+    <span class="hct"><span class="t">${E().hk.name}</span><b>${E().hk.tiers[hk.tier]}</b><span class="go">${E().hk.lift} ›</span></span></button>`;
+};
+window.healthSheet = healthSheet;
+
 function healthSheet() {
   const hk = home.health, H = E().hk, t = Math.abs(Math.round(hk.trend_points));
   const tone = typeof H.tones[hk.tone] === "function" ? H.tones[hk.tone](t) : H.tones[hk.tone];
@@ -903,6 +914,10 @@ async function aiSwitch() {
   if (!window.aiInfo) { try { window.aiInfo = await api("/api/ai"); } catch { window.aiInfo = { eu: { configured: false }, voice: false }; } }
   const eu = window.aiInfo.eu, head = $("#lang").parentElement;
   if (!eu.configured || head.querySelector("#aichip")) return;
+  if (eu.forced) {  // Gemma only: a fixed badge, no switch
+    const b = document.createElement("span"); b.id = "aichip"; b.className = "aichip on"; b.textContent = `🇪🇺 ${E().euOn}`;
+    b.title = eu.label || ""; head.insertBefore(b, $("#lang")); return;
+  }
   const b = document.createElement("button"); b.id = "aichip"; b.className = "aichip";
   const paint = () => { const on = aiProvider() === "eu"; b.classList.toggle("on", on); b.textContent = on ? `🇪🇺 ${E().euOn}` : E().euOff; };
   b.onclick = () => {

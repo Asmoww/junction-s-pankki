@@ -29,8 +29,13 @@ def configured() -> bool:
     return bool(os.environ.get("EU_LLM_BASE_URL") and os.environ.get("EU_LLM_MODEL"))
 
 
+def forced() -> bool:
+    """AI_PROVIDER=eu in .env: every AI job runs on the EU model, whatever the request asks for (Claude disabled)."""
+    return os.environ.get("AI_PROVIDER", "").strip().lower() == "eu"
+
+
 def active() -> bool:
-    return provider.get() == "eu" and configured()
+    return (forced() or provider.get() == "eu") and configured()
 
 
 def cache_tag() -> str:
@@ -43,7 +48,8 @@ def label() -> str:
 
 
 def info() -> dict:
-    return {"configured": configured(), "label": label() if configured() else None, "model": os.environ.get("EU_LLM_MODEL")}
+    return {"configured": configured(), "forced": forced() and configured(), "label": label() if configured() else None,
+            "model": os.environ.get("EU_LLM_MODEL")}
 
 
 def _post(body: dict, timeout: float = 120) -> dict:

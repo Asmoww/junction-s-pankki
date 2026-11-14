@@ -522,6 +522,8 @@ def traps():
     f, g = ROOT / "state" / "traps.json", ROOT / "state" / "traps_eu.json"
     out = json.loads(f.read_text()) if f.exists() else {"runs": []}
     out["eu_runs"] = json.loads(g.read_text())["runs"] if g.exists() else []  # same suite on the EU-hosted open model
+    if eu.forced() and out["eu_runs"]:  # Gemma only: its score is the main one; Claude's is shown for comparison
+        out = {"runs": out["eu_runs"], "eu_runs": [], "claude_runs": out["runs"]}
     return out
 
 
