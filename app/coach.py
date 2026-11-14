@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import homeplan, insights, live, money, verify
+from . import homeplan, insights, live, money, readiness, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -99,6 +99,15 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"price": {"type": "number"},
                       "property_type": {"type": "string", "enum": ["apartment", "house"]}},
                       "required": ["price"], "additionalProperties": False}},
+    {"name": "home_readiness",
+     "description": "Can the customer buy a home at this price, when, and what is stopping them? Returns a range "
+                    "(earliest / likely / cautious months), the binding constraint, other constraints, monthly room "
+                    "after buying (today's Euribor + assumed margin, and the 6 % stress rate), the price reachable in "
+                    "2 and 5 years, the next best question, and which numbers are rules, assumptions or bank data. "
+                    "Prefer this over plan_home for 'can I / when can I buy a home' questions.",
+     "input_schema": {"type": "object", "properties": {"price": {"type": "number"},
+                      "property_type": {"type": "string", "enum": ["apartment", "house"]}},
+                      "required": ["price"], "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
                     "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
@@ -147,6 +156,7 @@ def calculate(cid: str, expression: str, what: str = "") -> dict:
 _FUNCS["calculate"] = calculate
 _FUNCS["check_purchase"] = lambda cid, item: live.check_purchase(item)
 _FUNCS["plan_home"] = homeplan.plan_home
+_FUNCS["home_readiness"] = readiness.home_readiness
 
 
 LANGS = {"en": "English. Format amounts like 1,234.50 €.",
@@ -172,6 +182,10 @@ Rules:
 - If the user is short of money or overdrawn, say so kindly and plainly, with one concrete next step.
 - Prices of things to buy and outside rules (loan cap, transfer tax, Euribor) come only from check_purchase and
   plan_home, with the shop or source named. If a value is unknown, say it is unknown; never use 0 or a guess.
+- Home questions: use home_readiness. Lead with the binding constraint in one sentence, then the range in months
+  ("likely about N months, between A and B"), never a single date. If likely is unknown, say it isn't reachable on
+  the current pace and give the reachable price instead. Say the stress formula is an assumption from the synthetic
+  data, not S-Bank credit policy, and that S-Bank decides. End with the tool's next_question.
 - Keep the two shortfalls apart: "at your usual pace" (get_payday_forecast, extras included) vs "even with no
   extras" (get_safe_to_spend). Say which one you mean.
 - Explain financial terms in plain language. Be warm and practical, never preachy.

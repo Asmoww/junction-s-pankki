@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, readiness  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -226,6 +226,15 @@ def live_apply(body: ApplyIn):
 def live_home(cid: str, price: float, property_type: str = "apartment"):
     try:
         return homeplan.plan_home(_cid(cid), price, property_type)
+    except money.ToolError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/readiness/{cid}")
+def home_readiness(cid: str, price: float, property_type: str = "apartment"):
+    """Plan tab hero: range, binding constraint, life after buying, next best question, provenance."""
+    try:
+        return readiness.home_readiness(_cid(cid), price, property_type)
     except money.ToolError as e:
         raise HTTPException(400, str(e))
 
