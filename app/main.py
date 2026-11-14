@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money, sorter, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, play, sorter, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -133,6 +133,24 @@ def home(cid: str):
             "health": insights.money_health(cid)}
 
 
+class PlayIn(BaseModel):
+    kept: list[str]
+    move_rent: bool = False
+    lang: str = "en"
+
+
+@app.get("/api/play/{cid}")
+def play_deal(cid: str, lang: str = "en"):
+    """Play your next two weeks: the cards, the no-extras line and the coach's suggested plan."""
+    cid = _cid(cid)
+    return {**play.deal(cid), "tip": play.tip(cid, lang if lang in ("en", "fi", "sv") else "en")}
+
+
+@app.post("/api/play/{cid}")
+def play_finish(cid: str, body: PlayIn):
+    return play.finish(_cid(cid), body.kept, body.move_rent, body.lang if body.lang in ("en", "fi", "sv") else "en")
+
+
 class SortIn(BaseModel):
     answers: dict[str, int]
     lang: str = "en"
@@ -204,6 +222,7 @@ def _warm_notes():
                 future.annotations(p["id"], lg)
                 wrapped.captions(p["id"], lg)
                 sorter.questions(p["id"], lg)
+                play.tip(p["id"], lg)
             except Exception as e:  # noqa: BLE001 (warm-up only)
                 logging.getLogger("notes").warning("warm-up failed for %s %s: %s", p["id"], lg, e)
 

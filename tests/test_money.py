@@ -176,3 +176,16 @@ def test_limit_works_through_the_tx_view():
     assert len(money._q("SELECT sub FROM tx WHERE customer_id = ? LIMIT 4", [EMMA])) == 4
     from app import wrapped
     assert len(wrapped.facts(EMMA)["top_extras"]) == 4
+
+
+def test_play_two_weeks_matches_the_forecast():
+    # Keep every card = the usual forecast; skip every extra = the no-extras line; Emma's rescue = skip extras + move rent.
+    from app import future, play
+    d = play.deal(EMMA)
+    f = future.future(EMMA)
+    extras = [c["id"] for c in d["cards"] if c["kind"] == "extra"]
+    assert play.outcome(EMMA, extras, False, d)["end_eur"] == pytest.approx(f["base"]["end_eur"], abs=0.05)
+    assert play.outcome(EMMA, [], False, d)["end_eur"] == pytest.approx(f["no_extras"]["end_eur"], abs=0.05)
+    rescue = play.outcome(EMMA, [], True, d)
+    assert rescue["end_eur"] > 0 and rescue["rent_moved_after_payday"]
+    assert all(c["kind"] != "extra" or c["basket"] == 3 for c in d["cards"])  # only extras are choices

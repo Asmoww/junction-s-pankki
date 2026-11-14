@@ -15,21 +15,23 @@ Phone screen mirrored (or Chrome device mode, Pixel 7, zoom 125 %). Emma, Englis
 | 0:00 | Home, Emma | "Emma, 23, first job. 699.85 € today. This line is her real balance since payday, and the dotted part is where it's heading." |
 | 0:15 | Point at the rent marker | "Rent, 763 € on 3 Oct, takes her below zero. On payday she'd be 997 € short." |
 | 0:30 | Point at the AI notes | "The AI reads her line: biggest day 205 € right after payday. Every number in a note is checked against her data before it's shown." |
-| 0:45 | Tap **Pause extras** | "Pause every extra: still 676 € short. It's not the coffee." |
-| 1:00 | Clear, tap **What if…**, type "What if I pause extras and pay rent after payday?" | "She asks in her own words. The AI turns it into a plan, code redraws the future." |
-| 1:10 | Line turns up, result **+87 €** | "Two moves, and she makes it to payday with 87 € left. That's literacy: she sees which basket sinks her." |
+| 0:45 | Tap **Play your next two weeks** | "Her likely next 15 days as cards. The three baskets are the rules: rent can't be skipped, surprises stay, extras are her choice." |
+| 0:55 | Skip a few extras (swipe left); the line moves but stays red | "Skip every coffee and dinner: still short. It's not the coffee." |
+| 1:05 | Rent card → **Pay after payday**; finish | "Timing is the lever. +87 € on payday, and the AI sums up what she did, every number checked." |
+| 1:15 | **Show on my graph** | "Her plan lands on the real forecast." |
 | 1:25 | **Check a purchase** → "iPhone 17 256 GB" | "Can she buy a phone? We check live prices, and every price is read from the shop's own page. Search engines guessed 879 € for a page that says 999 €; we only trust the page." |
 | 1:45 | Tap the 879 € offer | "Line drops to −1,876 €. Not this month." |
 | 2:00 | Coach tab: "Why am I always short before payday?" | "The coach answers from her data, draws the chart, and shows its work." Open **How I worked this out** → **What the AI saw**: "about 2 cents an answer, no name or account number ever sent." |
-| 2:30 | Learn tab → report card | "22 trick questions run against the live coach every night: 22/22, 92 of 92 numbers verified." |
+| 2:30 | Learn tab → report card → **See the questions** | "22 trick questions run against the live coach: 22/22, every number matched to her data." |
 | 2:45 | Close | "Built to live in S-mobiili: a push before payday, a card on the home screen, the rules from official sources. **See your money's future, and change it.**" |
 
 ## B. Table version (5-8 min, let the judge drive)
-1. Do A up to 1:10 (Emma, the two-move fix).
+1. Do A up to 1:15 (Emma plays her two weeks).
 2. **Hand the phone over**: "Type any what-if." Good prompts if they freeze: "concert tickets 150 € on Friday",
    "Mitä jos syön ulkona puolet vähemmän?" (Finnish works).
-3. **Rahakunto** (strip card): 19, "A tight year, one thing first: spend 206 € a month less to break even". Tap the
-   step: the coach takes over.
+3. **Your three baskets → Sort yours with the AI**: five of her own unclear buys and habits ("parking: commute or
+   convenience?"); her answers re-sort the baskets and safe-to-spend. Then **Your money year** (Wrapped) to close:
+   the guess, the work-days slide, the shareable poster.
 4. **Ville, 32**: "When can I buy a 250,000 € home?" → about 4 months. Open **Live rules**: loan cap 95 %
    (FIN-FSA, 30 Jun 2026), Euribor 3.293 %, transfer tax 1.5 % (vero.fi). "The planner reads live rules, so it
    wasn't stuck on last year's 90 % cap. And it shows the catch: 57,500 € of extra collateral."
@@ -39,6 +41,7 @@ Phone screen mirrored (or Chrome device mode, Pixel 7, zoom 125 %). Emma, Englis
 ## C. Prep checklist (the hour before)
 - [ ] Phone hotspot as backup network; laptop charged; screen mirroring tested.
 - [ ] Logged in on the demo device; Emma selected; language EN; home tab; no scenario active; chat empty.
+- [ ] Sort answers cleared for every persona (Sort → "Undo my answers", or `DELETE /api/sort/<id>`): the demo login is shared.
 - [ ] Warm everything once: open Emma, Ville, Jussi (AI notes are cached), ask the coach one question, run
       "Check a purchase: iPhone 17 256 GB" (page reads are reused for an hour, so the second run is faster).
 - [ ] Re-check rules in the Live rules sheet (shows fetched time).
