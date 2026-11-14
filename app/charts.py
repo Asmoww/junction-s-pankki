@@ -70,8 +70,8 @@ def show_chart(cid: str, kind: str, months: int = 12, category: str | None = Non
 
 
 def forecast_with_events(cid: str, events: list[dict], pause_extras: bool = False) -> dict:
-    """Costs or income the user tells us about, placed on their own dates. A cost after the next 7 days lowers what is
-    safe until payday, but not this week's figure; only costs inside the next 7 days do that."""
+    """Costs or income the user tells us about, placed on their own dates. One model gives both figures: the week is its
+    share of the until-payday money (income included); a cost after the next 7 days lowers safe-until-payday only."""
     sts = money.get_safe_to_spend(cid)
     payday = date.fromisoformat(sts["next_payday"]) if sts["next_payday"] else TODAY + timedelta(days=30)
     week_end = TODAY + timedelta(days=7)
@@ -92,7 +92,13 @@ def forecast_with_events(cid: str, events: list[dict], pause_extras: bool = Fals
     inc_before = sum(e["amount_eur"] for e in clean if e["kind"] == "income" and e["before_payday"])
     spend_week = sum(e["amount_eur"] for e in clean if e["kind"] == "spend" and e["in_next_7_days"])
     until_after = sts["safe_until_payday_eur"] - spend_before + inc_before
-    week_after = max(0.0, min(sts["safe_this_week_eur"] - spend_week, until_after))
+    # Same rule as get_safe_to_spend: the week gets its share of the money that must last until payday. Income
+    # joins that money (an extra 5,000 € raises the week too); costs inside the week count in full; costs after it
+    # only cap the figure.
+    days = sts["days_until_payday"] or 30
+    pool = sts["safe_until_payday_eur"] + inc_before
+    share = max(pool, 0) / days * min(7, days) if inc_before else sts["safe_this_week_eur"]
+    week_after = max(0.0, min(share - spend_week, until_after))
     f = future.future(cid, sc)
     return {"events": clean, "next_payday": sts["next_payday"],
             "safe_until_payday_before_eur": sts["safe_until_payday_eur"], "safe_until_payday_after_eur": _r(until_after),
@@ -100,5 +106,6 @@ def forecast_with_events(cid: str, events: list[dict], pause_extras: bool = Fals
             "costs_in_next_7_days_eur": _r(spend_week),
             "balance_at_payday_before_eur": f["base"]["end_eur"], "balance_at_payday_after_eur": f["scenario"]["end_eur"],
             "goes_below_zero_on_after": f["scenario"]["runs_out"],
-            "rule": "Costs after the next 7 days lower what is safe until payday, not this week's figure.",
+            "rule": ("This week's figure is its share of what must last until payday. Income before payday raises both "
+                     "figures; costs in the next 7 days count fully this week; later costs lower safe-until-payday only."),
             "_future": f}

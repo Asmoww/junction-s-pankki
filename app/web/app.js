@@ -76,7 +76,7 @@ function sliderWidget(a) {
     el.querySelector("input").addEventListener("input", upd); upd();
   });
   return `<div class="slider" id="${id}"><div>${T().slider(esc(label(a.area)))} <b class="pct"></b></div>
-    <input type="range" min="5" max="60" step="5" value="${a.cut_percent}"><div class="save"></div></div>`;
+    <input type="range" min="5" max="${a.cut_percent > 60 ? 100 : 60}" step="5" value="${a.cut_percent}"><div class="save"></div></div>`;
 }
 // Chart specs come from the show_chart tool (code computes every point); drawn as inline SVG.
 function chartSvg(spec) {

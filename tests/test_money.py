@@ -123,6 +123,18 @@ def test_charts_and_dated_events():
     assert f["safe_until_payday_after_eur"] == pytest.approx(f["safe_until_payday_before_eur"] - 150, abs=0.01)
 
 
+def test_extra_income_raises_both_figures_consistently():
+    # Outside browser test 14 Nov: Emma +5,000 € gave 4,324.29 € until payday but 0 € this week.
+    from app import charts
+    sts = money.get_safe_to_spend("CUST01610")
+    f = charts.forecast_with_events("CUST01610", [{"label": "Bonus", "amount": 5000, "date": "2026-10-01", "kind": "income"}])
+    days = sts["days_until_payday"]
+    assert f["safe_until_payday_after_eur"] == pytest.approx(sts["safe_until_payday_eur"] + 5000, abs=0.01)
+    assert f["safe_this_week_after_eur"] == pytest.approx(f["safe_until_payday_after_eur"] / days * min(7, days), abs=0.01)
+    g = charts.forecast_with_events(MIKKO, [{"label": "Concert", "amount": 80, "date": "2026-10-02"}])
+    assert g["safe_this_week_after_eur"] == pytest.approx(max(0, g["safe_this_week_before_eur"] - 80), abs=0.01)
+
+
 def test_verify_derived_sums_only_within_one_tool():
     from app import verify
     tr = [{"tool": "a", "error": False, "result": {"groceries": 397.73, "buffer": 163.30}},

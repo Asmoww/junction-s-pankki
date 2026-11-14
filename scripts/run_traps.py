@@ -41,8 +41,8 @@ def run_case(c):
     for rx in c.get("must_not", []):
         if re.search(rx, ans, re.I):
             failed.append(f"forbidden: {rx}")
-    return {"trap": c["trap"], "question": c["q"], "persona": c["persona"], "ok": not failed, "failed": failed,
-            "answer": ans, "tools": [t["tool"] for t in r.get("trace", [])],
+    return {"trap": c["trap"], "question": c.get("shown", c["q"]), "persona": c["persona"], "ok": not failed, "failed": failed,
+            "answer": ans if "shown" not in c else "(not stored: the question is hidden)", "tools": [t["tool"] for t in r.get("trace", [])],
             "numbers_total": len(nums), "numbers_verified": len(nums) - len(bad),
             "cost_usd": (r.get("usage") or {}).get("cost_usd", 0), "model": (r.get("usage") or {}).get("model", "")}
 
