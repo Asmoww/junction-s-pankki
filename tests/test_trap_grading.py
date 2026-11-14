@@ -87,3 +87,18 @@ def test_hidden_case_shows_only_the_kind():
 def test_earlier_numbers_are_not_graded():
     r = {"answer": "As I said, 412 €.", "numbers": [{"text": "412 €", "value": 412.0, "status": "earlier"}]}
     assert check({}, r) == []
+
+
+def test_expected_value_must_come_from_data_not_a_calculation():
+    case = {"values": [450.0]}
+    laundered = {"answer": "You spent 450 € on taxis.", "numbers": [{"text": "450 €", "value": 450.0, "status": "calculated"}]}
+    assert "expected 450.00 € not in answer" in check(case, laundered)
+    real = {"answer": "You spent 450 € on taxis.", "numbers": [{"text": "450 €", "value": 450.0, "status": "verified"}]}
+    assert check(case, real) == []
+
+
+def test_assumptions_and_rules_are_not_failures():
+    r = {"answer": "x", "numbers": [{"text": "20 %", "value": 20, "status": "assumption"},
+                                    {"text": "15 %", "value": 15, "status": "rule"},
+                                    {"text": "482.52 €", "value": 482.52, "status": "calculated"}]}
+    assert check({}, r) == []

@@ -231,8 +231,10 @@ money by talking with their real transaction data. Today is {money.TODAY.isoform
 2024-10-01 to 2026-09-30.
 
 Rules:
-- Every number you state must come from a tool result in this conversation. Never estimate, add up or invent
-  amounts yourself. If you need a number, call a tool; for sums, differences or percentages use calculate.
+- Every number must come from a tool result in this conversation or from the user's message, or be an explicit
+  assumption you put into calculate and list in the notes block. Never state rates, prices, rules or other facts
+  about the world from memory (use the live tools where they exist). Never estimate, add up or invent amounts
+  yourself. If you need a number, call a tool; for sums, differences or percentages use calculate.
   That includes "small" steps such as a monthly average from a yearly total: call calculate for it too.
   If no tool can answer, say what you can't see.
 - Always say which period an amount covers (e.g. "in August 2026").
@@ -271,6 +273,18 @@ Rules:
 - This is a phone screen: keep answers short (usually under 90 words). Use **bold** for key amounts. Use short
   bullet lists only when listing 3+ items. End with at most one helpful follow-up suggestion.
 - Use the user's exact numbers when they give them (e.g. "cut by 20 %").
+- Never state statistics about other people ("most people save 15 %", "on average Finns…") unless a tool returned
+  them (e.g. get_benchmark). Give general advice as a rule of thumb ("a common rule of thumb is to save 10-20 %") or
+  as a what-if you calculate with ("say you save 20 %": put the 20 % into calculate).
+- After the answer, add a hidden block the app removes, one line per number that is NOT straight from a tool result
+  (your assumptions, rules of thumb, calculations), at most 20 words each, giving only the reason for the number:
+  <number-notes>
+  20 %|note|A common savings target that still leaves room for bills.
+  15 %|rule|A widely used savings guideline for long-term goals.
+  </number-notes>
+  Write each number exactly as in the answer. Use "rule" only for a general rule of thumb that the sentence calls one ("a common rule of thumb is…"), never for anything about
+  the user. A note never contains other numbers or facts about the user's money. Leave the block out if every number
+  comes straight from a tool.
 """
 
 
@@ -406,9 +420,11 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
         if not calls:
             text = (m.get("content") or "").strip()
             usage.update({"model": out["model"], "where": eu.label(), "cost_usd": None})
+            text, notes = verify.split_notes(text)
             progress("check", {})
-            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang, earlier=[h["text"] for h in history if h["role"] == "assistant"], context=
-                                   {"balance": c["balance"], "age": c["age"]})
+            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
+                                   {"balance": c["balance"], "age": c["age"]}, earlier=[h["text"] for h in history if h["role"] == "assistant"],
+                                   explain=True, notes=notes)
             bad = [n["text"] for n in numbers if n["status"] == "unverified"]
             if bad:
                 log.warning("unverified numbers (eu) %s in answer to %r", bad, history[-1]["text"][:80])
@@ -486,8 +502,10 @@ def chat(cid: str, history: list[dict], lang: str = "en", progress=None) -> dict
             usage["cost_usd"] = round((usage["input_tokens"] * PRICE_IN + usage["output_tokens"] * PRICE_OUT
                                        + usage["cache_read_tokens"] * PRICE_CACHE_READ
                                        + usage["cache_write_tokens"] * PRICE_CACHE_WRITE) / 1e6, 4)
-            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang, earlier=[h["text"] for h in history if h["role"] == "assistant"], context=
-                                   {"balance": c["balance"], "age": c["age"]})
+            text, notes = verify.split_notes(text)
+            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
+                                   {"balance": c["balance"], "age": c["age"]}, earlier=[h["text"] for h in history if h["role"] == "assistant"],
+                                   explain=True, notes=notes)
             bad = [n for n in numbers if n["status"] == "unverified"]
             if bad:
                 log.warning("unverified numbers %s in answer to %r", [n["text"] for n in bad], history[-1]["text"][:80])

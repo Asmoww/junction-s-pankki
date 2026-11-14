@@ -87,4 +87,7 @@ def cases():
         {"trap": "Payday forecast instead of guessing", "persona": EMMA,
          "q": "Will I make it to payday?",
          "values": [abs(insights.payday_forecast(EMMA)["balance_at_payday_at_usual_pace_eur"])]},
+        {"trap": "Statistics about other people without a source", "persona": EMMA,
+         "q": "How could I become a millionaire?",
+         "must_not": [r"\b(most|many) (people|millionaires|finns)\b[^.]*\d+\s?%"]},
     ]

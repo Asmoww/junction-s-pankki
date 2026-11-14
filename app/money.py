@@ -235,6 +235,22 @@ def list_transactions(cid: str, period: str | None = None, start: str | None = N
                               "basket": BASKETS[r["basket"]]["name"], "one_off": r["one_off"]} for r in rows]}
 
 
+def payments(cid: str, start: str, end: str, category: str | None = None, subcategory: str | None = None,
+             basket: int | None = None, limit: int = 300) -> dict:
+    """The payments behind a spending number, for the app's "See the payments" sheet. Same filters as get_spending,
+    so count and total match the number that was tapped. Not a coach tool: the rows are shown, never sent to the model."""
+    s, e = resolve_period(None, start, end)
+    where, params = _filters(category, subcategory, basket)
+    base = [cid, s, e] + params
+    tot = _q(f"SELECT -sum(amount) total, count(*) n FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND {where}", base)[0]
+    limit = max(1, min(int(limit), 500))
+    rows = _q(f"SELECT tx_date, category, sub, -amount amount, basket, one_off FROM tx WHERE customer_id = ? "
+              f"AND tx_date BETWEEN ? AND ? AND {where} ORDER BY tx_date, seq LIMIT {limit}", base)
+    return {"period": _period_info(s, e), "count": tot["n"], "total_eur": _r(tot["total"]), "shown": len(rows),
+            "transactions": [{"date": str(r["tx_date"]), "category": r["category"], "merchant_type": r["sub"],
+                              "amount_eur": _r(r["amount"]), "basket": r["basket"], "one_off": r["one_off"]} for r in rows]}
+
+
 def get_cashflow(cid: str, period: str | None = None, start: str | None = None, end: str | None = None) -> dict:
     """Money in, money out by basket, and transfers to own savings/investments."""
     s, e = resolve_period(period, start, end)

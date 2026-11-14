@@ -20,7 +20,7 @@ for line in (ROOT / ".env").read_text().splitlines():
 from app import coach, eu  # noqa: E402
 EU = "--eu" in sys.argv
 from tests.traps.cases import cases  # noqa: E402
-from tests.traps.grade import check, public_reasons  # noqa: E402
+from tests.traps.grade import NOT_CLAIMS, check, public_reasons  # noqa: E402
 
 _hid_lock = threading.Lock()
 
@@ -46,7 +46,7 @@ def run_case(c):
         eu.provider.set("eu")
     r = coach.chat(c["persona"], [{"role": "user", "text": c["q"]}], c.get("lang", "en"))
     ans, failed = r["answer"], check(c, r)
-    nums = [n for n in r.get("numbers", []) if n["status"] not in ("suggestion", "yours", "earlier")]
+    nums = [n for n in r.get("numbers", []) if n["status"] not in NOT_CLAIMS]
     bad = [n for n in nums if n["status"] == "unverified"]
     if failed and "shown" in c:  # hidden question: keep the answer out of the app, but in a local file for debugging
         _save_hidden({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "eu": EU, "trap": c["trap"],

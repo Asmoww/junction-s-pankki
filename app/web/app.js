@@ -305,15 +305,157 @@ function md(text) {
   return html;
 }
 
-function markNumbers(html, numbers) {
+// Where a number comes from: green = your data, grey = your number, blue = assumption / calculation / rule of thumb,
+// amber = couldn't check. The colour comes from app/verify.py (code); the coach's note only explains, never recolours.
+const NUM_KIND = { verified: "data", rounded: "data", derived: "data", yours: "yours", assumption: "assumption",
+  calculated: "calculated", rule: "rule", earlier: "earlier", unverified: "unverified" };
+const NUM_SPARK = `<svg class="nspark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
+const ANSWERS = [];  // rendered answers, so a tapped number can read its tool result from the answer's trace
+function markNumbers(html, numbers, aid = -1) {
   let pos = 0;
-  for (const n of numbers || []) {
+  for (const [k, n] of (numbers || []).entries()) {
     const t = esc(n.text), i = html.indexOf(t, pos);
     if (i < 0) continue;
-    const span = `<span class="num ${n.status}" data-status="${n.status}" data-src="${esc(n.source || "")}">${t}</span>`;
+    const span = `<span class="num ${n.status}" role="button" tabindex="0" data-a="${aid}" data-i="${k}" data-status="${n.status}" data-src="${esc(n.source || "")}" data-note="${esc(n.note || "")}">${t}</span>`;
     html = html.slice(0, i) + span + html.slice(i + t.length); pos = i + span.length;
   }
   return html;
+}
+function numberBadges(nums) {
+  const S = T().ns, k = nums.map((n) => NUM_KIND[n.status] || "unverified");
+  const d = k.filter((x) => x === "data").length, a = k.filter((x) => ["assumption", "calculated", "rule"].includes(x)).length,
+    u = k.filter((x) => x === "unverified").length;
+  if (!d && !a && !u) return "";
+  let legend = "";
+  if (a || k.includes("yours")) {
+    let seen = false;
+    try { seen = localStorage.getItem("numLegend") === "1"; localStorage.setItem("numLegend", "1"); } catch { seen = false; }
+    if (!seen) legend = `<div class="nlegend">${S.legend.map((l, i) => `<span>${i < 3 ? `<i class="l${i}"></i>` : ""}${esc(l)}</span>`).join("")}</div>`;
+  }
+  return `<div class="nbadges">${d ? `<span class="nb data">${S.bData(d)}</span>` : ""}${a ? `<span class="nb asm">${S.bAsm(a)}</span>` : ""}${u ? `<span class="nb unch">${S.bUnch(u)}</span>` : ""}</div>${legend}`;
+}
+// "From your data", in plain words: what the number is, the period, how many payments, and the payments behind it.
+// Built by code from the tool's own inputs and results (never by the AI), so it can't misdescribe a number.
+const SHIELD = `<svg class="nshield" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 2 3.5v4C2 11 4.6 14 8 15c3.4-1 6-4 6-7.5v-4L8 1zm-1 10L4.3 8.3l1-1L7 9l3.7-3.7 1 1L7 11z"/></svg>`;
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function periodText(p) {
+  if (!p || !p.start) return "";
+  const s = new Date(p.start + "T12:00:00"), e = new Date(p.end + "T12:00:00");
+  const last = new Date(e.getFullYear(), e.getMonth() + 1, 0).getDate();
+  if (s.getDate() === 1 && s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear() && e.getDate() === last)
+    return s.toLocaleDateString(T().locale, { month: "long", year: "numeric" });
+  return `${day(p.start)} ${s.getFullYear() !== e.getFullYear() ? s.getFullYear() + " " : ""}– ${day(p.end)} ${e.getFullYear()}`;
+}
+function monthRange(ym, p) {
+  const [y, m] = ym.split("-").map(Number), a = `${ym}-01`, b = new Date(y, m, 0), z = `${ym}-${String(b.getDate()).padStart(2, "0")}`;
+  return { start: p && p.start > a ? p.start : a, end: p && p.end < z ? p.end : z };
+}
+const basketNo = (name) => [1, 2, 3].find((b) => I18N.en.baskets[b][0] === name || T().baskets[b][0] === name);
+const humanKey = (k) => { const w = String(k).replace(/\[\d+\]/g, "").split(".").pop().replace(/_eur$/, "").replace(/_/g, " "); return w.charAt(0).toUpperCase() + w.slice(1); };
+function describeSource(n, trace) {
+  const D = T().ds;
+  if (n.ti === undefined || n.ti === null || !trace || !trace[n.ti]) {
+    if (/^customer\.balance/.test(n.source || "")) return { what: D.balance, meta: [day("2026-09-30") + " 2026"] };
+    return { what: n.expression ? D.fromData : D.acct, meta: [] };
+  }
+  const t = trace[n.ti], inp = t.input || {}, res = t.result || {}, path = n.path || "", per = res.period;
+  const filt = { category: inp.category, subcategory: inp.subcategory, basket: inp.basket };
+  const flabel = inp.subcategory ? label(inp.subcategory) : inp.category ? label(inp.category) : inp.basket ? T().baskets[inp.basket][0] : D.all;
+  const list = (extra = {}, p = per) => (p ? { ...filt, ...extra, start: p.start, end: p.end } : null);
+  if (t.tool === "get_spending") {
+    if (path === "total_eur") return { what: flabel, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions };
+    if (path === "average_per_month_eur") return { what: `${D.avg}: ${flabel}`, meta: [periodText(per), D.months(per.months)], list: list(), count: res.transactions };
+    if (path.startsWith("one_off_large_purchases")) return { what: D.oneoff, meta: [periodText(per), D.pays(res.one_off_large_purchases.count)] };
+    if (path.startsWith("not_classifiable")) return { what: D.nomcc, meta: [periodText(per), D.pays(res.not_classifiable.count)] };
+    const m = path.match(/^breakdown\[(\d+)\]/);
+    if (m && res.breakdown && res.breakdown[+m[1]]) {
+      const row = res.breakdown[+m[1]], gb = inp.group_by, pays = D.pays(row.transactions), count = row.transactions;
+      if (gb === "month") { const p = monthRange(row.key, per); return { what: flabel, meta: [periodText(p), pays], list: list({}, p), count }; }
+      if (gb === "category") return { what: label(row.key), meta: [periodText(per), pays], list: list({ category: row.key }), count };
+      if (gb === "subcategory") return { what: label(row.key), meta: [periodText(per), pays], list: list({ subcategory: row.key }), count };
+      if (gb === "basket") { const b = basketNo(row.key); return { what: b ? T().baskets[b][0] : row.key, meta: [periodText(per), pays], list: b ? list({ basket: b }) : null, count }; }
+      if (gb === "weekday") {
+        const w = WEEKDAYS.indexOf(row.key), wd = w >= 0 ? new Date(2026, 0, 5 + w).toLocaleDateString(T().locale, { weekday: "long" }) : row.key;
+        return { what: `${flabel}, ${D.onDays(wd)}`, meta: [periodText(per), pays] };
+      }
+    }
+  }
+  if (t.tool === "get_cashflow") {
+    const map = { "income_eur.salary": D.salary, "income_eur.other_income": D.otherIncome, "income_eur.total": D.moneyIn, "spending_eur.total": D.all,
+      "income_minus_spending_eur": D.net, "balance_eur.start": D.balStart, "balance_eur.end": D.balEnd, "balance_eur.change": D.balChange };
+    const b = path.startsWith("spending_eur.") && basketNo(path.slice(13));
+    const what = map[path] || (b ? T().baskets[b][0] : path.startsWith("moved_to_own") ? D.saved : humanKey(path));
+    return { what, meta: [periodText(per)] };
+  }
+  if (t.tool === "get_three_baskets") {
+    const m = path.match(/^baskets\[(\d+)\](?:\.top\[(\d+)\])?/), bk = m && res.baskets && res.baskets[+m[1]];
+    if (bk) {
+      if (m[2] !== undefined && bk.top[+m[2]]) return { what: label(bk.top[+m[2]].merchant_type), meta: [periodText(per), D.pays(bk.top[+m[2]].transactions)] };
+      return { what: (path.includes("per_month") ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)] };
+    }
+  }
+  if (t.tool === "get_safe_to_spend") {
+    const m = path.match(/^steps\[(\d+)\]/);
+    if (m && res.steps && res.steps[+m[1]]) return { what: res.steps[+m[1]].step, meta: [] };
+  }
+  if (t.tool === "list_transactions") {
+    const m = path.match(/^transactions\[(\d+)\]/), tx = m && res.transactions && res.transactions[+m[1]];
+    if (tx) return { what: label(tx.merchant_type || tx.category), meta: [day(tx.time.slice(0, 10)) + " " + tx.time.slice(0, 4)] };
+  }
+  return { what: humanKey(path), meta: per ? [periodText(per)] : [] };
+}
+function techLine(n, trace) {
+  if (n.expression) return n.expression;
+  const t = trace && n.ti !== undefined && n.ti !== null ? trace[n.ti] : null;
+  if (!t) return n.source || "";
+  const args = Object.entries(t.input || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
+  return `${t.tool}(${args}) → ${n.path || ""}`;
+}
+function dataSheet(n, trace) {
+  const D = T().ds, d = describeSource(n, trace);
+  const partRows = [];
+  if (n.rounded_from !== undefined) partRows.push(`<div><span>${D.rounded}</span><span>${eur(n.rounded_from)}</span></div>`);
+  if (n.parts && n.parts.length) {
+    for (const p of n.parts) {
+      const pd = describeSource({ ...p, source: "" }, trace);
+      partRows.push(`<div><span>${p.op ? `${p.op} ` : ""}${esc(pd.what)}${pd.meta.filter(Boolean).length ? `<small>${esc(pd.meta.filter(Boolean).join(" · "))}</small>` : ""}</span><span>${eur(p.value)}</span></div>`);
+    }
+    partRows.push(`<div class="sum"><span>${D.together}</span><span>${eur(n.value)}</span></div>`);
+  }
+  const see = d.list && d.count && n.status !== "derived" ? `<button class="nsee" type="button">${D.see(d.count)}</button>` : "";
+  return { html: `<span class="nkind data">${SHIELD}${D.acct}</span><div class="nval">${esc(n.text)}</div><p class="nwhat">${esc(d.what)}</p>
+    ${d.meta.filter(Boolean).length ? `<p class="nfact">${esc(d.meta.filter(Boolean).join(" · "))}</p>` : ""}
+    ${partRows.length ? `<div class="nparts">${partRows.join("")}</div>` : ""}${see}
+    <details class="ntech"><summary>${D.details}</summary><code>${esc(techLine(n, trace))}</code></details>`, list: d.list };
+}
+async function paymentsSheet(n, trace, el) {
+  const D = T().ds, d = describeSource(n, trace), q = new URLSearchParams();
+  for (const [k, v] of Object.entries(d.list)) if (v !== undefined && v !== null && v !== "") q.set(k, v);
+  const s = sheet(`<div class="nsheet"><button class="nback" type="button">${D.back}</button><h2>${esc(d.what)}</h2><p class="nfact">${esc(d.meta.filter(Boolean).join(" · "))}</p><div class="swait"><span class="typing"><i></i><i></i><i></i></span></div></div>`);
+  s.querySelector(".nback").onclick = () => numberSheet(el);
+  let r;
+  try { r = await api(`/api/payments/${cid}?${q}`); } catch { s.querySelector(".swait").innerHTML = `<p class="sub">${T().failed || "Error"}</p>`; return; }
+  const rows = r.transactions.map((x) => { const dt = new Date(x.date + "T12:00:00");
+    return `<div class="nrow"><span class="nd"><b>${dt.getDate()}</b>${esc(dt.toLocaleDateString(T().locale, { weekday: "short" }))}</span>
+      <span class="nt">${esc(label(x.merchant_type || x.category))}<small>${esc(T().baskets[x.basket] ? T().baskets[x.basket][0] : D.card)}</small></span><span class="na">−${eur(x.amount_eur)}</span></div>`; }).join("");
+  const avg = n.path === "average_per_month_eur" ? `<div class="ntotal"><span>${D.avg}</span><span>${eur(n.value)}</span></div>` : "";
+  s.querySelector(".swait").outerHTML = `${rows}<div class="ntotal"><span>${D.total}</span><span>${eur(r.total_eur)}</span></div>${avg}
+    <p class="nfine">${D.noShop}${r.shown < r.count ? " " + D.shown(r.shown, r.count) : ""}</p>`;
+}
+function numberSheet(el) {
+  const r = ANSWERS[+el.dataset.a], n = r && r._nums ? r._nums[+el.dataset.i] : null;
+  const st = el.dataset.status, k = NUM_KIND[st] || "unverified", S = T().ns, src = el.dataset.src, note = el.dataset.note;
+  const nt = note ? `<div class="nnote"><span class="nh">${NUM_SPARK}${S.note}</span>${esc(note)}</div>` : "";
+  if (k === "data" && n) {
+    const ds = dataSheet(n, r.trace), s = sheet(`<div class="nsheet">${ds.html}${nt}</div>`);
+    const btn = s.querySelector(".nsee");
+    if (btn) btn.onclick = () => paymentsSheet(n, r.trace, el);
+    return;
+  }
+  const fact = k === "data" ? (st === "rounded" ? T().numRounded : st === "derived" ? T().numDerived : T().numVerified) : S["f" + k];
+  const work = src && k !== "yours" ? `<div class="nwork"><span>${S.how}</span><code>${esc(src)}</code></div>` : "";
+  const s = sheet(`<div class="nsheet"><span class="nkind ${k}">${S[k]}</span><div class="nval">${el.innerHTML}</div><p class="nfact">${esc(fact)}</p>${nt}${work}</div>`);
+  s.querySelector(".nsheet").addEventListener("click", closeSheet);
 }
 
 const TOOL_LABEL = {
@@ -336,15 +478,16 @@ function traceLine(t) {
 }
 
 function answerHtml(r) {
-  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion" && n.status !== "yours" && n.status !== "earlier"), v = nums.filter((n) => n.status !== "unverified").length;
-  const badge = nums.length ? `<div class="vbadge ${v === nums.length ? "all" : "some"}">${v === nums.length ? "✓" : "!"} ${T().verified(v, nums.length)}</div>` : "";
+  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion");
+  const badge = numberBadges(nums);
+  r._nums = nums; const aid = ANSWERS.push(r) - 1; if (aid >= 60) delete ANSWERS[aid - 60];
   const att = (r.attachments || []).map((a) => `<div class="att">${renderAttachment(a)}</div>`).join("");
   const u = r.usage || {}, pv = r.privacy || {};
   const how = r.trace && r.trace.length ? `<details class="how"><summary>${T().howWorked}</summary><ul class="trace">${r.trace.map(traceLine).join("")}</ul></details>` : "";
   const saw = u.model ? `<details class="how"><summary>${T().whatAiSaw}</summary><ul class="trace">
     <li><b>${T().model}</b>: ${esc(u.model)} · ${u.calls} × · ${nf(0).format(u.input_tokens + (u.cache_read_tokens || 0) + (u.cache_write_tokens || 0))} / ${nf(0).format(u.output_tokens)} ${T().tokens}</li>
     ${u.where ? `<li><b>${T().where}</b>: ${esc(u.where)}</li>` : `<li><b>${T().cost}</b>: $${(u.cost_usd || 0).toFixed(3)}</li>`}<li><b>${T().sent}</b>: ${esc(pv.sent)}</li><li><b>${T().neverSent}</b>: ${esc(pv.never_sent)}</li></ul></details>` : "";
-  return markNumbers(md(r.answer), nums) + listenBtn(r.answer) + att + badge + how + saw;
+  return markNumbers(md(r.answer), nums, aid) + listenBtn(r.answer) + att + badge + how + saw;
 }
 
 // Listen: the sentence read aloud (ElevenLabs), only when voice is connected on the server
@@ -505,10 +648,10 @@ $("#lang").addEventListener("click", () => {
 });
 document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
 document.addEventListener("click", (e) => {
-  const n = e.target.closest("#thread .num, #asks .num"); if (!n) return;
-  const st = n.dataset.status;
-  toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : st === "yours" ? `<b>${T().numYours}</b>` : st === "earlier" ? `<b>${T().numEarlier}</b>`
-    : `<b>${st === "verified" ? T().numVerified : st === "derived" ? T().numDerived : T().numRounded}</b><br><code>${esc(n.dataset.src)}</code>`);
+  const n = e.target.closest("#thread .num, #asks .num"); if (n) numberSheet(n);
+});
+document.addEventListener("keydown", (e) => {
+  const n = e.target.closest && e.target.closest("#thread .num, #asks .num"); if (n && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); numberSheet(n); }
 });
 
 (async () => {

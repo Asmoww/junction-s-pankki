@@ -13,7 +13,7 @@ import os
 import secrets
 from pathlib import Path
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -542,6 +542,16 @@ def traps():
     if eu.forced() and out["eu_runs"]:  # Gemma only: its score is the main one; Claude's is shown for comparison
         out = {"runs": out["eu_runs"], "eu_runs": [], "claude_runs": out["runs"]}
     return out
+
+
+@app.get("/api/payments/{cid}")
+def payments(cid: str, start: str, end: str, category: str | None = None, subcategory: str | None = None,
+             basket: int | None = Query(None, ge=1, le=3)):
+    """Payments behind a number in a coach answer ("See the payments")."""
+    try:
+        return money.payments(_cid(cid), start, end, category, subcategory, basket)
+    except money.ToolError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.get("/api/baskets/{cid}")
