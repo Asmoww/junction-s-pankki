@@ -199,16 +199,24 @@ function graph() {
   for (let i = 0; i <= n; i += 7) ticks.push(`<text x="${X(i)}" y="${H - 14}" text-anchor="middle" class="tick">${day((past[i] || base[i - past.length]).date)}</text>`);
   const marks = [];
   marks.push(`<g class="mk pay" transform="translate(${pPast[0][0]},${pPast[0][1]})"><circle r="9"/><path d="M0 4V-4M-3.5 -0.5L0 -4 3.5 -0.5"/></g>`);
-  for (const b of fut.bills) {
-    const i = base.findIndex((q) => q.date === b.date); if (i < 0 || b.date === fut.next_payday) continue;
-    const [x, y] = pBase[i + 1];
-    marks.push(`<g class="mk bill ${base[i].balance_eur < 0 ? "neg" : ""}" transform="translate(${x},${y})"><rect x="-8" y="-8" width="16" height="16" rx="5"/><path d="M-3.5 1.5V-1.5L0 -4 3.5 -1.5V3.5H-3.5Z"/></g>
-      <text class="mlab ${base[i].balance_eur < 0 ? "neg" : ""}" x="${x + 13}" y="${y + 4}">${esc((E().bills[b.bill] || b.bill))} ${eur0(b.eur)}</text>`);
+  // Bills within a few days of each other share one marker and one label ("Rent + bills 1,356 €"), so they never pile up.
+  const groups = [];
+  for (const b of [...fut.bills].filter((b) => b.date !== fut.next_payday).sort((a, b) => a.date.localeCompare(b.date))) {
+    const g = groups.at(-1);
+    if (g && (new Date(b.date) - new Date(g.date)) / 864e5 <= 4) { g.names.push(E().bills[b.bill] || b.bill); g.eur += b.eur; }
+    else groups.push({ date: b.date, names: [E().bills[b.bill] || b.bill], eur: b.eur });
+  }
+  for (const g of groups) {
+    const i = base.findIndex((q) => q.date === g.date); if (i < 0) continue;
+    const [x, y] = pBase[i + 1], neg = base[i].balance_eur < 0, txt = `${g.names.join(" + ")} ${eur0(g.eur)}`;
+    const left = x - 8 + txt.length * 7 > W - px;  // under the marker; right-aligned to it near the right edge
+    marks.push(`<g class="mk bill ${neg ? "neg" : ""}" transform="translate(${x},${y})"><rect x="-8" y="-8" width="16" height="16" rx="5"/><path d="M-3.5 1.5V-1.5L0 -4 3.5 -1.5V3.5H-3.5Z"/></g>
+      <text class="mlab ${neg ? "neg" : ""}" x="${left ? x + 8 : x - 8}" y="${y + 26}" text-anchor="${left ? "end" : "start"}">${esc(txt)}</text>`);
   }
   const end = pBase[pBase.length - 1];
   marks.push(`<g class="mk pay" transform="translate(${end[0]},${end[1]})"><circle r="9"/><path d="M0 4V-4M-3.5 -0.5L0 -4 3.5 -0.5"/></g>`);
   const endV = (sc || base).at(-1).balance_eur, endY = sc ? Y(endV) : end[1];
-  marks.push(`<text class="endlab ${endV < 0 ? "neg" : ""}" x="${end[0] - 14}" y="${endY + (endY > zeroY - 30 && endV >= 0 ? -14 : 24)}" text-anchor="end">${endV < 0 ? "−" : ""}${eur0(Math.abs(endV))}</text>`);
+  marks.push(`<text class="endlab ${endV < 0 ? "neg" : ""}" x="${end[0] + 8}" y="${endY - 16}" text-anchor="end">${endV < 0 ? "−" : ""}${eur0(Math.abs(endV))}</text>`);
   // AI notes: laid out after render in lanes above the line (layoutNotes), with a leader to the point.
   const nl = [];
   (notes ? notes.notes : []).forEach((nt) => {

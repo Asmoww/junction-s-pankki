@@ -347,3 +347,6 @@ body.e #trust .link { padding: 0; margin-top: 8px; font-weight: 600; color: var(
 .ycal span { display: flex; gap: 2px; } .ycal i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.14); }
 .ycal i.on { background: #8ee8b2; animation: wpop .3s var(--d) ease both; }
 @media (prefers-reduced-motion: reduce) { .ycal i.on { animation: none; } }
+
+/* Graph labels: a white halo so the line never cuts through the text */
+#g .mlab, #g .endlab, #g .ylab { paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
