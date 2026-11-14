@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import charts, drains, eu, homeplan, insights, live, money, psd2, saving, verify
+from . import learning, charts, drains, eu, homeplan, insights, live, money, psd2, saving, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -336,7 +336,7 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
             numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
                                    {"balance": c["balance"], "age": c["age"]})
             return {"answer": text, "trace": trace, "error": False, "model": out["model"], "numbers": numbers,
-                    "attachments": _attachments(trace), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
+                    "attachments": _attachments(trace), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
         for call in calls:
             fn = call.get("function", {})
             try:
@@ -406,7 +406,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
             if bad:
                 log.warning("unverified numbers %s in answer to %r", [n["text"] for n in bad], history[-1]["text"][:80])
             return {"answer": text, "trace": trace, "error": False, "model": resp.model, "numbers": numbers,
-                    "attachments": _attachments(trace), "usage": usage, "privacy": _privacy(trace), "lang": lang}
+                    "attachments": _attachments(trace), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang}
         results = []
         for u in uses:
             out, is_err = _run_tool(cid, u.name, dict(u.input))

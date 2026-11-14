@@ -65,3 +65,45 @@ new example."
 ## 4. Before claiming impact
 Measure on a few testers: first-try rate and revisit success (transfer), plus "did this feel judging?". Report it as
 a small usability sample, not proof of literacy gains (Codex's caution stands).
+
+## 5. Critical review (16:40): rewarding *wanting* to learn, within this challenge
+The brief's insight asks for a coach that "explains financial concepts in plain language" and judges "impact on
+financial literacy". The question Rasmus raised is sharper: reward the person for *wanting* to learn about their own
+money, not for finishing our homework.
+
+**What's wrong with the quest-only design (mine and Codex's):**
+- Three fixed quests feel like homework. They reward doing *our* questions, not asking *yours*. The brief's MyData line
+  ("explore their own data freely rather than fixed charts") points the other way.
+- Revisit-after-3-days and weekly goals can't be shown honestly in a 2-day demo where "today" is fixed at 30 Sep 2026.
+  Showing them needs a labelled demo clock, or they stay a roadmap slide.
+- A quest reward measures completion, not understanding. Judges can't see learning from a badge.
+
+**What fits better, and is now on this branch:**
+1. **Curiosity map.** Every coach tool belongs to one money concept (9: where money goes, baskets, spending room,
+   irregular costs, what-ifs, payday and forecast, how you compare, big decisions, saving). `coach.chat` now returns
+   `concepts` for each answer. The UI records five kinds of curiosity per concept: asked, opened the steps, tried a
+   what-if, corrected a basket, guessed before a reveal. Each (concept, kind) counts **once, ever**, so repeating a
+   question earns nothing; looking into a new corner of your own money lights it up. This rewards the person's own
+   questions inside the normal chat, which is the product.
+2. **Guess first, then see.** Any reveal (quest, Wrapped's top-extra game, a "guess first?" chip in chat) can record a
+   guess. The summary shows "earlier off by 62 %, lately off by 15 %" once there are 4 guesses. That's a learning
+   signal judges can watch improve inside one demo session, and it's the honest literacy metric: your sense of your
+   own money getting sharper.
+3. **Quests stay** as the optional "check yourself" on a lit concept (q1-q3), with feedback and retry.
+4. **Weekly goal counts any learning** (quests or newly explored concepts); nothing resets.
+**Guardrails kept:** no reward for spending less, earning more, buying products or sharing more data; nothing touches
+the money-fitness score; progress has no euros; hide / pause / reset always there.
+
+**Within the challenge constraints:** synthetic data and one shared login → progress per device id + persona;
+"today" fixed → no fake streaks; S-mobiili → in production the bank stores progress per customer. Idea for the pitch
+only (not built): S-Group's Bonus system could recognise learning milestones, never money outcomes; needs a
+compliance check before anyone promises it.
+
+**Demo (30 s):** ask the coach "Why am I short this month?" → the Spending room chip lights up → tap "How I worked
+this out" → second kind lit → "Guess first: what share went to extras?" → reveal → "Earlier off by 40 %, now 10 %".
+
+**UI to build (small):** a 9-dot curiosity map on the Learn tab (dots fill per kind seen); post
+`/api/learn/{cid}/curiosity` with `{device, event_id, concept, kind}` after each coach answer (`concepts`), on "How I
+worked this out", on a what-if, on a Sort answer; post `{metric, guess, actual}` after any guess game.
+Tests: `tests/test_learning.py` (12; curiosity can't be farmed, tools map to concepts, guesses get sharper, all
+languages).

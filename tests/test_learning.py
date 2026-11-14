@@ -72,3 +72,31 @@ def test_progress_contains_no_money():
 def test_every_language_has_every_string():
     keys = set(L.T["en"])
     assert all(set(L.T[l]) == keys for l in ("fi", "sv"))
+
+
+def test_curiosity_counts_each_new_corner_once():
+    s = L.new_state()
+    assert L.record_curiosity(s, event_id="c1", concept="spending_room", kind="asked", now=NOW)["new"]
+    assert not L.record_curiosity(s, event_id="c2", concept="spending_room", kind="asked", now=NOW)["new"]  # no farming
+    assert L.record_curiosity(s, event_id="c3", concept="spending_room", kind="opened_steps", now=NOW)["new"]
+    assert L.record_curiosity(s, event_id="c3", concept="spending_room", kind="opened_steps", now=NOW)["duplicate"]
+    c = L.summary(s, NOW)["curiosity"]
+    assert c["concepts_explored"] == 1 and c["explored_this_week"] == 1
+    assert L.summary(s, NOW)["this_week"] == 1
+
+
+def test_coach_tools_map_to_concepts():
+    assert L.concepts_for_tools(["get_safe_to_spend", "calculate", "simulate_cut"]) == ["spending_room", "what_if"]
+    assert set(L.TOOL_CONCEPT.values()) <= set(L.CONCEPTS)
+
+
+def test_guesses_show_getting_sharper():
+    s = L.new_state()
+    for i, (g, a) in enumerate([(100, 300), (150, 300), (260, 300), (290, 300)]):
+        L.record_guess(s, event_id=f"g{i}", metric="extras_share", guess=g, actual=a, now=NOW)
+    sh = L.summary(s, NOW)["curiosity"]["sharper"]
+    assert sh["earlier_off_by_pct"] > sh["lately_off_by_pct"]
+
+
+def test_curiosity_names_in_all_languages():
+    assert all(set(L.CONCEPT_NAMES[l]) == set(L.CONCEPTS) for l in ("en", "fi", "sv"))

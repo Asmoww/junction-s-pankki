@@ -250,6 +250,33 @@ def learn_answer(cid: str, body: LearnIn):
     return out
 
 
+class CuriosityIn(BaseModel):
+    device: str = Field(max_length=64)
+    event_id: str = Field(max_length=64)
+    concept: str | None = None
+    kind: str | None = None
+    metric: str | None = None
+    guess: float | None = None
+    actual: float | None = None
+
+
+@app.post("/api/learn/{cid}/curiosity")
+def learn_curiosity(cid: str, body: CuriosityIn):
+    """Record wanting to learn: a new concept asked about, steps opened, a what-if tried, a correction, or a guess."""
+    from datetime import datetime
+    c = _cid(cid)
+    st = learning.load(body.device, c)
+    if body.guess is not None and body.actual is not None and body.metric:
+        out = learning.record_guess(st, event_id=body.event_id, metric=body.metric, guess=body.guess,
+                                    actual=body.actual, now=datetime.now())
+    else:
+        out = learning.record_curiosity(st, event_id=body.event_id, concept=body.concept or "", kind=body.kind or "",
+                                        now=datetime.now())
+    if out.get("ok"):
+        learning.save(body.device, c, st)
+    return out
+
+
 @app.post("/api/learn/{cid}/settings")
 def learn_settings(cid: str, body: LearnSettingsIn):
     c = _cid(cid)

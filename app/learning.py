@@ -191,7 +191,7 @@ def quest(qid: str, facts: dict, lang: str = "en", revisit: bool = False) -> dic
 def new_state() -> dict:
     return {"concepts": {q: {"status": "not_explored", "first_try": None, "explained_at": None, "revisited_at": None,
                              "attempts": 0} for q in QUESTS},
-            "events": [], "awards": [], "weekly_goal": 2, "settings": {"show_points": False, "hide_rewards": False,
+            "events": [], "awards": [], "curiosity": {}, "guesses": [], "weekly_goal": 2, "settings": {"show_points": False, "hide_rewards": False,
                                                                        "pause_prompts": False}}
 
 
@@ -261,7 +261,9 @@ def summary(state: dict, now: datetime, lang: str = "en") -> dict:
            "weekly_goal": state["weekly_goal"], "quests_this_week": done_week,
            "weekly_note": "Missed weeks don't reset anything.",
            "revisits_due": [] if state["settings"]["pause_prompts"] else revisits_due,
-           "settings": state["settings"]}
+           "settings": state["settings"], "curiosity": curiosity_summary(state, now, lang)}
+    # Weekly goal counts any learning: a quest done or a new corner of your own money explored.
+    out["this_week"] = done_week + out["curiosity"]["explored_this_week"]
     if not hide:
         out["milestones"] = [{"key": k, "title": t[k], "reached": explained >= n} for n, k in MILESTONES]
         if state["settings"]["show_points"]:
@@ -276,6 +278,83 @@ def set_settings(state: dict, **kw) -> dict:
     if kw.get("weekly_goal") is not None:
         state["weekly_goal"] = max(1, min(3, int(kw["weekly_goal"])))
     return state
+
+
+# ---------- curiosity: reward wanting to learn, inside the normal app ----------
+# Every coach tool belongs to one money concept. When the coach answers with a tool, the UI records "asked" for that
+# concept; opening "How I worked this out" records "opened_steps"; a what-if records "tried_whatif"; a basket answer
+# in Sort records "corrected"; a guess before a reveal records "guessed". Each (concept, kind) counts once, ever:
+# you can't farm it by repeating a question, but every new corner of your own money you look into lights up.
+CONCEPTS = ["where_money_goes", "baskets", "spending_room", "irregular", "what_if", "forecast", "compare",
+            "big_decisions", "saving"]
+TOOL_CONCEPT = {
+    "get_spending": "where_money_goes", "list_transactions": "where_money_goes", "get_cashflow": "where_money_goes",
+    "show_chart": "where_money_goes", "get_monthly_drains": "where_money_goes", "get_other_accounts": "where_money_goes",
+    "get_three_baskets": "baskets", "get_safe_to_spend": "spending_room", "get_surprise_pot": "irregular",
+    "simulate_cut": "what_if", "forecast_with_events": "what_if", "get_payday_pattern": "forecast",
+    "get_payday_forecast": "forecast", "get_benchmark": "compare", "get_spender_type": "compare",
+    "get_spender_profile": "compare", "money_health": "compare", "check_purchase": "big_decisions",
+    "plan_home": "big_decisions", "home_readiness": "big_decisions", "plan_scenario": "what_if",
+    "get_safe_to_save": "saving",
+}
+CURIOSITY_KINDS = ["asked", "opened_steps", "tried_whatif", "corrected", "guessed"]
+CONCEPT_NAMES = {
+    "en": {"where_money_goes": "Where money goes", "baskets": "The three baskets", "spending_room": "Spending room",
+           "irregular": "Irregular costs", "what_if": "What-ifs", "forecast": "Payday and forecast",
+           "compare": "How you compare", "big_decisions": "Big decisions", "saving": "Saving"},
+    "fi": {"where_money_goes": "Mihin raha menee", "baskets": "Kolme koria", "spending_room": "Käyttövara",
+           "irregular": "Epäsäännölliset menot", "what_if": "Entä jos", "forecast": "Palkkapäivä ja ennuste",
+           "compare": "Vertailu muihin", "big_decisions": "Isot päätökset", "saving": "Säästäminen"},
+    "sv": {"where_money_goes": "Vart pengarna går", "baskets": "De tre korgarna", "spending_room": "Utrymme",
+           "irregular": "Oregelbundna kostnader", "what_if": "Tänk om", "forecast": "Lönedag och prognos",
+           "compare": "Jämförelse", "big_decisions": "Stora beslut", "saving": "Sparande"},
+}
+
+
+def concepts_for_tools(tools: list[str]) -> list[str]:
+    """Concepts touched by an answer (for coach.chat to return; the UI then records 'asked')."""
+    return sorted({TOOL_CONCEPT[t] for t in tools if t in TOOL_CONCEPT})
+
+
+def record_curiosity(state: dict, *, event_id: str, concept: str, kind: str, now: datetime) -> dict:
+    if concept not in CONCEPTS or kind not in CURIOSITY_KINDS:
+        return {"ok": False, "error": "unknown concept or kind"}
+    cur = state.setdefault("curiosity", {})
+    if any(e["id"] == event_id for e in state["events"]):
+        return {"ok": True, "duplicate": True}
+    state["events"].append({"id": event_id, "concept": concept, "kind": kind, "at": now.isoformat()})
+    seen = cur.setdefault(concept, {})
+    new = kind not in seen
+    if new:
+        seen[kind] = now.isoformat()
+    return {"ok": True, "duplicate": False, "new": new, "concept": concept, "kinds_seen": sorted(seen)}
+
+
+def record_guess(state: dict, *, event_id: str, metric: str, guess: float, actual: float, now: datetime) -> dict:
+    """A guess before a reveal (quest, Wrapped, or 'guess first' in chat). Stores how far off it was, so the person
+    can see their sense of their own money getting sharper. No penalty; the error is only shown to them."""
+    if any(e["id"] == event_id for e in state["events"]):
+        return {"ok": True, "duplicate": True}
+    state["events"].append({"id": event_id, "guess_metric": metric[:40], "at": now.isoformat()})
+    err = abs(guess - actual) / max(abs(actual), 1.0)
+    state.setdefault("guesses", []).append({"metric": metric[:40], "error": round(min(err, 5.0), 3), "at": now.isoformat()})
+    return {"ok": True, "duplicate": False, "off_by_pct": round(min(err, 5.0) * 100)}
+
+
+def curiosity_summary(state: dict, now: datetime, lang: str = "en") -> dict:
+    names = CONCEPT_NAMES.get(lang, CONCEPT_NAMES["en"])
+    cur = state.get("curiosity", {})
+    week = _week(now.date())
+    this_week = {c for c, kinds in cur.items() if any(_week(datetime.fromisoformat(t).date()) == week for t in kinds.values())}
+    g = [x["error"] for x in state.get("guesses", [])]
+    sharp = None
+    if len(g) >= 4:
+        h = len(g) // 2
+        sharp = {"earlier_off_by_pct": round(sum(g[:h]) / h * 100), "lately_off_by_pct": round(sum(g[h:]) / (len(g) - h) * 100)}
+    return {"map": [{"concept": c, "name": names[c], "kinds_seen": sorted(cur.get(c, {})), "lit": bool(cur.get(c))}
+                    for c in CONCEPTS],
+            "concepts_explored": sum(1 for c in CONCEPTS if cur.get(c)), "concepts_total": len(CONCEPTS),
+            "explored_this_week": len(this_week), "guesses": len(g), "sharper": sharp}
 
 
 # ---------- I/O (app only) ----------
