@@ -202,7 +202,7 @@ const ES = {
 };
 const E = () => ES[lang] || ES.en;
 const SPARK = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
-let fut = null, notes = null, active = null, scen = null, picked = null, liveSt = null, buyRes = null;
+let fut = null, notes = null, active = null, scen = null, picked = null, liveSt = null, buyRes = null, dockOpen = false;
 let range = "pay";            // Home trend line: "pay" (pay month + forecast, the original graph) or 3 / 12 / 24 months
 const histCache = {};
 const CART = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h2l1.6 7.2a1 1 0 0 0 1 .8h6.2a1 1 0 0 0 1-.8L14 5H4.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="13" r="1.2"/><circle cx="12" cy="13" r="1.2"/></svg>`;
@@ -340,7 +340,7 @@ function layoutNotes() {
 function resultRow() {
   const b = fut.base.end_eur, s = scen && scen.scenario;
   const cls = (v) => (v < 0 ? "neg" : "pos");
-  return `<div class="result"><span>${s ? E().payResultPlan(day(fut.next_payday)) : `${E().payResult(day(fut.next_payday))} <button class="whyb" data-why="${esc(hbT().end)}">${hbT().why}</button>`}</span>
+  return `<div class="result"${s ? "" : ` data-why="${esc(hbT().end)}" role="button"`}><span>${s ? E().payResultPlan(day(fut.next_payday)) : E().payResult(day(fut.next_payday))}</span>
     <span class="vals">${s ? `<s class="${cls(b)}">${eur0(b)}</s><b class="${cls(s.end_eur)}">${eur0(s.end_eur)}</b>
       <i class="${s.delta_at_payday_eur >= 0 ? "up" : "down"}">${s.delta_at_payday_eur >= 0 ? "+" : "−"}${eur0(Math.abs(s.delta_at_payday_eur))}</i>`
       : `<b class="${cls(b)}">${eur0(b)}</b>`}</span></div>`;
@@ -351,10 +351,12 @@ function dock() {
   if (picked !== null) chips.push(`<button class="chip ask" data-pick>${SPARK}${esc(E().ask(day(picked)))}</button>`);
   chips.push(`<button class="chip ai ${active === "ai" ? "on" : ""}" data-whatif>${SPARK}${active === "ai" && scen ? esc(scen.parsed.label) + ` <span class="x">×</span>` : E().whatIf}</button>`);
   chips.push(`<button class="chip buy ${active === "buy" ? "on" : ""}" data-buy>${CART}${active === "buy" && scen ? esc(scen.label) + ` <span class="x">×</span>` : E().buy}</button>`);
-  chips.push(`<button class="chip ${active === "preset" && presets.has("pause") ? "on" : ""}" data-sc="pause">${E().pause}</button>`);
-  if ((fut.extras_by_category_until_payday || {}).Restaurants) chips.push(`<button class="chip ${active === "preset" && presets.has("eat") ? "on" : ""}" data-sc="eat">${E().eatLess}</button>`);
-  if (fut.bills.some((b) => b.bill === "Housing" && b.date !== fut.next_payday)) chips.push(`<button class="chip ${active === "preset" && presets.has("rent") ? "on" : ""}" data-sc="rent">${E().rentLater}</button>`);
-  return `<div class="dock"><div class="chips">${chips.join("")}</div>
+  const pre = [];
+  pre.push(`<button class="chip ${active === "preset" && presets.has("pause") ? "on" : ""}" data-sc="pause">${E().pause}</button>`);
+  if ((fut.extras_by_category_until_payday || {}).Restaurants) pre.push(`<button class="chip ${active === "preset" && presets.has("eat") ? "on" : ""}" data-sc="eat">${E().eatLess}</button>`);
+  if (fut.bills.some((b) => b.bill === "Housing" && b.date !== fut.next_payday)) pre.push(`<button class="chip ${active === "preset" && presets.has("rent") ? "on" : ""}" data-sc="rent">${E().rentLater}</button>`);
+  const showPre = dockOpen || active === "preset";
+  return `<div class="dock"><div class="chips">${chips.join("")}</div><div class="chips presets" ${showPre ? "" : "hidden"}>${pre.join("")}</div>
     <form class="wi" hidden><span>${SPARK}</span><input maxlength="200" placeholder="${esc(E().whatIfPh)}"><button class="go" aria-label="Go">→</button></form>
     <div class="wimsg" hidden></div>
     <form class="wi buyf" hidden><span>${CART}</span><input maxlength="100" placeholder="${esc(E().buyPh)}"><button class="go" aria-label="Go">→</button></form>
@@ -484,7 +486,8 @@ function strip() {
   // The AI's order for this person (brief.py), when it has arrived; the code order otherwise
   const keys = ["play", "safe", "save", "pot", "drains", "sort", "wrap"];
   if (hb && hb.cards) { const rank = (k) => { const i = hb.cards.indexOf(k); return i < 0 ? 99 : i; };
-    const sorted = keys.map((k, i) => [k, cards[i]]).sort((a, b) => rank(a[0]) - rank(b[0])); cards.splice(0, cards.length, ...sorted.map((x) => x[1])); }
+    // Play stays first: it's the main way to try changes (and the demo's step at 1:00); the AI orders the rest
+    const sorted = keys.map((k, i) => [k, cards[i]]).sort((a, b) => (a[0] === "play" ? -1 : b[0] === "play" ? 1 : rank(a[0]) - rank(b[0]))); cards.splice(0, cards.length, ...sorted.map((x) => x[1])); }
   // PSD2: before consent, how much moves to the other bank; after it, the full picture across both banks
   const ps = home.psd2;
   if (ps && ps.connected) {
@@ -507,8 +510,9 @@ function strip() {
   }
   const lc = homeBuyer && liveSt && liveSt.cards && liveSt.cards[0];
   const top = lc ? `<button class="rulecard" data-rules>${SPARK}<span><b>${E().ruleChanged}</b> ${esc(lc.rule.replace(/_/g, " "))}: ${lc.before ?? "?"} → ${lc.after ?? "?"} · ${esc(host(lc.source_url))}</span></button>` : "";
-  const by = hb && hb.cards_by === "ai" ? `<p class="cardsby">${SPARK}${esc(hbT().cardsBy)}</p>` : "";
-  return top + by + `<div class="strip">${cards.join("")}</div>`;
+  const shown = cards.filter(Boolean), first = shown.slice(0, 3), rest = shown.slice(3);
+  return top + `<div class="strip">${first.join("")}</div>` + (rest.length ? `<div class="strip rest" ${cardsOpen ? "" : "hidden"}>${rest.join("")}</div>
+    <button class="morel" data-toggle="cards">${cardsOpen ? hbT().fewerC : hbT().moreC}</button>` : "");
 }
 
 function bindGraph(G) {
@@ -572,7 +576,9 @@ function bindDock() {
   bindOffers();
   d.querySelector("[data-whatif]").addEventListener("click", (e) => {
     if (active === "ai" && e.target.classList.contains("x")) { active = null; scen = null; return redraw(); }
-    form.hidden = !form.hidden; if (!form.hidden) form.querySelector("input").focus();
+    form.hidden = !form.hidden; dockOpen = !form.hidden;
+    d.querySelector(".presets").hidden = !dockOpen && active !== "preset";
+    if (!form.hidden) form.querySelector("input").focus();
   });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1230,23 +1236,23 @@ window.openPlay = openPlay;
 // "why" about exactly that. The AI also orders the cards below.
 const HB = {
   en: { title: "Questions about your money", next: "Ask next", cont: "Continue in Coach", byAi: "Picked and written by the AI from your numbers. Every number is checked.",
-    byRules: "From your numbers", cardsBy: "In the order that matters for you now", why: "Why?", other: "Ask something else",
+    byRules: "From your numbers", cardsBy: "In the order that matters for you now", why: "Why?", other: "Ask something else", moreQ: "More questions", fewerQ: "Fewer questions", moreC: "Show all cards", fewerC: "Show fewer cards",
     note: { biggest_day: (d) => `What did I spend on ${d}?`, big_day: (d) => `What did I spend on ${d}?`, below_zero: (d) => `Why does my balance go below zero around ${d}?`,
       payday: () => "Where did my last pay go?", no_spend_days: () => "What helped me have days with no spending?", payday_week: () => "Why do I spend more right after payday?" },
     bill: (n) => `Why does ${n} hit my balance before payday?`, end: "What decides how much I'll have on payday?" },
   fi: { title: "Kysymyksiä rahoistasi", next: "Kysy seuraavaksi", cont: "Jatka valmentajan kanssa", byAi: "Tekoäly valitsi ja kirjoitti lukujesi pohjalta. Jokainen luku on tarkistettu.",
-    byRules: "Lukujesi pohjalta", cardsBy: "Järjestyksessä, joka on sinulle nyt tärkein", why: "Miksi?", other: "Kysy jotain muuta",
+    byRules: "Lukujesi pohjalta", cardsBy: "Järjestyksessä, joka on sinulle nyt tärkein", why: "Miksi?", other: "Kysy jotain muuta", moreQ: "Lisää kysymyksiä", fewerQ: "Vähemmän kysymyksiä", moreC: "Näytä kaikki kortit", fewerC: "Näytä vähemmän kortteja",
     note: { biggest_day: (d) => `Mihin käytin rahaa ${d}?`, big_day: (d) => `Mihin käytin rahaa ${d}?`, below_zero: (d) => `Miksi saldoni menee miinukselle noin ${d}?`,
       payday: () => "Mihin viime palkkani meni?", no_spend_days: () => "Mikä auttoi minua pitämään ostottomia päiviä?", payday_week: () => "Miksi kulutan enemmän heti palkkapäivän jälkeen?" },
     bill: (n) => `Miksi ${n} osuu saldooni ennen palkkapäivää?`, end: "Mikä ratkaisee, paljonko minulla on palkkapäivänä?" },
   sv: { title: "Frågor om dina pengar", next: "Fråga härnäst", cont: "Fortsätt med coachen", byAi: "AI:n valde och skrev utifrån dina siffror. Varje siffra är kontrollerad.",
-    byRules: "Utifrån dina siffror", cardsBy: "I den ordning som spelar roll för dig nu", why: "Varför?", other: "Fråga något annat",
+    byRules: "Utifrån dina siffror", cardsBy: "I den ordning som spelar roll för dig nu", why: "Varför?", other: "Fråga något annat", moreQ: "Fler frågor", fewerQ: "Färre frågor", moreC: "Visa alla kort", fewerC: "Visa färre kort",
     note: { biggest_day: (d) => `Vad spenderade jag på ${d}?`, big_day: (d) => `Vad spenderade jag på ${d}?`, below_zero: (d) => `Varför går saldot på minus runt ${d}?`,
       payday: () => "Vart tog min senaste lön vägen?", no_spend_days: () => "Vad hjälpte mig att ha köpfria dagar?", payday_week: () => "Varför spenderar jag mer direkt efter lönen?" },
     bill: (n) => `Varför slår ${n} mot saldot före lönen?`, end: "Vad avgör hur mycket jag har på lönedagen?" },
 };
 const hbT = () => HB[lang] || HB.en;
-let hb = null, hbAsked = new Set(), hbBusy = false, hbLast = null;
+let hb = null, hbAsked = new Set(), hbBusy = false, hbLast = null, qsOpen = false, cardsOpen = false;
 const briefCache = {};
 const whyNote = (nt) => (hbT().note[nt.kind] ? hbT().note[nt.kind](day(nt.date)) : "");
 window.whyQ = (id) => { const all = hb ? [...hb.questions, ...hb.more] : []; const q = all.find((x) => x.id === id); return q ? q.text : ""; };
@@ -1255,14 +1261,16 @@ window.askHere = (q) => (tab === "home" && $("#asks") ? askHome(q) : ask(q));
 
 function briefHtml() {
   if (!hb) return `<div class="brief"><div class="skeleton" style="width:92%"></div><div class="skeleton" style="width:64%"></div></div>`;
-  return `<button class="brief" data-why="${esc(hb.questions[0] ? hb.questions[0].text : "")}">${SPARK}<span>${esc(hb.headline)}</span></button>
-    <p class="bysrc">${esc(hb.source === "ai" ? hbT().byAi : hbT().byRules)}</p>`;
+  return `<button class="brief" data-why="${esc(hb.questions[0] ? hb.questions[0].text : "")}" title="${esc(hb.source === "ai" ? hbT().byAi : hbT().byRules)}">${hb.source === "ai" ? SPARK : ""}<span>${esc(hb.headline)}</span></button>`;
 }
 function asksHtml() {
   const H = hbT();
-  const qs = hb ? hb.questions.map((q) => `<button class="askq${hbAsked.has(q.text) ? " done" : ""}" data-q="${esc(q.text)}">${SPARK}<span>${esc(q.text)}</span><em>›</em></button>`).join("")
-    : [1, 2, 3].map(() => `<div class="askq sk"><div class="skeleton"></div></div>`).join("");
-  return `<h3 class="asksT">${H.title}</h3><div class="askqs">${qs}</div><div class="hans" hidden></div>`;
+  const row = (q) => `<button class="askq${hbAsked.has(q.text) ? " done" : ""}" data-q="${esc(q.text)}">${SPARK}<span>${esc(q.text)}</span><em>›</em></button>`;
+  if (!hb) return `<h3 class="asksT">${H.title}</h3><div class="askqs">${[1, 2].map(() => `<div class="askq sk"><div class="skeleton"></div></div>`).join("")}</div><div class="hans" hidden></div>`;
+  const all = [...hb.questions, ...hb.more].slice(0, 6);
+  return `<h3 class="asksT">${H.title}</h3><div class="askqs">${all.slice(0, 2).map(row).join("")}
+    <div class="askmore" ${qsOpen ? "" : "hidden"}>${all.slice(2).map(row).join("")}</div>
+    ${all.length > 2 ? `<button class="morel" data-toggle="qs">${qsOpen ? H.fewerQ : H.moreQ}</button>` : ""}</div><div class="hans" hidden></div>`;
 }
 function nextQs(n = 2) {
   if (!hb) return [];
@@ -1319,6 +1327,12 @@ function paintBrief() {
 // One delegated handler for Home (it survives every repaint): questions, "why" taps, and "Continue in Coach"
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#view-home")) return;
+  const tg = e.target.closest("[data-toggle]");
+  if (tg) {  // "More questions" / "Show all cards": extra detail only when asked for
+    if (tg.dataset.toggle === "qs") { qsOpen = !qsOpen; tg.previousElementSibling.hidden = !qsOpen; tg.textContent = qsOpen ? hbT().fewerQ : hbT().moreQ; }
+    else { cardsOpen = !cardsOpen; tg.previousElementSibling.hidden = !cardsOpen; tg.textContent = cardsOpen ? hbT().fewerC : hbT().moreC; }
+    return;
+  }
   const w = e.target.closest("[data-why],[data-q]");
   if (w && (w.dataset.why || w.dataset.q)) { e.stopPropagation(); askHome(w.dataset.why || w.dataset.q); return; }
   if (e.target.closest("[data-cont]") && hbLast) {

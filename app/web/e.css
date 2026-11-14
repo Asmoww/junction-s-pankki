@@ -539,3 +539,11 @@ div.brief { display: block; } div.brief .skeleton { margin: 6px 0; }
 .whyb { margin-left: 4px; padding: 2px 9px; border-radius: 999px; background: var(--g50); color: var(--g700); font-size: 12px; font-weight: 600; vertical-align: 1px; }
 #g .note[data-why], #g .billpill[data-why] { cursor: pointer; pointer-events: auto; }
 .hnext .chip { display: inline-flex; gap: 7px; align-items: center; text-align: left; }
+/* Clean Home: extra detail only when asked for */
+.morel { display: block; margin: 2px auto 0; padding: 8px 14px; font: 600 14px Geologica, sans-serif; color: var(--g700); }
+#cards .morel { margin-top: 10px; }
+.strip.rest { margin-top: 10px; }
+.dock .presets { margin-top: 8px; }
+.result[data-why] { cursor: pointer; }
+.result[data-why] .vals::after { content: "›"; margin-left: 2px; font-size: 20px; color: var(--g500); }
+#view-home [hidden] { display: none !important; }
