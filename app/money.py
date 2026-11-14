@@ -32,12 +32,13 @@ _con.execute("SET memory_limit='300MB'; SET threads=2")
 # answers flow into baskets, safe-to-spend, forecasts and the coach.
 _con.execute("CREATE TABLE ov_tx (customer_id VARCHAR, seq BIGINT, basket INTEGER, PRIMARY KEY (customer_id, seq))")
 _con.execute("CREATE TABLE ov_sub (customer_id VARCHAR, sub VARCHAR, basket INTEGER, PRIMARY KEY (customer_id, sub))")
-_con.execute(f"""CREATE VIEW tx AS SELECT p.* REPLACE (CASE WHEN p.basket IS NULL THEN NULL
-                                                    ELSE coalesce(o1.basket, o2.basket, p.basket) END AS basket),
+# Scalar subqueries, not LEFT JOINs: with joins in this view DuckDB 2.0.0 ignored LIMIT in queries on tx.
+_con.execute(f"""CREATE VIEW tx AS SELECT p.* REPLACE (CASE WHEN p.basket IS NULL THEN NULL ELSE coalesce(
+                    (SELECT o.basket FROM ov_tx o WHERE o.customer_id = p.customer_id AND o.seq = p.seq),
+                    (SELECT o.basket FROM ov_sub o WHERE o.customer_id = p.customer_id AND o.sub = p.sub),
+                    p.basket) END AS basket),
                     p.basket AS data_basket
-             FROM '{DATA / 'tx.parquet'}' p
-             LEFT JOIN ov_tx o1 ON o1.customer_id = p.customer_id AND o1.seq = p.seq
-             LEFT JOIN ov_sub o2 ON o2.customer_id = p.customer_id AND o2.sub = p.sub""")
+             FROM '{DATA / 'tx.parquet'}' p""")
 _con.execute(f"CREATE TABLE cust AS SELECT * FROM '{DATA / 'customers.parquet'}'")
 # Per customer and month: spending per basket (one-offs kept separate) and income. Used for peers and baselines.
 CM_SQL = """

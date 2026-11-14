@@ -169,3 +169,10 @@ def test_basket_answers_flow_everywhere_and_reset(monkeypatch, tmp_path):
     assert r["after"]["safe_until_payday_eur"] < r["before"]["safe_until_payday_eur"]  # a must-pay leaves less room
     sorter.reset(EMMA)
     assert money.get_three_baskets(EMMA, "last_12_months")["baskets"] == before
+
+
+def test_limit_works_through_the_tx_view():
+    # Regression: with LEFT JOINs in the override view, DuckDB ignored LIMIT (Wrapped's guess showed 23 options).
+    assert len(money._q("SELECT sub FROM tx WHERE customer_id = ? LIMIT 4", [EMMA])) == 4
+    from app import wrapped
+    assert len(wrapped.facts(EMMA)["top_extras"]) == 4
