@@ -13,19 +13,21 @@ everything ends exactly where the usual forecast does.
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
 import logging
 import statistics
 import threading
 from datetime import timedelta
 from pathlib import Path
 
-from . import future, money, verify
+from . import future, live, money, verify
 from .money import TODAY, _q, _r
 
 log = logging.getLogger("play")
 CACHE = Path(__file__).resolve().parent.parent / "state" / "play_tips.json"
 _lock = threading.Lock()
 MAX_CARDS = 8
+TRANSPORT = ("Parking", "Taxis")  # habits a public-transport ticket can replace
 
 
 def _hourly(cid: str) -> float | None:
@@ -80,16 +82,28 @@ def deal(cid: str) -> dict:
                       "hours_of_work": round(rest / hour, 1) if hour else None})
     # dated cards in date order; the two whole-period cards first, everything-else last
     cards.sort(key=lambda c: (c["id"] not in ("ess", "sur"), c["id"] == "rest", c["date"] or ""))
+    # Swap: a live, official ticket price (Context.dev, hsl.fi) can replace the parking and taxi cards
+    swap, hsl = None, live.registry().get("hsl_30day_ab", {})
+    replaces = [c["id"] for c in cards if c["kind"] == "extra" and c["label"] in TRANSPORT]
+    if replaces and hsl.get("status") == "confirmed":
+        swap = {"label": "hsl_30day_ab", "price_eur": hsl["value"], "source_url": hsl["source_url"], "fetched_at": hsl.get("fetched_at"),
+                "valid_from": hsl.get("source_date"), "replaces": replaces, "replaced_eur": _r(sum(c["amount_eur"] for c in cards if c["id"] in replaces)),
+                "covers_until": (TODAY + timedelta(days=30)).isoformat(),
+                "hours_of_work": round(hsl["value"] / hour, 1) if hour else None}
     return {"days": days, "today": TODAY.isoformat(), "next_payday": payday.isoformat(), "balance_eur": comp["balance"],
             "no_extras_path": noext["path"], "keep_all_end_eur": base["end_eur"], "skip_all_end_eur": noext["end_eur"],
-            "cards": cards}
+            "cards": cards, "swap": swap}
 
 
-def outcome(cid: str, kept: list[str], move_rent: bool, d: dict | None = None) -> dict:
+def outcome(cid: str, kept: list[str], move_rent: bool, d: dict | None = None, swap: bool = False) -> dict:
     """Where the chosen plan lands, recomputed by the forecast engine."""
     d = d or deal(cid)
     byid = {c["id"]: c for c in d["cards"]}
     sc = {"pause_extras": True, "one_offs": [], "move_bills": []}
+    sw = d.get("swap") if swap else None
+    if sw:  # the ticket is bought tomorrow; the parking and taxi cards it replaces are gone
+        kept = [k for k in kept if k not in sw["replaces"]]
+        sc["one_offs"].append({"label": "ticket", "amount": sw["price_eur"], "date": (TODAY + timedelta(days=1)).isoformat()})
     for k in kept:
         c = byid.get(k)
         if not c or c["kind"] != "extra":
@@ -104,16 +118,18 @@ def outcome(cid: str, kept: list[str], move_rent: bool, d: dict | None = None) -
         sc["move_bills"].append({"bill": "Housing", "date": (TODAY + timedelta(days=d["days"] + 1)).isoformat()})
     r = future.simulate(cid, sc)
     kept_eur = sum(byid[k]["amount_eur"] for k in kept if k in byid and byid[k]["kind"] == "extra")
-    skipped = [c for c in d["cards"] if c["kind"] == "extra" and c["id"] not in kept]
+    skipped = [c for c in d["cards"] if c["kind"] == "extra" and c["id"] not in kept and not (sw and c["id"] in sw["replaces"])]
     return {"end_eur": r["end_eur"], "goes_below_zero_on": r["runs_out"], "extras_kept_eur": _r(kept_eur),
             "extras_skipped_eur": _r(sum(c["amount_eur"] for c in skipped)),
             "skipped": [{"what": c["label"], "date": c["date"], "eur": c["amount_eur"]} for c in skipped],
             "rent_moved_after_payday": move_rent, "keep_all_end_eur": d["keep_all_end_eur"], "next_payday": d["next_payday"],
+            "swapped_to_ticket": ({"ticket_eur": sw["price_eur"], "replaced_parking_and_taxis_eur": sw["replaced_eur"],
+                                   "source": urlparse(sw["source_url"]).netloc.removeprefix("www.")} if sw else None),
             "scenario": sc}
 
 
-TIP_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["skip", "move_rent", "tip"],
-              "properties": {"skip": {"type": "array", "items": {"type": "string"}}, "move_rent": {"type": "boolean"},
+TIP_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["skip", "move_rent", "swap", "tip"],
+              "properties": {"skip": {"type": "array", "items": {"type": "string"}}, "move_rent": {"type": "boolean"}, "swap": {"type": "boolean"},
                              "tip": {"type": "string"}}}
 
 
@@ -127,13 +143,15 @@ def tip(cid: str, lang: str = "en") -> dict | None:
     if key not in cache:
         lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
         system = (f"You coach a bank customer, in {lname}, before they plan their days until payday. Cards of kind 'extra' "
-                  "can be skipped; rent can be moved to after payday if 'movable'; fixed and buffer cards stay. Suggest the "
+                  "can be skipped; rent can be moved to after payday if 'movable'; fixed and buffer cards stay. If 'swap' is given, a "
+                  "public-transport ticket can replace the parking and taxi cards (set swap true if that helps). Suggest the "
                   "smallest plan that reaches payday at or above zero, keeping the extras that look most valued (frequent "
                   "habits) where possible. If skipping extras can't get there, say so and suggest moving rent. Return the "
                   "ids to skip, move_rent, and tip: one friendly line (max 110 characters) with NO digits, explaining the "
                   "idea (e.g. timing beats coffee).")
         facts = {k: d[k] for k in ("keep_all_end_eur", "skip_all_end_eur", "next_payday")}
         facts["cards"] = [{k: c.get(k) for k in ("id", "kind", "label", "date", "amount_eur", "movable")} for c in d["cards"]]
+        facts["swap"] = ({k: d["swap"][k] for k in ("price_eur", "replaces", "replaced_eur", "covers_until")} if d["swap"] else None)
         try:
             t = future._json_call(system, json.dumps(facts), TIP_SCHEMA, max_tokens=600)
         except Exception as e:  # noqa: BLE001
@@ -149,19 +167,20 @@ def tip(cid: str, lang: str = "en") -> dict | None:
     t = cache[key]
     ids = {c["id"] for c in d["cards"] if c["kind"] == "extra"}
     skip = [i for i in t["skip"] if i in ids]
-    o = outcome(cid, [i for i in ids if i not in skip], t["move_rent"], d)
-    return {"skip": skip, "move_rent": t["move_rent"], "tip": t["tip"], "end_eur": o["end_eur"]}
+    sw = bool(t.get("swap")) and bool(d["swap"])
+    o = outcome(cid, [i for i in ids if i not in skip], t["move_rent"], d, sw)
+    return {"skip": skip, "move_rent": t["move_rent"], "swap": sw, "tip": t["tip"], "end_eur": o["end_eur"]}
 
 
 SUM_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["summary"],
               "properties": {"summary": {"type": "string"}}}
 
 
-def finish(cid: str, kept: list[str], move_rent: bool, lang: str = "en") -> dict:
-    o = outcome(cid, kept, move_rent)
+def finish(cid: str, kept: list[str], move_rent: bool, lang: str = "en", swap: bool = False) -> dict:
+    o = outcome(cid, kept, move_rent, swap=swap)
     lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
     system = (f"In {lname}, write ONE short sentence (max 140 characters) summing up a customer's plan until payday: what "
-              "they skipped or moved and where they land. If they land below zero, be kind and name the one lever that "
+              "they skipped, swapped or moved and where they land. If they land below zero, be kind and name the one lever that "
               "would help most. At most two numbers, from the facts, rounded to whole euros like 87 €. Never judge.")
     facts = {k: v for k, v in o.items() if k != "scenario"}
     trace = [{"tool": "plan", "error": False, "result": facts}]

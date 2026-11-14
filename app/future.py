@@ -18,7 +18,7 @@ from pathlib import Path
 
 import anthropic
 
-from . import insights, money, verify
+from . import insights, live, money, verify
 from .money import TODAY, _month_start, _q, _r
 
 log = logging.getLogger("future")
@@ -114,8 +114,9 @@ SCENARIO_SCHEMA = {
                  "properties": {"category": {"type": "string", "enum": EXTRA_CATS}, "percent": {"type": "number"}}}},
         "move_bills": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["bill", "date"],
                        "properties": {"bill": {"type": "string", "enum": ["Housing", "Utilities"]}, "date": {"type": "string"}}}},
-        "one_offs": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["label", "amount", "date"],
-                     "properties": {"label": {"type": "string"}, "amount": {"type": "number"}, "date": {"type": "string"}}}},
+        "one_offs": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["label", "amount", "date", "lookup"],
+                     "properties": {"label": {"type": "string"}, "amount": {"type": ["number", "null"]}, "date": {"type": "string"},
+                                    "lookup": {"type": ["string", "null"], "description": "Only when the user gave no amount: a short shop search for the item, e.g. 'pesukone 8 kg'"}}}},
         "income": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["label", "amount", "date"],
                    "properties": {"label": {"type": "string"}, "amount": {"type": "number"}, "date": {"type": "string"}}}},
         "unsupported": {"type": ["string", "null"], "description": "One short plain sentence if it can't be done, else null."},
@@ -132,7 +133,9 @@ def parse_whatif(cid: str, text: str, lang: str = "en") -> dict:
     system = ("You turn a bank customer's what-if question into a scenario for a forecast engine. Use only what the "
               "user said; never invent amounts. Dates are ISO, from tomorrow to next payday; moving a bill to after "
               "payday means the day after next payday. "
-              "'Pause/stop/no extras' = pause_extras. 'Eat out less' = cuts on Restaurants. A purchase = one_offs; "
+              "'Pause/stop/no extras' = pause_extras. 'Eat out less' = cuts on Restaurants. A purchase = one_offs; if the user names "
+              "something to buy but no amount, set amount null and lookup to a short shop search for it (the app reads live "
+              "prices from shop pages); "
               "money coming in = income. Moving rent = move_bills Housing (only if that bill is before payday). If it can't "
               "be done (amount missing, no such bill), set unsupported to ONE short plain sentence (max 90 characters, "
               "no ISO dates, no technical words) in the label's language; otherwise null. "
@@ -142,9 +145,38 @@ def parse_whatif(cid: str, text: str, lang: str = "en") -> dict:
         sc["unsupported"] = sc["unsupported"].strip().strip("{}\"'").strip() or None
     # Amounts must come from the user's own words (verified the same way as coach answers).
     said = {float(x.replace(" ", "").replace(",", ".")) for x in re.findall(r"\d+(?:[.,]\d+)?", text)}
-    for k in ("one_offs", "income"):
-        sc[k] = [o for o in sc[k] if round(abs(float(o["amount"])), 2) in said]
-    return {"parsed": sc, **future(cid, sc)}
+    sc["income"] = [o for o in sc["income"] if o.get("amount") is not None and round(abs(float(o["amount"])), 2) in said]
+    # A purchase without an amount gets a live price confirmed on a shop page (Context.dev), or the app asks for it.
+    keep, prices = [], []
+    for o in sc["one_offs"]:
+        if o.get("amount") is not None:
+            if round(abs(float(o["amount"])), 2) in said:
+                keep.append(o)
+            continue
+        r = None
+        if o.get("lookup"):
+            try:
+                r = live.cached_purchase(o["lookup"], max_age_h=1)
+            except (live.LiveUnavailable, ValueError) as e:
+                log.info("no live price for %r: %s", o["lookup"], e)
+        if r and r.get("confirmed"):
+            best = r["confirmed"][0]  # the cheapest price confirmed on a shop's own page
+            o["amount"] = best["price_eur"]
+            prices.append({"item": r["item"], "price_eur": best["price_eur"], "shop": best["domain"], "url": best["url"],
+                           "offers_confirmed": len(r["confirmed"]), "checked_at": r["checked_at"]})
+            name = o.get("label") or r["item"]
+            name = name if len(name) <= 18 else name[:18].rsplit(" ", 1)[0] + "…"
+            sc["label"] = f"{name} {best['price_eur']:.0f} € · {best['domain']}"
+            keep.append(o)
+        else:
+            sc["unsupported"] = NO_PRICE.get(lang, NO_PRICE["en"]).format(item=o.get("label") or o.get("lookup") or "")
+    sc["one_offs"] = keep
+    return {"parsed": sc, "live_prices": prices, **future(cid, sc)}
+
+
+NO_PRICE = {"en": "I couldn't confirm a price for {item}. Add the amount, e.g. '{item} 150 €'.",
+            "fi": "En saanut varmistettua hintaa: {item}. Lisää summa, esim. '{item} 150 €'.",
+            "sv": "Jag kunde inte bekräfta ett pris för {item}. Lägg till beloppet, t.ex. '{item} 150 €'."}
 
 
 FACTS_HELP = "Facts are computed from the customer's data; every number you write must appear in them."

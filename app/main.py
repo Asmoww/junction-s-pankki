@@ -130,12 +130,13 @@ def home(cid: str):
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
             "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid),
-            "health": insights.money_health(cid), "year": wrapped.calendar(cid)}
+            "health": insights.money_health(cid), "year": wrapped.calendar(cid), "surprise_example": live.surprise_example()}
 
 
 class PlayIn(BaseModel):
     kept: list[str]
     move_rent: bool = False
+    swap: bool = False
     lang: str = "en"
 
 
@@ -148,7 +149,7 @@ def play_deal(cid: str, lang: str = "en"):
 
 @app.post("/api/play/{cid}")
 def play_finish(cid: str, body: PlayIn):
-    return play.finish(_cid(cid), body.kept, body.move_rent, body.lang if body.lang in ("en", "fi", "sv") else "en")
+    return play.finish(_cid(cid), body.kept, body.move_rent, body.lang if body.lang in ("en", "fi", "sv") else "en", body.swap)
 
 
 class SortIn(BaseModel):
@@ -216,6 +217,12 @@ def whatif(body: WhatIfIn):
 
 
 def _warm_notes():
+    if os.environ.get("CONTEXT_DEV_API_KEY"):  # live prices used on Home and in the game, refreshed once a day
+        for f in (lambda: live.surprise_example(fetch=True), lambda: live.refresh_rule("hsl_30day_ab")):
+            try:
+                f()
+            except Exception as e:  # noqa: BLE001 (warm-up only)
+                logging.getLogger("live").warning("live warm-up failed: %s", e)
     for p in PERSONAS:
         for lg in ("en", "fi", "sv"):
             try:

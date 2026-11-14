@@ -12,6 +12,9 @@ github.com/context-dot-dev/context-python-sdk).
 | Home planner (`app/homeplan.py`) | none (reads the registry) | cap, transfer tax and Euribor only from confirmed rules, else unknown; Mikko 250 k reproduces the dry-run table | built + test |
 | Monitors → card | `monitors.create` (page, semantic, daily, webhook) · `monitors.run` + `retrieve_run` (demo control) | webhook HMAC-SHA256 (`t.` + body), 5 min tolerance, dedupe on `X-Context-Id`; rule re-read on change | built; live |
 | Coach tools | `check_purchase`, `plan_home` | prices and rules only from these tools; unknown said as unknown | built; live (says unknown without the key) |
+| **Swap card in "Play your next two weeks"** (core flow) | rules registry entry `hsl_30day_ab`: `web.search` on hsl.fi → `web.scrape formats.json` | parking and taxi cards can be swapped for the live HSL 30-day ticket price (73.90 €, hsl.fi, 2026 fares); the forecast line redraws; the coach's plan may suggest it; also shown on the parking/taxi questions in Sort with the AI | built + test; live 14 Nov |
+| **"What if…" without a number** (core flow, the graph) | `check_purchase` (answers → scrape product), cached 1 h | the AI marks a purchase with no amount for lookup; code confirms the cheapest price on a shop page and redraws the line, chip shows price and shop; if nothing is confirmed the app asks for the amount (never a guess) | built; live: washing machine 499 € (euronics.fi), AirPods Pro 2 219 € (verkkokauppa.com); events and trips are not product pages, so they ask for the amount |
+| **Surprise basket made concrete** | `check_purchase("pesukone 8 kg")`, refreshed daily by the warm-up, Home reads the cache only | Surprises sheet: "a washing machine costs 449 € today (karkkainen.com, westerlund.tv): about one every 2 months of your surprise pot" | built; live |
 
 
 Original options note (2026-11-14, before the build). The challenge needs at least one Context.dev

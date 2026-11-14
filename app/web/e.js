@@ -9,7 +9,7 @@ const ES = {
       ruleExtra: "An everyday extra: your choice. Swipe or tap.", ruleBuffer: "The dentist, a broken phone: surprises come anyway, so this stays.",
       ruleFixed: "A fixed must-pay: it can't be skipped.", ruleRent: "You can't skip rent, but you can ask to pay it after payday.",
       skip: "Skip", keep: "Keep", move: "Pay after payday", payOnTime: "Pay on time", ok: "OK", win: "You made it to payday", lose: "Still short on payday",
-      skipped: "Extras skipped", rentMoved: "Rent moved", yes: "Yes", no: "No", showGraph: "Show on my graph", again: "Play again", planLabel: "Your two-week plan" },
+      skipped: "Extras skipped", rentMoved: "Rent moved", yes: "Yes", no: "No", showGraph: "Show on my graph", again: "Play again", altLine: (p, src) => `An HSL 30-day ticket costs ${p} today (${src})`, swapBtn: (p) => `Swap parking and taxis for an HSL ticket, ${p}`, swapNote: (d, src) => `30 days, until ${d} · price read live from ${src}`, swappedT: "Swapped to a ticket", planLabel: "Your two-week plan" },
     so: { card: "Your three baskets", cardB: "Where does your money really go?", go: "Sort yours with the AI", loading: "Finding the spending only you can sort…",
       none: "Nothing unclear to sort right now.", title: "Sort your money", intro: "Everything you spend lands in one of three baskets. We sorted most of it; a few things only you can sort.",
       start: (n) => `Start · ${n} questions`, habit: (n, t) => `${n} times · ${t} in 12 months`, now: (b) => `Counted now as: ${b}`, next: "Next",
@@ -60,7 +60,7 @@ const ES = {
       ruleExtra: "Arjen extra: sinun valintasi. Pyyhkäise tai napauta.", ruleBuffer: "Hammaslääkäri, rikkinäinen puhelin: yllätyksiä tulee joka tapauksessa, joten tämä pysyy.",
       ruleFixed: "Kiinteä pakollinen: sitä ei voi ohittaa.", ruleRent: "Vuokraa ei voi ohittaa, mutta sen maksua voi pyytää siirtämään palkkapäivän jälkeen.",
       skip: "Ohita", keep: "Pidä", move: "Maksa palkan jälkeen", payOnTime: "Maksa ajallaan", ok: "OK", win: "Pääsit palkkapäivään", lose: "Palkkapäivänä yhä miinuksella",
-      skipped: "Ohitetut extrat", rentMoved: "Vuokra siirretty", yes: "Kyllä", no: "Ei", showGraph: "Näytä kuvaajassa", again: "Pelaa uudelleen", planLabel: "Kahden viikon suunnitelmasi" },
+      skipped: "Ohitetut extrat", rentMoved: "Vuokra siirretty", yes: "Kyllä", no: "Ei", showGraph: "Näytä kuvaajassa", again: "Pelaa uudelleen", altLine: (p, src) => `HSL:n 30 päivän lippu maksaa tänään ${p} (${src})`, swapBtn: (p) => `Vaihda pysäköinti ja taksit HSL-lippuun, ${p}`, swapNote: (d, src) => `30 päivää, ${d} asti · hinta luettu suoraan: ${src}`, swappedT: "Vaihdettu lippuun", planLabel: "Kahden viikon suunnitelmasi" },
     so: { card: "Kolme koriasi", cardB: "Mihin rahasi oikeasti menevät?", go: "Lajittele omasi tekoälyn kanssa", loading: "Etsitään menoja, jotka vain sinä voit lajitella…",
       none: "Ei nyt mitään epäselvää lajiteltavaa.", title: "Lajittele rahasi", intro: "Jokainen menosi päätyy yhteen kolmesta korista. Lajittelimme suurimman osan; muutaman asian voit lajitella vain sinä.",
       start: (n) => `Aloita · ${n} kysymystä`, habit: (n, t) => `${n} kertaa · ${t} 12 kuukaudessa`, now: (b) => `Nyt laskettu: ${b}`, next: "Seuraava",
@@ -111,7 +111,7 @@ const ES = {
       ruleExtra: "Ett vardagsextra: ditt val. Svep eller tryck.", ruleBuffer: "Tandläkaren, en trasig telefon: överraskningar kommer ändå, så den stannar.",
       ruleFixed: "Ett fast måste: kan inte hoppas över.", ruleRent: "Hyran kan inte hoppas över, men du kan be att få betala efter lönen.",
       skip: "Hoppa över", keep: "Behåll", move: "Betala efter lönen", payOnTime: "Betala i tid", ok: "OK", win: "Du klarade lönedagen", lose: "Fortfarande minus på lönedagen",
-      skipped: "Överhoppade extra", rentMoved: "Hyran flyttad", yes: "Ja", no: "Nej", showGraph: "Visa i grafen", again: "Spela igen", planLabel: "Din tvåveckorsplan" },
+      skipped: "Överhoppade extra", rentMoved: "Hyran flyttad", yes: "Ja", no: "Nej", showGraph: "Visa i grafen", again: "Spela igen", altLine: (p, src) => `Ett HSL-kort för 30 dagar kostar ${p} i dag (${src})`, swapBtn: (p) => `Byt parkering och taxi mot ett HSL-kort, ${p}`, swapNote: (d, src) => `30 dagar, till ${d} · priset läst direkt från ${src}`, swappedT: "Bytt till ett kort", planLabel: "Din tvåveckorsplan" },
     so: { card: "Dina tre korgar", cardB: "Vart går dina pengar egentligen?", go: "Sortera dina med AI:n", loading: "Letar efter utgifter som bara du kan sortera…",
       none: "Inget oklart att sortera just nu.", title: "Sortera dina pengar", intro: "Allt du spenderar hamnar i en av tre korgar. Vi sorterade det mesta; några saker kan bara du sortera.",
       start: (n) => `Börja · ${n} frågor`, habit: (n, t) => `${n} gånger · ${t} på 12 månader`, now: (b) => `Räknas nu som: ${b}`, next: "Nästa",
@@ -710,6 +710,7 @@ async function openSort() {
     box.innerHTML = `<div class="sdots">${cards.map((_, k) => `<i class="${k < i ? "done" : k === i ? "on" : ""}"></i>`).join("")}</div>
       <div class="smeta"><b>${esc(label(c.merchant_type))}</b><span>${meta(c)}</span></div>
       <p class="snow">${esc(S.now(T().baskets[c.data_basket][0]))}</p>
+      ${c.live_alternative ? `<p class="salt">🚌 ${esc(E().pl.altLine(eur(c.live_alternative.price_eur), host(c.live_alternative.source_url)))}</p>` : ""}
       <p class="sq">${SPARK}<span>${esc(c.question)}</span></p>
       <div class="sans">${[1, 2, 3].map((b) => `<button data-b="${b}"><i style="background:${BASKET_COLORS[b]}"></i><span>${esc(c.answers[b])}<small>${esc(T().baskets[b][0])}</small></span></button>`).join("")}</div>
       <div class="slesson"></div>`;
@@ -768,15 +769,16 @@ async function openPlay() {
   root.querySelector(".wx").onclick = () => root.remove();
   let d; try { d = await api(`/api/play/${cid}?lang=${lang}`); } catch { root.remove(); return; }
   const cards = d.cards, extras = cards.filter((c) => c.kind === "extra"), rent = cards.find((c) => c.movable);
-  const skip = new Set(); let moveRent = false, i = 0;
+  const skip = new Set(), sw = d.swap; let moveRent = false, swapped = false, i = 0;
   const NAMES = { groceries: [S.groceries, "🛒"], surprises: [S.surprises, "🧰"], Housing: [S.rent, "🏠"], Utilities: [S.bills, "💡"], everything_else: [S.rest, "🧾"] };
   const nameOf = (c) => (NAMES[c.label] || [label(c.label), EMOJI[c.label] || "🛍️"]);
   const wday = (iso) => new Date(iso + "T12:00:00").toLocaleDateString(T().locale, { weekday: "short", day: "numeric", month: "short" });
   // The line: the engine's no-extras line, minus the extras kept, plus rent if it moves past payday (same as the server)
   const line = () => d.no_extras_path.map((p, k) => {
     let v = p.balance_eur;
+    if (swapped) v -= sw.price_eur;  // the ticket is bought tomorrow, the first day on the line
     for (const c of extras) {
-      if (skip.has(c.id)) continue;
+      if (skip.has(c.id) || (swapped && sw.replaces.includes(c.id))) continue;
       if (c.id === "rest") v -= (c.amount_eur / d.days) * (k + 1); else if (c.date <= p.date) v -= c.amount_eur;
     }
     if (moveRent && rent && rent.date <= p.date) v += rent.amount_eur;
@@ -802,24 +804,32 @@ async function openPlay() {
       <button class="btn" data-start>${S.start(cards.length)}</button>`;
     body.querySelector("[data-start]").onclick = () => { i = 0; card(); };
     const tb = body.querySelector("[data-tip]");
-    if (tb) tb.onclick = () => { skip.clear(); t.skip.forEach((s) => skip.add(s)); moveRent = t.move_rent; chart(); end(); };
+    if (tb) tb.onclick = () => { skip.clear(); t.skip.forEach((s) => skip.add(s)); moveRent = t.move_rent; swapped = !!t.swap; chart(); end(); };
   };
-  const next = () => { i++; chart(); if (i < cards.length) card(); else end(); };
+  const next = () => {
+    i++; chart();
+    while (i < cards.length && swapped && sw.replaces.includes(cards[i].id)) i++;  // covered by the ticket
+    if (i < cards.length) card(); else end();
+  };
   const card = () => {
     const c = cards[i], [nm, em] = nameOf(c);
     const rule = c.kind === "extra" ? S.ruleExtra : c.kind === "buffer" ? S.ruleBuffer : c.movable ? S.ruleRent : S.ruleFixed;
     const btns = c.kind === "extra" ? `<button class="pno" data-a="skip">✕ ${S.skip}</button><button class="pyes" data-a="keep">✓ ${S.keep}</button>`
       : c.movable ? `<button class="pno" data-a="move">${S.move}</button><button class="pyes" data-a="ok">${S.payOnTime}</button>`
       : `<button class="pyes wide" data-a="ok">${S.ok}</button>`;
+    const offerSwap = sw && !swapped && sw.replaces[0] === c.id;
     body.innerHTML = `<div class="pprog">${i + 1}/${cards.length}</div>
       <div class="pcard k${c.basket}"><span class="pchip"><i></i>${esc(T().baskets[c.basket][0])}</span><span class="pem">${em}</span>
         <b class="plabel">${esc(nm)}</b><span class="pdate">${c.date ? esc(wday(c.date)) : S.wholePeriod}</span>
         <span class="pamt">${eur0(c.amount_eur)}</span>${c.hours_of_work ? `<span class="phrs">${esc(S.hours(nf(1).format(c.hours_of_work)))}</span>` : ""}
         <p class="prule">${rule}</p></div>
-      <div class="pbtns">${btns}</div>`;
+      <div class="pbtns">${btns}</div>
+      ${offerSwap ? `<button class="pswap" data-a="swap"><span>🚌 ${S.swapBtn(eur(sw.price_eur))}</span>
+        <small>${esc(S.swapNote(day(sw.covers_until), host(sw.source_url)))}</small></button>` : ""}`;
     const el = body.querySelector(".pcard");
     const act = (a) => {
       if (a === "skip") skip.add(c.id); if (a === "keep") skip.delete(c.id); if (a === "move") moveRent = true; if (a === "ok" && c.movable) moveRent = false;
+      if (a === "swap") { swapped = true; sw.replaces.forEach((r) => skip.delete(r)); }
       el.classList.add(a === "skip" || a === "move" ? "out-l" : "out-r"); setTimeout(next, 220);
     };
     body.querySelectorAll("[data-a]").forEach((b) => (b.onclick = () => act(b.dataset.a)));
@@ -833,14 +843,15 @@ async function openPlay() {
   const end = async () => {
     const kept = extras.filter((c) => !skip.has(c.id)).map((c) => c.id);
     body.innerHTML = `<div class="swait"><span class="typing"><i></i><i></i><i></i></span></div>`;
-    let r; try { r = await api(`/api/play/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kept, move_rent: moveRent, lang }) }); }
+    let r; try { r = await api(`/api/play/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kept, move_rent: moveRent, swap: swapped, lang }) }); }
     catch { body.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
     const ok = r.end_eur >= 0;
     body.innerHTML = `<h2 class="${ok ? "win" : "lose"}">${ok ? S.win : S.lose}</h2>
       ${r.summary ? `<p class="sq">${SPARK}<span>${esc(r.summary)}</span></p>` : ""}
-      <div class="sch"><div><span>${S.skipped}</span><b>${eur0(r.extras_skipped_eur)}</b></div><div><span>${S.rentMoved}</span><b>${r.rent_moved_after_payday ? S.yes : S.no}</b></div></div>
+      <div class="sch"><div><span>${S.skipped}</span><b>${eur0(r.extras_skipped_eur)}</b></div><div><span>${S.rentMoved}</span><b>${r.rent_moved_after_payday ? S.yes : S.no}</b></div>
+      ${r.swapped_to_ticket ? `<div class="wide"><span>🚌 ${S.swappedT}</span><b>${eur(r.swapped_to_ticket.ticket_eur)} · ${esc(r.swapped_to_ticket.source)}</b></div>` : ""}</div>
       <div class="actions"><button class="btn" data-graph>${S.showGraph}</button><button class="btn ghost" data-again>${S.again}</button></div>`;
-    body.querySelector("[data-again]").onclick = () => { skip.clear(); moveRent = false; chart(); intro(); };
+    body.querySelector("[data-again]").onclick = () => { skip.clear(); moveRent = false; swapped = false; chart(); intro(); };
     body.querySelector("[data-graph]").onclick = async () => {
       const f = await api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_id: cid, scenario: r.scenario }) });
       scen = { ...f, parsed: { label: S.planLabel } }; active = "ai"; root.remove(); setTab("home"); redraw();

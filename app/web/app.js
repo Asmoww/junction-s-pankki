@@ -222,10 +222,18 @@ function showNotif(c) {
   setTimeout(() => { n.classList.remove("in"); setTimeout(() => (n.hidden = true), 400); }, 6500);
 }
 
+// Basket 2 made concrete with a live price (Context.dev): what one washing machine costs today, vs the surprise pot
+function washBlock() {
+  const ex = home.surprise_example, avg = home.pot.average_per_month_last_12_eur;
+  if (!ex || !(avg > 0)) return "";
+  return `<div class="liveex"><span class="em">🧺</span><div><b>${esc(T().liveWash(eur0(ex.low_eur)))}</b><span>${esc(T().liveWashSrc(ex.shops.join(", ")))}</span>
+    <p>${esc(T().liveWashEvery(eur0(avg), (ex.low_eur / avg >= 2 ? nf(0) : nf(1)).format(ex.low_eur / avg)))}</p></div></div>`;
+}
+
 function potSheet() {
   const pot = home.pot, payday = home.overview.safe_to_spend.next_payday;
   const s = sheet(`<h2>${T().potTitle}</h2><p class="sub">${T().potSheet(eur0(pot.suggested_monthly_pot_eur), day(payday))}</p>
-    ${potChart(pot.months.slice(-12), pot.average_per_month_last_12_eur)}<p class="note">${T().demoNote}</p>
+    ${potChart(pot.months.slice(-12), pot.average_per_month_last_12_eur)}${washBlock()}<p class="note">${T().demoNote}</p>
     <button class="btn wide" data-close>${T().ok}</button>`);
   s.querySelector("[data-close]").addEventListener("click", closeSheet);
 }

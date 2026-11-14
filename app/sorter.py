@@ -13,7 +13,7 @@ import logging
 import threading
 from pathlib import Path
 
-from . import future, insights, money, verify
+from . import future, insights, live, money, verify
 from .money import TODAY, _month_start, _q, _r
 from .taxonomy import BASKETS
 
@@ -107,6 +107,9 @@ def questions(cid: str, lang: str = "en") -> dict:
         cache[key] = qs
         _write(QUESTIONS, cache)
     saved = _read(ANSWERS).get(cid, {})
+    hsl = live.registry().get("hsl_30day_ab", {})
+    alt = ({"label": "hsl_30day_ab", "price_eur": hsl["value"], "source_url": hsl["source_url"]}
+           if hsl.get("status") == "confirmed" else None)  # live public price next to a commuting habit
     cards = []
     for q in cache[key]:
         c = pool.get(q["id"])
@@ -114,7 +117,8 @@ def questions(cid: str, lang: str = "en") -> dict:
             continue
         cur = (saved.get("tx", {}).get(q["id"][1:]) if q["id"].startswith("t") else saved.get("sub", {}).get(q["id"][2:]))
         cards.append({**c, "question": q["question"], "answers": {"1": q["answer_1"], "2": q["answer_2"], "3": q["answer_3"]},
-                      "lesson": q["lesson"], "your_answer": cur})
+                      "lesson": q["lesson"], "your_answer": cur,
+                      "live_alternative": alt if c["merchant_type"] in ("Parking", "Taxis") else None})
     return {"cards": cards, "source": "ai"}
 
 

@@ -148,6 +148,35 @@ def check_purchase(item: str) -> dict:
     return res
 
 
+def cached_purchase(item: str, max_age_h: float = 12) -> dict:
+    """check_purchase, reusing a check younger than max_age_h (page reads cost credits and take seconds)."""
+    f = STATE / "live_purchases.json"
+    d = json.loads(f.read_text()) if f.exists() else {}
+    hit = d.get(safe_query(item).lower())
+    if hit and hit.get("checked_at"):
+        age = (datetime.now(timezone.utc) - datetime.strptime(hit["checked_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)).total_seconds()
+        if age < max_age_h * 3600:
+            return hit
+    return check_purchase(item)
+
+
+SURPRISE_ITEM = "pesukone 8 kg"  # the brief's own basket-2 example: a broken washing machine
+
+
+def surprise_example(fetch: bool = False) -> dict | None:
+    """A confirmed price of a washing machine, to make the surprise basket concrete. None if not confirmed.
+    fetch=False only reads the last check (Home never waits on the web); the warm-up thread fetches daily."""
+    if fetch:
+        r = cached_purchase(SURPRISE_ITEM, max_age_h=24)
+    else:
+        f = STATE / "live_purchases.json"
+        r = (json.loads(f.read_text()) if f.exists() else {}).get(safe_query(SURPRISE_ITEM).lower()) or {}
+    if not r.get("summary"):
+        return None
+    return {"item": "washing_machine", "low_eur": r["summary"]["low_eur"], "high_eur": r["summary"]["high_eur"],
+            "shops": sorted({c["domain"] for c in r["confirmed"]})[:3], "checked_at": r["checked_at"]}
+
+
 # --------------------------------------------------------------------------------------------- rules registry
 
 RULES = {
@@ -170,6 +199,11 @@ RULES = {
                          "schema": {"type": "object", "properties": {"value": {"type": ["number", "null"], "description": "Maximum loan-to-collateral percent for housing loans for all borrowers, as decided"},
                                                                       "as_of": {"type": ["string", "null"], "description": "Date of the decision or release, ISO"},
                                                                       "effective_from": {"type": ["string", "null"], "description": "Date the cap takes effect, ISO, only if the page states it"}}}},
+    # A public price, read like a rule: the swap card in "Play your next two weeks" (all demo customers live in HSL zones AB)
+    "hsl_30day_ab": {"label": "HSL 30-day ticket, zones AB (adult)", "unit": "€", "range": (30.0, 200.0),
+                     "query": "HSL fares 2026 30-day season ticket AB price", "domains": ["hsl.fi"],
+                     "schema": {"type": "object", "properties": {"value": {"type": ["number", "null"], "description": "Price in euros of a 30-day season ticket, zones AB, adult"},
+                                                                  "as_of": {"type": ["string", "null"], "description": "Date these prices apply from, ISO, if stated"}}}},
 }
 
 

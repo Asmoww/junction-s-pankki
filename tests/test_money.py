@@ -189,3 +189,17 @@ def test_play_two_weeks_matches_the_forecast():
     rescue = play.outcome(EMMA, [], True, d)
     assert rescue["end_eur"] > 0 and rescue["rent_moved_after_payday"]
     assert all(c["kind"] != "extra" or c["basket"] == 3 for c in d["cards"])  # only extras are choices
+
+
+def test_ticket_swap_replaces_parking_and_taxis(monkeypatch):
+    # The live ticket price (Context.dev, hsl.fi) replaces the parking and taxi cards; offline here with a fixed price.
+    from app import live, play
+    monkeypatch.setattr(live, "registry", lambda: {"hsl_30day_ab": {"status": "confirmed", "value": 73.9,
+                                                                     "source_url": "https://www.hsl.fi/x", "source_date": "2026-01-01"}})
+    d = play.deal(EMMA)
+    sw = d["swap"]
+    assert sw and sw["replaces"] and all(c["label"] in play.TRANSPORT for c in d["cards"] if c["id"] in sw["replaces"])
+    extras = [c["id"] for c in d["cards"] if c["kind"] == "extra"]
+    plain, swapped = play.outcome(EMMA, extras, False, d), play.outcome(EMMA, extras, False, d, swap=True)
+    assert swapped["end_eur"] == pytest.approx(plain["end_eur"] + sw["replaced_eur"] - 73.9, abs=0.05)
+    assert swapped["swapped_to_ticket"]["source"] == "hsl.fi"
