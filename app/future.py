@@ -209,9 +209,9 @@ NOTE_PHRASES = {
     "en": {"biggest_day": "Biggest day {v} €", "big_day": "Big day {v} €", "no_spend_days": "{n} no-spend days",
            "payday_week": "Payday week +{p} %", "below_zero": "Below zero here", "payday": "Payday {v} €"},
     "fi": {"biggest_day": "Suurin menopäivä {v} €", "big_day": "Iso menopäivä {v} €", "no_spend_days": "{n} ostotonta päivää",
-           "payday_week": "Palkkaviikko +{p} %", "below_zero": "Tästä miinukselle", "payday": "Palkkapäivä {v} €"},
+           "payday_week": "Palkkaviikko +{p} %", "below_zero": "Tili miinukselle", "payday": "Palkkapäivä {v} €"},
     "sv": {"biggest_day": "Största dagen {v} €", "big_day": "Stor dag {v} €", "no_spend_days": "{n} köpfria dagar",
-           "payday_week": "Löneveckan +{p} %", "below_zero": "Här blir det minus", "payday": "Lönedag {v} €"},
+           "payday_week": "Löneveckan +{p} %", "below_zero": "Kontot på minus", "payday": "Lönedag {v} €"},
 }
 NOTE_KINDS = list(NOTE_PHRASES["en"])
 

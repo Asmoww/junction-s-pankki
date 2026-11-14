@@ -245,7 +245,7 @@ def test_graph_notes_are_rendered_from_facts_in_proper_finnish():
     assert future._render_note("below_zero", "2026-10-01", f, "fi") is None or f["goes_below_zero_on"] == "2026-10-01"
     assert future._render_note("biggest_day", "1999-01-01", f, "fi") is None
     bz = future._render_note("below_zero", f["goes_below_zero_on"], f, "sv")
-    assert bz["text"] == "Här blir det minus"
+    assert bz["text"] == "Kontot på minus"
 
 
 def test_monthly_drains_add_up_and_stay_honest():
