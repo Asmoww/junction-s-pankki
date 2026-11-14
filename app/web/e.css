@@ -444,3 +444,5 @@ body.e .detective .lmore { padding: 0; margin-top: 8px; font-weight: 600; color:
 #g .billpill .hic path { fill: none; stroke: var(--g900); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 #g .billpill.neg .hic path { stroke: var(--neg); } #g .billpill .bolt { fill: var(--g900); } #g .billpill.neg .bolt { fill: var(--neg); }
 .healthcard .ring { margin-top: 0; }
+/* Payday row: amounts never wrap; the label takes the remaining width */
+.result { gap: 10px; } .result > span:first-child { flex: 1 1 auto; min-width: 0; line-height: 1.3; } .result .vals { flex: none; white-space: nowrap; }
