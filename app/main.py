@@ -291,6 +291,15 @@ def learn_reset(cid: str, device: str):
     return {"reset": True}
 
 
+@app.get("/api/history/{cid}")
+def balance_history(cid: str, months: int = 12):
+    """Home trend line zoomed out: 3, 12 or 24 months of real balances + money in/out per month."""
+    try:
+        return insights.balance_history(_cid(cid), months)
+    except money.ToolError as e:
+        raise HTTPException(400, str(e))
+
+
 @app.get("/api/sort/{cid}")
 def sort_cards(cid: str, lang: str = "en"):
     """Sort with the AI: the customer's unclear items, each with a question and three basket answers."""

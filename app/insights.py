@@ -362,3 +362,54 @@ def money_health(cid: str) -> dict:
             "based_on": _period_info(start, TODAY),
             "method": "Based on the Spend and Save pillars of the Financial Health Network framework; four of eight indicators "
                       "can be measured from one bank account. Never compared with other people."}
+
+
+# ---------------------------------------------------------------- longer view of the Home trend line
+HISTORY_RANGES = {3: "day", 12: "week", 24: "week"}
+
+
+def downsample(days: list[dict], step: str) -> list[dict]:
+    """Daily end-of-day balances -> one point per ISO week (the week's last day) when step == 'week'. Pure."""
+    if step == "day":
+        return days
+    out, last_key = [], None
+    for d in days:
+        y, w, _ = d["date"].isocalendar()
+        if (y, w) == last_key:
+            out[-1] = d
+        else:
+            out.append(d)
+            last_key = (y, w)
+    return out
+
+
+def balance_history(cid: str, months: int = 12) -> dict:
+    """Balance over the last 3, 12 or 24 months (real data only, no forecast), plus money in/out per month.
+    Lets the Home trend line zoom out from the pay month (Rasmus's request)."""
+    months = months if months in HISTORY_RANGES else 12
+    start = _month_start(TODAY, months - 1)
+    eod = _q("SELECT tx_date d, arg_max(balance, seq) b FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? "
+             "GROUP BY 1 ORDER BY 1", [cid, start, TODAY])
+    if not eod:
+        raise money.ToolError(f"No transactions for {cid} in the last {months} months")
+    prev = _q("SELECT balance FROM tx WHERE customer_id = ? AND tx_date < ? ORDER BY seq DESC LIMIT 1", [cid, start])
+    # Fill days without transactions with the previous balance so the line is honest about quiet days.
+    have, days, bal = {r["d"]: float(r["b"]) for r in eod}, [], float(prev[0]["balance"]) if prev else float(eod[0]["b"])
+    d = start
+    while d <= TODAY:
+        bal = have.get(d, bal)
+        days.append({"date": d, "balance_eur": _r(bal)})
+        d += timedelta(days=1)
+    pts = downsample(days, HISTORY_RANGES[months])
+    flows = _q("""SELECT strftime(tx_date, '%Y-%m') m, sum(amount) FILTER (WHERE kind = 'income') i,
+                         -sum(amount) FILTER (WHERE kind = 'spend') o
+                  FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? GROUP BY 1 ORDER BY 1""", [cid, start, TODAY])
+    low = min(days, key=lambda x: x["balance_eur"])
+    return {"months": months, "step": HISTORY_RANGES[months], "period": _period_info(start, TODAY),
+            "points": [{"date": p["date"].isoformat(), "balance_eur": p["balance_eur"]} for p in pts],
+            "start_eur": days[0]["balance_eur"], "end_eur": days[-1]["balance_eur"],
+            "change_eur": _r(days[-1]["balance_eur"] - days[0]["balance_eur"]),
+            "lowest": {"date": low["date"].isoformat(), "balance_eur": low["balance_eur"]},
+            "days_below_zero": sum(1 for x in days if x["balance_eur"] < 0),
+            "per_month": [{"month": r["m"], "in_eur": _r(r["i"] or 0), "out_eur": _r(r["o"] or 0)} for r in flows],
+            "note": "Real balances only (no forecast). Transfers to your own savings are neither in nor out."}
