@@ -117,6 +117,42 @@ def _kind_of(path: str) -> str:
     return "other"
 
 
+class _User(str):
+    """'your question', remembering what kind of number the user typed: 'pct' (20 %), 'eur' (500 €, $4000, a million),
+    'other' (a bare 4000) or 'time' (20 years). A duration is never an amount: "20 years" must not make "20 %" theirs."""
+    def __new__(cls, kind: str):
+        o = super().__new__(cls, "your question")
+        o.kind = kind
+        return o
+
+
+_AFTER_PCT = re.compile(r"\s?(%|prosent\w*|procent\w*|percent\b)", re.IGNORECASE)
+_AFTER_EUR = re.compile(r"\s?(€|eur\b|euro\w*|e\b)", re.IGNORECASE)
+_AFTER_TIME = re.compile(r"\s?(-?\s?)(years?|yrs?|months?|weeks?|days?|v\b|vuo\w*|kuuka\w*|kk\b|viik\w*|päiv\w*|år\w*|månad\w*|veck\w*|dag\w*)",
+                         re.IGNORECASE)
+
+
+def _user_numbers(text: str) -> list[tuple[float, "_User"]]:
+    """Every number the user typed, with its kind (see _User)."""
+    out = []
+    for m in re.finditer(_NUM, text):
+        try:
+            v = _parse(m.group(0))[0]
+        except ValueError:
+            continue
+        after, before = text[m.end():m.end() + 14], text[max(0, m.start() - 4):m.start()]
+        if _AFTER_PCT.match(after):
+            kind = "pct"
+        elif _AFTER_TIME.match(after):
+            kind = "time"
+        elif _AFTER_EUR.match(after) or re.search(r"(€|\$|eur)\s?$", before, re.IGNORECASE):
+            kind = "eur"
+        else:
+            kind = "other"
+        out.append((v, _User(kind)))
+    return out
+
+
 class _Src(str):
     """A source label ("get_spending.total_eur") that also remembers its trace entry and path, so the app can describe
     the number in plain words (category, period, payments) and list the payments behind it."""
@@ -233,13 +269,9 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
     data_sources = list(sources)
     eur_data = [(v, p) for v, p in data_sources if _kind_of(p) == "eur"]
     for u in user_texts:  # numbers the user said themselves ("cut by 20 %", "save 200 euros", "$4000") are theirs
-        for m in re.finditer(_NUM, u):
-            try:
-                sources.append((_parse(m.group(0))[0], "your question"))
-            except ValueError:
-                pass
+        sources += [(v, k) for v, k in _user_numbers(u) if k.kind != "time"]
         if explain:
-            sources += [(v, "your question") for v in _word_numbers(u)]
+            sources += [(v, _User("eur")) for v in _word_numbers(u)]
     for e in earlier or []:  # the coach's own earlier answers in this chat (they were checked when first shown)
         for _, num, _ in _matches(e):
             try:
@@ -276,7 +308,10 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
         if not explain:
             return sources
         want = "pct" if unit in _PCT_UNITS else "eur"
-        return [(v, p) for v, p in sources if not isinstance(p, _Src) or _kind_of(p) == want]
+        # The user's numbers keep their unit too: 20 % only from a typed "20 %", € from "500 €" or a bare "500".
+        return [(v, p) for v, p in sources
+                if (_kind_of(p) == want if isinstance(p, _Src)
+                    else p.kind == want or (p.kind == "other" and want == "eur") if isinstance(p, _User) else True)]
 
     found, cursor = [], 0
     for full, num, unit in _matches(answer):
@@ -315,11 +350,12 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
                     status, src = "derived", _Src(f"{a:.2f} {op} {b:.2f}", pa.ti, "")
                     parts = [{"value": a, "op": "", **_ref(pa)}, {"value": b, "op": op, **_ref(pb)}]
                     break
-        if status == "unverified" and unit in _PCT_UNITS:
-            # A percentage inside a closing question ("Want to see a 30 % cut?") is an offer, not a claim.
+        if unit in _PCT_UNITS and (status == "unverified" or src == "your question"):
+            # A percentage inside a closing question ("Want to see a 30 % cut?") is an offer, not a claim, even when
+            # it equals a number the user typed.
             end = answer.find("\n", cursor)
             if "?" in answer[cursor: end if end >= 0 else len(answer)].split(".")[0]:
-                status = "suggestion"
+                status, src = "suggestion", None
         if src == "your question":
             status = "yours"
         elif src == "earlier in this chat":
