@@ -17,12 +17,16 @@ from __future__ import annotations
 import math
 import statistics
 
+from .homeplan import COLLATERAL_SHARE, FEES_EUR, STRESS_INCOME_PER_LOAN  # one source, so the two can't drift
+
 MARGIN_ASSUMED_PCT = 0.6      # assumed bank margin on top of Euribor (labelled assumption, not an offer)
 STRESS_RATE_PCT = 6.0         # the stress rate seen in the mortgage data (6 %, 25 years)
-STRESS_INCOME_PER_LOAN = 0.018409
-COLLATERAL_SHARE = 0.72
-FEES_EUR = 550.0
 TERM_YEARS = 25
+# ASP (first-home saving) from 1 Jun 2026: Valtiokonttori "Ohje asuntosäästölainoitukseen" 1.6.2026, §2.
+# Static, not in the live registry yet: shown as "rule (static, checked 14 Nov 2026)" with this source.
+ASP_MIN_MONTHS, ASP_MIN_SHARE, ASP_MAX_DEPOSIT = 20, 0.10, 1_500.0
+ASP_SOURCE = ("Valtiokonttori, Ohje asuntosäästölainoitukseen, 1 Jun 2026 "
+              "(cdn.valtiokonttori.fi/.../Ohje-asuntosaastolainoitukseen_01062026.pdf), section 2")
 HORIZON_MONTHS = 120          # beyond 10 years we say "not on the current pace" instead of a date
 
 
@@ -73,7 +77,8 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
     good, typical, weak = (_q(surpluses, 0.75), statistics.median(surpluses), _q(surpluses, 0.25)) if surpluses else (0, 0, 0)
     rng = {"earliest_months": _months(c["gap"], good), "likely_months": _months(c["gap"], typical),
            "cautious_months": _months(c["gap"], weak),
-           "pace_eur_month": {"good": round(good, 2), "typical": round(typical, 2), "weak": round(weak, 2)}}
+           "pace_eur_month": {"good": round(good, 2), "typical": round(typical, 2), "weak": round(weak, 2)},
+           "pace_note": "good / typical / weak = 75th percentile / median / 25th percentile of your last 12 months"}
 
     pay_now = c["loan"] * _annuity(euribor_pct + MARGIN_ASSUMED_PCT)
     pay_stress = c["loan"] * _annuity(STRESS_RATE_PCT)
@@ -87,9 +92,11 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
 
     # Constraints in the order that decides the answer. The first failing one is binding.
     checks = []
+    mean_s = statistics.fmean(surpluses) if surpluses else 0.0
     if typical <= 0:
-        checks.append(("monthly_gap", "More goes out than comes in in a typical month, so savings don't grow yet.",
-                       round(-typical, 2)))
+        # Euro amount = 12-month average gap, the same definition Rahakunto uses, so the two never disagree.
+        checks.append(("monthly_gap", "On average over the last 12 months more went out than came in, so savings "
+                       "don't grow yet.", round(max(-mean_s, 0.0), 2)))
     if c["by_income"] < c["by_cap"]:
         checks.append(("income_caps_loan", "Your income, not the loan cap, limits the loan: the bank's stress test "
                        "allows about this much.", round(c["by_income"], 2)))
@@ -125,9 +132,9 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
     if first_home is None and (binding["key"] == "collateral" or c["extra_collateral"] > 0):
         # ASP (from 1 Jun 2026): save on an ASP account at least 20 months, 50-1,500 €/month, at least 10 % of the
         # price; the ASP loan comes with a free state guarantee (answers the collateral gap) and interest subsidy.
-        need_asp = 0.10 * price + price * tax_pct / 100 + FEES_EUR
-        m_asp = _months(max(need_asp - have, 0.0), min(max(typical, 0.0), 1_500.0))
-        m_asp = max(m_asp, 20) if m_asp is not None else None
+        need_asp = ASP_MIN_SHARE * price + price * tax_pct / 100 + FEES_EUR
+        m_asp = _months(max(need_asp - have, 0.0), min(max(typical, 0.0), ASP_MAX_DEPOSIT))
+        m_asp = max(m_asp, ASP_MIN_MONTHS) if m_asp is not None else None
         cands.append({"key": "asp", "likely_months_if_yes": m_asp, "months_saved": 0, "unblocks": "collateral",
                       "question": "Is this your first home? An ASP account gives a free state guarantee instead of extra "
                                   "collateral (save at least 20 months, 10 % of the price)."})
@@ -140,12 +147,14 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
         if typical <= 0:
             return None
         lo, best = 20_000, None
-        for p_ in range(lo, int(price) + 1, 1_000):
+        for p_ in range(lo, int(price * 2) + 1, 1_000):
             m_ = _months(core(p_, salary, have, cap_pct, tax_pct)["gap"], typical)
             if m_ is not None and m_ <= within:
                 best = p_
         return best
-    reach = {"within_24_months_eur": reachable(24), "within_60_months_eur": reachable(60)}
+    # Highest price reachable (searched up to twice the asked price), so it can be above the asked price.
+    reach = {"within_24_months_eur": reachable(24), "within_60_months_eur": reachable(60),
+             "searched_up_to_eur": round(price * 2)}
     # Pick: a deficit comes first (nothing else works before it); then an answer that removes the binding
     # constraint; then the answer that saves the most months; then the reachable price.
     cands.sort(key=lambda x: (x.get("unblocks") != binding["key"], -(x["months_saved"] or 0)))
@@ -162,6 +171,8 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
         nbq = None
 
     prov = {"rule": ["loan cap", "transfer tax", "12-month Euribor"],
+            "rule_static": [f"ASP: at least {ASP_MIN_MONTHS} months, {ASP_MIN_SHARE:.0%} of price, up to "
+                            f"{ASP_MAX_DEPOSIT:,.0f} €/month; source: {ASP_SOURCE}"],
             "assumption": [f"stress formula: required income = {STRESS_INCOME_PER_LOAN} x loan (6 %, 25 years); seen in "
                            "the synthetic mortgage data, not S-Pankki credit policy",
                            f"bank margin {MARGIN_ASSUMED_PCT} % on top of Euribor", f"fees {FEES_EUR:.0f} €",

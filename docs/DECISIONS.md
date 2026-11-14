@@ -23,3 +23,8 @@ One line per decision, with why. Newest last.
 - 2026-11-13 Trap suite runs nightly (~$0.15/run, Sonnet). Why: judges see measured reliability that stays current.
 - 2026-11-14 Design E built as a second front end at /e, sharing app.js and the API; / unchanged. Why: try it without risking the working demo.
 - 2026-11-14 Login keeps the requested page (/login?next=), only local paths. Why: links to /e and /design survive the password gate.
+- 2026-11-14 Design E is the main page; the first design stays at /classic. Why: Pyry; the graph-first design with AI inside it is the direction.
+- 2026-11-14 Verification accepts a number that is the exact sum or difference of two numbers from the same tool result ("derived", source shown). Why: the coach adds two shown figures in its head; cent-exact and same-tool keeps invented numbers out.
+- 2026-11-14 Costs the user mentions are placed on their date (forecast_with_events): after the next 7 days they lower safe-until-payday, not this week's figure. Why: smoke test #6.
+- 2026-11-14 Rahakunto ported from review/rasmus-health-score; for a deficit the first step is break-even, then keep 10 %. Own name, "based on" FHN's pillars (their score may not be used in commercial software).
+- 2026-11-14 Chart spending = all spending (as cashflow), not purchases only; a reviewer's 2,279.24 € for Mikko's August excluded rent and bills.

@@ -99,3 +99,55 @@ def test_future_engine_matches_forecast_and_safe_to_spend():
     assert s["delta_at_payday_eur"] == pytest.approx(-150, abs=0.01)
     moved = future.future(EMMA, {"move_bills": [{"bill": "Housing", "date": "2026-10-16"}]})["scenario"]
     assert moved["delta_at_payday_eur"] == pytest.approx(762.79, abs=0.05)
+
+
+def test_rahakunto_matches_reference_backtest_people():
+    from app import insights
+    m = insights.money_health(MIKKO)
+    assert m["score"] == 70 and m["parts"] == {"spend": 81, "on_time": 100, "buffer": 100, "long_term": 0}
+    assert m["steps"][0]["part"] == "long_term"
+    e = insights.money_health(EMMA)
+    assert e["score"] == 19 and e["tier"] == "vulnerable" and e["tone"] == "comfort"
+    assert e["steps"][0]["target"] == "break_even" and e["steps"][0]["gap_eur_month"] == pytest.approx(206, abs=3)
+    j = insights.money_health(JUSSI)
+    assert j["parts"]["long_term"] is None and j["coverage"] == "3 of 8"  # unknown is never averaged in as 0
+
+
+def test_charts_and_dated_events():
+    from app import charts
+    c = charts.show_chart(MIKKO, "monthly_spend", months=12)
+    aug = next(p["v"] for p in c["series"][0]["points"] if p["x"] == "2026-08")
+    assert aug == pytest.approx(money.get_cashflow(MIKKO, "last_month")["spending_eur"]["total"], abs=0.01)
+    f = charts.forecast_with_events(MIKKO, [{"label": "Dentist", "amount": 150, "date": "2026-10-08"}])
+    assert f["safe_this_week_after_eur"] == f["safe_this_week_before_eur"]  # next week's cost doesn't hit this week
+    assert f["safe_until_payday_after_eur"] == pytest.approx(f["safe_until_payday_before_eur"] - 150, abs=0.01)
+
+
+def test_extra_income_raises_both_figures_consistently():
+    # Outside browser test 14 Nov: Emma +5,000 € gave 4,324.29 € until payday but 0 € this week.
+    from app import charts
+    sts = money.get_safe_to_spend("CUST01610")
+    f = charts.forecast_with_events("CUST01610", [{"label": "Bonus", "amount": 5000, "date": "2026-10-01", "kind": "income"}])
+    days = sts["days_until_payday"]
+    assert f["safe_until_payday_after_eur"] == pytest.approx(sts["safe_until_payday_eur"] + 5000, abs=0.01)
+    assert f["safe_this_week_after_eur"] == pytest.approx(f["safe_until_payday_after_eur"] / days * min(7, days), abs=0.01)
+    g = charts.forecast_with_events(MIKKO, [{"label": "Concert", "amount": 80, "date": "2026-10-02"}])
+    assert g["safe_this_week_after_eur"] == pytest.approx(max(0, g["safe_this_week_before_eur"] - 80), abs=0.01)
+
+
+def test_verify_derived_sums_only_within_one_tool():
+    from app import verify
+    tr = [{"tool": "a", "error": False, "result": {"groceries": 397.73, "buffer": 163.30}},
+          {"tool": "b", "error": False, "result": {"x": 100.00}}]
+    got = {n["text"]: n["status"] for n in verify.check("About 561.03 € more, and 497.73 € elsewhere, and 777.77 €.", tr, [])}
+    assert got == {"561.03 €": "derived", "497.73 €": "unverified", "777.77 €": "unverified"}
+
+
+def test_wrapped_facts_add_up():
+    from app import wrapped
+    f = wrapped.facts(EMMA)
+    assert sum(f["baskets_eur"].values()) == pytest.approx(f["money_out_eur"], abs=0.05)
+    t = f["twins"]
+    assert t["twins_who_never_went_below_zero"] >= 20  # a group, never one person
+    assert t["your_extras_per_month_eur"] == pytest.approx(f["baskets_eur"]["3"] / 12, abs=0.01)
+    assert f["no_spend_days"] >= f["longest_no_spend_streak_days"] > 0

@@ -1,20 +1,20 @@
 # Context.dev side challenge: how it could fit the money coach
 
 ## Build status (branch `feature/context-dev`, 2026-11-14)
-Built, and tested offline against a fake client that replays the dry-run shapes; **not yet run live: the app's
-`CONTEXT_DEV_API_KEY` is missing from `.env`**. Python SDK: `context.dev` 2.50.0 (PyPI, official,
+Built, tested offline against a fake client that replays the dry-run shapes, and **run live end to end on 14 Nov**
+(key in `.env` as `CONTEXT_DEV_API_KEY`). Python SDK: `context.dev` 2.50.0 (PyPI, official,
 github.com/context-dot-dev/context-python-sdk).
 
 | Feature | Calls | Rules enforced | Status |
 |---|---|---|---|
-| Check a purchase (`app/live.py`) | `web.answers` (discover pages) → `web.scrape formats.product`, `max_age_ms` 1 h (confirm each) | answers' prices never used; EUR, 1-50,000 €, product page; unconfirmed = unknown; only the item name is sent | built + 8 offline tests; live pending key |
-| Rules registry (`live.RULES`, `state/rules.json`) | `web.search` limited to vero.fi / finanssivalvonta.fi / suomenpankki.fi → `web.scrape formats.json` with a schema | value + source URL + source date + fetched_at + request_id; plausible ranges; a failed refresh keeps the last confirmed value, marked | built; live pending key |
+| Check a purchase (`app/live.py`) | `web.answers` (discover pages) → `web.scrape formats.product`, `max_age_ms` 1 h (confirm each) | answers' prices never used; EUR, 1-50,000 €, product page; unconfirmed = unknown; only the item name is sent | built + 8 offline tests; live |
+| Rules registry (`live.RULES`, `state/rules.json`) | `web.search` limited to vero.fi / finanssivalvonta.fi / suomenpankki.fi → `web.scrape formats.json` with a schema | value + source URL + source date + fetched_at + request_id; plausible ranges; a failed refresh keeps the last confirmed value, marked | built; live |
 | Home planner (`app/homeplan.py`) | none (reads the registry) | cap, transfer tax and Euribor only from confirmed rules, else unknown; Mikko 250 k reproduces the dry-run table | built + test |
-| Monitors → card | `monitors.create` (page, semantic, daily, webhook) · `monitors.run` + `retrieve_run` (demo control) | webhook HMAC-SHA256 (`t.` + body), 5 min tolerance, dedupe on `X-Context-Id`; rule re-read on change | built; live pending key |
-| Coach tools | `check_purchase`, `plan_home` | prices and rules only from these tools; unknown said as unknown | built; works without key (says unknown) |
+| Monitors → card | `monitors.create` (page, semantic, daily, webhook) · `monitors.run` + `retrieve_run` (demo control) | webhook HMAC-SHA256 (`t.` + body), 5 min tolerance, dedupe on `X-Context-Id`; rule re-read on change | built; live |
+| Coach tools | `check_purchase`, `plan_home` | prices and rules only from these tools; unknown said as unknown | built; live (says unknown without the key) |
 
 
-Status: options for the team (2026-11-14), nothing built yet. The challenge needs at least one Context.dev
+Original options note (2026-11-14, before the build). The challenge needs at least one Context.dev
 endpoint **in the core flow**, with its data **visibly driving the demo**, plus a note on endpoints and why.
 API facts below are from docs.context.dev (agent quickstart, credits, monitors pages).
 

@@ -93,10 +93,30 @@ def resolve_period(period: str | None = None, start: str | None = None, end: str
     return ranges[p]
 
 
+DATA_START = date(2024, 10, 1)
+
+
+def _months_between(s: date, e: date) -> int:
+    return max((e.year - s.year) * 12 + e.month - s.month + 1, 0)
+
+
 def _period_info(s: date, e: date) -> dict:
-    months = (e.year - s.year) * 12 + e.month - s.month + 1
-    return {"start": s.isoformat(), "end": e.isoformat(), "months": months,
+    """months = calendar months asked for; months_with_data = those inside the data (2024-10 .. today).
+    Averages divide by months_with_data, never by months the data doesn't cover (outside test 14 Nov:
+    Jan-Dec 2024 divided Oct-Dec spending by 12)."""
+    months = _months_between(s, e)
+    covered = _months_between(max(s, DATA_START), min(e, TODAY)) if e >= DATA_START else 0
+    info = {"start": s.isoformat(), "end": e.isoformat(), "months": months, "months_with_data": covered,
             "data_covers": "2024-10-01 to 2026-09-30", "today": TODAY.isoformat()}
+    if covered < months:
+        info["coverage_note"] = (f"Only {covered} of the {months} months asked for are in the data (it starts "
+                                 f"2024-10-01). Months before that are unavailable, not zero; averages use the "
+                                 f"{covered} covered months.")
+    return info
+
+
+def _per_month(total: float | None, info: dict) -> float | None:
+    return _r((total or 0) / info["months_with_data"]) if info["months_with_data"] else None
 
 
 def _filters(category=None, subcategory=None, basket=None) -> tuple[str, list]:
@@ -137,7 +157,7 @@ def get_spending(cid: str, period: str | None = None, start: str | None = None, 
     out = {"period": _period_info(s, e),
            "filter": {"category": category, "subcategory": subcategory, "basket": basket},
            "total_eur": _r(tot["total"]), "transactions": tot["n"],
-           "average_per_month_eur": _r((tot["total"] or 0) / _period_info(s, e)["months"]),
+           "average_per_month_eur": _per_month(tot["total"], _period_info(s, e)),
            "one_off_large_purchases": {"count": tot["n_oneoff"], "total_eur": _r(tot["oneoff_total"])}}
     if subcategory and subcategory in MCC_LABELS.values():
         # Purchases without a merchant code cannot be split into sub-categories; say how much that is.
@@ -222,7 +242,7 @@ def get_three_baskets(cid: str, period: str | None = "last_3_months", start: str
         items = [r for r in rows if r["basket"] == b]
         t = sum(r["total"] for r in items)
         out.append({"basket": b, "name": meta["name"], "meaning": meta["explain"], "total_eur": _r(t),
-                    "per_month_eur": _r(t / info["months"]), "share_of_spending": round(t / total, 3),
+                    "per_month_eur": _per_month(t, info), "share_of_spending": round(t / total, 3),
                     "transactions": sum(r["n"] for r in items),
                     "top": [{"merchant_type": r["sub"], "total_eur": _r(r["total"]), "transactions": r["n"]}
                             for r in items[:4]]})

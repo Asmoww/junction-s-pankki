@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money, readiness  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, readiness, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -47,7 +47,7 @@ async def password_gate(request: Request, call_next):
         return await call_next(request)
     if request.url.path.startswith("/api/"):
         return JSONResponse({"detail": "login required"}, status_code=401)
-    nxt = request.url.path if request.url.path in ("/", "/e") or request.url.path.startswith("/design") else "/"
+    nxt = request.url.path if request.url.path in ("/", "/e", "/classic") or request.url.path.startswith("/design") else "/"
     return RedirectResponse(f"/login?next={nxt}", status_code=303)
 
 
@@ -85,13 +85,20 @@ LOGIN = LOGIN.replace(".css\"", f".css?v={_ver}\"")
 E_PAGE = (WEB / "e.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
 
 
-@app.get("/e")
-def index_e():
+@app.get("/")
+def index():
+    """Design E (the future as a graph) is the main page."""
     return HTMLResponse(E_PAGE, headers={"Cache-Control": "no-cache"})
 
 
-@app.get("/")
-def index():
+@app.get("/e")
+def index_e():
+    return RedirectResponse("/", status_code=307)
+
+
+@app.get("/classic")
+def index_classic():
+    """The first design, kept for comparison."""
     return HTMLResponse(INDEX, headers={"Cache-Control": "no-cache"})
 
 
@@ -122,7 +129,13 @@ def home(cid: str):
     """Everything the home and learn screens need in one call."""
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
-            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid)}
+            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid),
+            "health": insights.money_health(cid)}
+
+
+@app.get("/api/wrapped/{cid}")
+def wrapped_year(cid: str, lang: str = "en"):
+    return wrapped.wrapped(_cid(cid), lang if lang in ("en", "fi", "sv") else "en")
 
 
 @app.get("/api/future/{cid}")
@@ -165,6 +178,7 @@ def _warm_notes():
         for lg in ("en", "fi", "sv"):
             try:
                 future.annotations(p["id"], lg)
+                wrapped.captions(p["id"], lg)
             except Exception as e:  # noqa: BLE001 (warm-up only)
                 logging.getLogger("notes").warning("warm-up failed for %s %s: %s", p["id"], lg, e)
 
@@ -189,6 +203,8 @@ def _live(fn, *a, **kw):
 @app.get("/api/live/status")
 def live_status():
     return {"connected": bool(os.environ.get("CONTEXT_DEV_API_KEY")), "rules": live.registry(),
+            "deliveries": (json.loads((ROOT / "state" / "live_deliveries.json").read_text())[:5]
+                           if (ROOT / "state" / "live_deliveries.json").exists() else []),
             "monitors": {k: {f: m.get(f) for f in ("monitor_id", "url", "rule", "created_at", "webhook")}
                          for k, m in live.monitors().items()}, "cards": live.cards()[:5]}
 
@@ -274,6 +290,7 @@ async def context_webhook(request: Request):
         return JSONResponse({"detail": "envelope mismatch"}, status_code=400)
     if live.seen_event(ev["id"]):
         return JSONResponse({}, status_code=204)
+    live.log_delivery(ev)
     change = (ev.get("data") or {}).get("change") or {}
     m = next((m for m in mons.values() if m.get("monitor_id") == change.get("monitor_id")), None)
     if ev.get("event") == "change.detected" and m:

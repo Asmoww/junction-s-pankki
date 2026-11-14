@@ -157,10 +157,12 @@ RULES = {
                                                                  "as_of": {"type": ["string", "null"], "description": "Date of that value, ISO"}}}},
     "transfer_tax_shares": {"label": "Transfer tax, housing-company shares", "unit": "%", "range": (0.0, 10.0),
                             "query": "varainsiirtovero asunto-osakkeet prosentti", "domains": ["vero.fi"],
+                            "page": "https://www.vero.fi/en/individuals/property/transfer-tax/buyer-of-a-flat/",
                             "schema": {"type": "object", "properties": {"value": {"type": ["number", "null"], "description": "Transfer tax percent on housing company shares (apartments)"},
                                                                          "as_of": {"type": ["string", "null"], "description": "Date the rate applies from, ISO, if stated"}}}},
     "transfer_tax_real_estate": {"label": "Transfer tax, real estate", "unit": "%", "range": (0.0, 10.0),
                                  "query": "varainsiirtovero kiinteistö prosentti", "domains": ["vero.fi"],
+                                 "page": "https://www.vero.fi/en/individuals/property/transfer-tax/buying_real_propert/",
                                  "schema": {"type": "object", "properties": {"value": {"type": ["number", "null"], "description": "Transfer tax percent on real estate (houses, land)"},
                                                                               "as_of": {"type": ["string", "null"], "description": "Date the rate applies from, ISO, if stated"}}}},
     "loan_cap_general": {"label": "Housing loan cap (all borrowers)", "unit": "%", "range": (50.0, 100.0),
@@ -193,11 +195,16 @@ def refresh_rule(key: str, url: str | None = None) -> dict:
     spec = RULES[key]
     c = client()
     rid_search = None
+    url = url or spec.get("page")  # official guidance page for evergreen rules; search otherwise
     if not url:
         s = c.web.search(query=spec["query"], include_domains=spec["domains"], num_results=3, tags=TAGS)
         rid_search = getattr(s, "request_id", None)
         results = getattr(s, "results", None) or getattr(s, "data", None) or []
-        url = next((getattr(x, "url", None) or (x.get("url") if isinstance(x, dict) else None) for x in results), None)
+        urls = [getattr(x, "url", None) or (x.get("url") if isinstance(x, dict) else None) for x in results]
+        # Prefer the newest page: search ranked a 2024 "cap unchanged" release above the 2026 "cap to 95 %" one.
+        year = lambda u: max([int(y) for y in re.findall(r"(?<!\d)(20\d{2})(?!\d)", u or "")] or [0])
+        urls = sorted([u for u in urls if u], key=lambda u: -year(u))
+        url = urls[0] if urls else None
         if not url:
             return _store_rule(key, {"status": "unknown", "reason": "no official page found", "search_request_id": rid_search})
     r = c.web.scrape(url=url, formats={"json": True}, json_params={"schema": spec["schema"],
@@ -263,7 +270,7 @@ def ensure_monitor(key: str, webhook_url: str | None = None) -> dict:
           "target": {"type": "page", "url": rule["source_url"], "instructions": spec["instructions"]},
           "change_detection": {"type": "semantic"}, "schedule": {"type": "interval", "frequency": 1, "unit": "days"}}
     if webhook_url:
-        kw["webhook"] = {"url": webhook_url, "events": ["change.detected"]}
+        kw["webhook"] = {"url": webhook_url, "events": ["change.detected", "run.completed"]}
     m = client().monitors.create(**kw)
     entry = {"key": key, "monitor_id": m.id, "url": rule["source_url"], "rule": spec["rule"], "created_at": now_iso(),
              "webhook": bool(webhook_url)}
@@ -341,6 +348,18 @@ def verify_signature(raw: bytes, header: str, secret: str, tolerance_s: int = 30
         return False
     expected = hmac.new(secret.encode(), t.encode() + b"." + raw, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, v1.lower())
+
+
+def log_delivery(event: dict) -> None:
+    """Keep the last deliveries (id, event, monitor, change flag) so the demo can show the webhook path works."""
+    with _lock:
+        f = STATE / "live_deliveries.json"
+        d = json.loads(f.read_text()) if f.exists() else []
+        data = event.get("data") or {}
+        d.insert(0, {"id": event.get("id"), "event": event.get("event"), "received_at": now_iso(),
+                     "monitor_id": ((data.get("run") or {}).get("monitor_id") or (data.get("change") or {}).get("monitor_id")),
+                     "change": bool(data.get("change"))})
+        f.write_text(json.dumps(d[:50], indent=1))
 
 
 def seen_event(event_id: str) -> bool:
