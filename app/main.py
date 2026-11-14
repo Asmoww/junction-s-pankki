@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, drains, eu, future, homeplan, insights, live, money, play, psd2, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, drains, eu, future, homeplan, insights, learning, live, money, play, psd2, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -194,6 +194,74 @@ def psd2_revoke(cid: str):
 class SortIn(BaseModel):
     answers: dict[str, int]
     lang: str = "en"
+
+
+class LearnIn(BaseModel):
+    device: str = Field(max_length=64)
+    quest: str
+    step: str
+    choice: int
+    event_id: str = Field(max_length=64)
+    lang: str = "en"
+
+
+class LearnSettingsIn(BaseModel):
+    device: str = Field(max_length=64)
+    show_points: bool | None = None
+    hide_rewards: bool | None = None
+    pause_prompts: bool | None = None
+    weekly_goal: int | None = None
+
+
+def _lang(lang: str) -> str:
+    return lang if lang in ("en", "fi", "sv") else "en"
+
+
+@app.get("/api/learn/{cid}")
+def learn_summary(cid: str, device: str, lang: str = "en"):
+    """Money Detective progress: concepts explored / explained / revisited, weekly goal, milestones. No money here."""
+    from datetime import datetime
+    return learning.summary(learning.load(device, _cid(cid)), datetime.now(), _lang(lang))
+
+
+@app.get("/api/learn/{cid}/quest/{qid}")
+def learn_quest(cid: str, qid: str, lang: str = "en", practice: bool = False, revisit: bool = False):
+    """One quest built from this customer's own numbers (or the practice case)."""
+    facts = learning.PRACTICE_FACTS if practice else learning.facts_from_data(_cid(cid))
+    try:
+        return learning.quest(qid, facts, _lang(lang), revisit=revisit)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/api/learn/{cid}")
+def learn_answer(cid: str, body: LearnIn):
+    """Record one answer (idempotent by event_id) and return feedback in the user's language."""
+    from datetime import datetime
+    c = _cid(cid)
+    st = learning.load(body.device, c)
+    out = learning.record(st, event_id=body.event_id, qid=body.quest, step=body.step, choice=body.choice, now=datetime.now())
+    if out.get("ok"):
+        learning.save(body.device, c, st)
+        if "correct" in out:
+            t = learning.T[_lang(body.lang)]
+            key = ("rev" if body.step == "revisit" else body.quest) + ("_ok" if out["correct"] else "_no")
+            out["feedback"] = t[key]
+    return out
+
+
+@app.post("/api/learn/{cid}/settings")
+def learn_settings(cid: str, body: LearnSettingsIn):
+    c = _cid(cid)
+    st = learning.set_settings(learning.load(body.device, c), **body.model_dump(exclude={"device"}))
+    learning.save(body.device, c, st)
+    return st["settings"] | {"weekly_goal": st["weekly_goal"]}
+
+
+@app.delete("/api/learn/{cid}")
+def learn_reset(cid: str, device: str):
+    learning.reset(device, _cid(cid))
+    return {"reset": True}
 
 
 @app.get("/api/sort/{cid}")
