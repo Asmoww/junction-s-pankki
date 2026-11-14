@@ -24,8 +24,9 @@ body.e .msg.user { background: var(--g700); }
 .etop .lang, .etop .who { background: var(--g50); color: var(--g900); }
 .etop .who .avatar { background: var(--g700); color: #fff; }
 .etop .greet { margin-top: 16px; font-size: 14px; color: var(--muted); }
-.etop .balance { font: 300 52px/1.05 Geologica, sans-serif; letter-spacing: -2px; color: var(--g900); display: flex; align-items: baseline; flex-wrap: wrap; }
-.etop .balance small { font-size: 22px; letter-spacing: 0; margin-left: 2px; }
+.etop .greet:empty { display: none; }
+.etop .balance { margin-top: 18px; font: 700 54px/1.05 Geologica, sans-serif; letter-spacing: -2px; color: var(--g900); display: flex; align-items: baseline; flex-wrap: wrap; }
+.etop .balance small { font-size: 24px; font-weight: 500; letter-spacing: 0; margin-left: 3px; }
 .etop .balance .delta { flex-basis: 100%; font-size: 14px; letter-spacing: 0; color: var(--muted); margin-top: 4px; font-weight: 400; }
 
 /* Graph */
@@ -549,3 +550,7 @@ div.brief { display: block; } div.brief .skeleton { margin: 6px 0; }
 #view-home [hidden] { display: none !important; }
 .lg .note[data-why] { cursor: pointer; pointer-events: auto; }
 .lg .note { max-width: none; }
+
+/* Clean top: the long-range month bars only on request */
+.hmonths { margin-top: 4px; }
+#hero .long .morel { margin-top: 2px; }

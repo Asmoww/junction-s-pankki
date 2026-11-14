@@ -271,8 +271,11 @@ function graph() {
     // One pill beside the step: the house icon and "Rent −763 €" (red when it takes the balance below zero)
     const [xb, y1] = pBase[i + 1], y0 = pBase[i][1], neg = base[i].balance_eur < 0;
     const txt = `${g.names.join(" + ")} −${eur0(g.eur)}`, tw = txt.length * 6.7 + 34, ph = 24;
-    const my = y1 - y0 >= 30 ? (y0 + y1) / 2 : y0 - 22;
-    let lx = xb + 10; if (lx + tw > W - px) lx = xb - 10 - tw;
+    // A tall step: the pill sits beside the drop. A small one (a big balance makes rent look tiny): below the line,
+    // centred on the step, so it never covers the past line or today's marker.
+    let my, lx;
+    if (y1 - y0 >= 30) { my = (y0 + y1) / 2; lx = xb + 10; if (lx + tw > W - px) lx = xb - 10 - tw; }
+    else { my = y1 + 26; lx = Math.max(px, Math.min(W - px - tw, xb - tw / 2)); if (my + ph / 2 > H - bot) my = y0 - 22; }
     marks.push(`<g class="billpill ${neg ? "neg" : ""}" data-why="${esc(hbT().bill(g.names.join(" + ").toLowerCase()))}" transform="translate(${lx.toFixed(1)},${(my - ph / 2).toFixed(1)})">
       <rect width="${tw.toFixed(1)}" height="${ph}" rx="12"/>${g.housing
         ? `<g class="hic" transform="translate(15,12.5)"><path d="M-6 -0.2 L0 -5.6 L6 -0.2"/><path d="M-4.4 -1.4 V5 H4.4 V-1.4"/><path d="M-1.3 5 V1.7 H1.3 V5"/></g>`
@@ -308,7 +311,7 @@ function graph() {
   const bandMid = pBase[Math.floor(pBase.length * 0.6)], noMid = pNo[Math.floor(pNo.length * 0.6)];
   const bandLab = Math.abs(bandMid[1] - noMid[1]) > 22 ? `<div class="bandlab" style="left:${bandMid[0]}px;top:${(bandMid[1] + noMid[1]) / 2}px">${E().extras}</div>` : "";
   const credit = nl.length ? `<div class="credit">${SPARK}${E().aiNotes}</div>` : "";
-  return { html: `<div class="g" id="g">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nl.join("")}${bandLab}${credit}<div class="tip" hidden></div></div>`, X, Y, W, n, iT, px, past, base, sc };
+  return { html: `<div class="g" id="g">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nl.join("")}${bandLab}<div class="tip" hidden></div></div>`, X, Y, W, n, iT, px, past, base, sc };
 }
 
 function layoutNotes(g = $("#g")) {
@@ -513,7 +516,8 @@ function strip() {
   }
   const lc = homeBuyer && liveSt && liveSt.cards && liveSt.cards[0];
   const top = lc ? `<button class="rulecard" data-rules>${SPARK}<span><b>${E().ruleChanged}</b> ${esc(lc.rule.replace(/_/g, " "))}: ${lc.before ?? "?"} → ${lc.after ?? "?"} · ${esc(host(lc.source_url))}</span></button>` : "";
-  const shown = cards.filter(Boolean), first = shown.slice(0, 3), rest = shown.slice(3);
+  // Shown: Play, the AI's top two, and the money year (a favourite extra); everything else behind "Show all cards"
+  const wrapH = wrapCard(), shown = cards.filter((c) => c && c !== wrapH), first = [...shown.slice(0, 3), wrapH].filter(Boolean), rest = shown.slice(3);
   return top + `<div class="strip">${first.join("")}</div>` + (rest.length ? `<div class="strip rest" ${cardsOpen ? "" : "hidden"}>${rest.join("")}</div>
     <button class="morel" data-toggle="cards">${cardsOpen ? hbT().fewerC : hbT().moreC}</button>` : "");
 }
@@ -712,9 +716,10 @@ async function drawLong() {
       <span class="ndot" style="left:${x}px;top:${y}px"></span>`; }).join("");
   $("#hero .long").innerHTML = `<div class="lg">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nhtml}<div class="tip" hidden></div></div>
     <div class="hsum"><span>${esc(E_.hChange)} <b class="${ch < 0 ? "neg" : ""}">${ch < 0 ? "−" : "+"}${esc(eur0(Math.abs(ch)))}</b></span>
-      <span>${esc(E_.hLow)} <b>${esc(eur0(h.lowest.balance_eur))}</b> · ${esc(day(h.lowest.date))}</span>
-      ${h.days_below_zero ? `<span class="neg">${esc(E_.hBelow(h.days_below_zero))}</span>` : ""}</div>
-    <p class="hnet">${esc(E_.hNet)}</p>${bars}<p class="hnote">${esc(E_.hNote)}</p>`;
+      <span>${esc(E_.hLow)} <b>${esc(eur0(h.lowest.balance_eur))}</b> · ${esc(day(h.lowest.date))}</span></div>
+    <div class="hmonths" ${monthsOpen ? "" : "hidden"}>${h.days_below_zero ? `<p class="hsum"><span class="neg">${esc(E_.hBelow(h.days_below_zero))}</span></p>` : ""}
+      <p class="hnet">${esc(E_.hNet)}</p>${bars}<p class="hnote">${esc(E_.hNote)}</p></div>
+    <button class="morel" data-toggle="months">${monthsOpen ? hbT().fewerM : hbT().moreM}</button>`;
   layoutNotes($("#hero .lg"));
   // Touch/drag readout: date and balance under the finger
   const g = $("#hero .lg"), sv = g.querySelector("svg"), tip = g.querySelector(".tip"), cur = sv.querySelector(".cur");
@@ -1005,10 +1010,7 @@ async function aiSwitch() {
   if (!window.aiInfo) { try { window.aiInfo = await api("/api/ai"); } catch { window.aiInfo = { eu: { configured: false }, voice: false }; } }
   const eu = window.aiInfo.eu, head = $("#lang").parentElement;
   if (!eu.configured || head.querySelector("#aichip")) return;
-  if (eu.forced) {  // Gemma only: a fixed badge, no switch
-    const b = document.createElement("span"); b.id = "aichip"; b.className = "aichip on"; b.textContent = `🇪🇺 ${E().euOn}`;
-    b.title = eu.label || ""; head.insertBefore(b, $("#lang")); return;
-  }
+  if (eu.forced) return;  // Gemma in Finland only: nothing to switch, so no header badge ("What the AI saw" names it)
   const b = document.createElement("button"); b.id = "aichip"; b.className = "aichip";
   const paint = () => { const on = aiProvider() === "eu"; b.classList.toggle("on", on); b.textContent = on ? `🇪🇺 ${E().euOn}` : E().euOff; };
   b.onclick = () => {
@@ -1023,10 +1025,10 @@ window.renderHomeE = async function () {
   aiSwitch();
   presetCache = {};
   const o = home.overview, r = home.ribbon;
-  $("#greet").textContent = `${persona().name} · ${day(o.customer.as_of)}`;
+  $("#greet").textContent = "";
   const [whole, dec] = nf(2).format(o.customer.balance).split(/[.,](?=\d{2}$)/);
   const ch = o.customer.balance - r.past[0].balance_eur;
-  $("#balance").innerHTML = `${esc(whole)}<small>${lang === "en" ? "." : ","}${esc(dec)} €</small><span class="delta">${esc(E().since(`${ch < 0 ? "−" : "+"}${eur0(Math.abs(ch))}`))}</span>`;
+  $("#balance").innerHTML = `${esc(whole)}<small>${lang === "en" ? "." : ","}${esc(dec)} €</small>`;
   if (!fut || fut.cid !== cid) { fut = await api(`/api/future/${cid}`); fut.cid = cid; active = null; scen = null; picked = null; buyRes = null; }
   if (!liveSt) { try { liveSt = await api("/api/live/status"); } catch { liveSt = null; } }
   notes = null;
@@ -1249,23 +1251,23 @@ window.openPlay = openPlay;
 // "why" about exactly that. The AI also orders the cards below.
 const HB = {
   en: { title: "Questions about your money", next: "Ask next", cont: "Continue in Coach", byAi: "Picked and written by the AI from your numbers. Every number is checked.",
-    byRules: "From your numbers", cardsBy: "In the order that matters for you now", why: "Why?", other: "Ask something else", moreQ: "More questions", fewerQ: "Fewer questions", moreC: "Show all cards", fewerC: "Show fewer cards",
+    byRules: "From your numbers", cardsBy: "In the order that matters for you now", why: "Why?", other: "Ask something else", moreQ: "More questions", fewerQ: "Fewer questions", moreC: "Show all cards", fewerC: "Show fewer cards", moreM: "Month by month", fewerM: "Hide months",
     note: { biggest_day: (d) => `What did I spend on ${d}?`, big_day: (d) => `What did I spend on ${d}?`, below_zero: (d) => `Why does my balance go below zero around ${d}?`,
       payday: () => "Where did my last pay go?", no_spend_days: () => "What helped me have days with no spending?", payday_week: () => "Why do I spend more right after payday?", lowest: (d) => `Why was my balance so low around ${d}?`, below_zero_spell: (d) => `Why was I below zero from ${d}?`, top_month: (d, m) => `Why did I spend so much in ${m}?`, best_month: (d, m) => `What went well in ${m}?`, worst_month: (d, m) => `Why was ${m} so tight?` },
     bill: (n) => `Why does ${n} hit my balance before payday?`, end: "What decides how much I'll have on payday?" },
   fi: { title: "Kysymyksiä rahoistasi", next: "Kysy seuraavaksi", cont: "Jatka valmentajan kanssa", byAi: "Tekoäly valitsi ja kirjoitti lukujesi pohjalta. Jokainen luku on tarkistettu.",
-    byRules: "Lukujesi pohjalta", cardsBy: "Järjestyksessä, joka on sinulle nyt tärkein", why: "Miksi?", other: "Kysy jotain muuta", moreQ: "Lisää kysymyksiä", fewerQ: "Vähemmän kysymyksiä", moreC: "Näytä kaikki kortit", fewerC: "Näytä vähemmän kortteja",
+    byRules: "Lukujesi pohjalta", cardsBy: "Järjestyksessä, joka on sinulle nyt tärkein", why: "Miksi?", other: "Kysy jotain muuta", moreQ: "Lisää kysymyksiä", fewerQ: "Vähemmän kysymyksiä", moreC: "Näytä kaikki kortit", fewerC: "Näytä vähemmän kortteja", moreM: "Kuukausittain", fewerM: "Piilota kuukaudet",
     note: { biggest_day: (d) => `Mihin käytin rahaa ${d}?`, big_day: (d) => `Mihin käytin rahaa ${d}?`, below_zero: (d) => `Miksi saldoni menee miinukselle noin ${d}?`,
       payday: () => "Mihin viime palkkani meni?", no_spend_days: () => "Mikä auttoi minua pitämään ostottomia päiviä?", payday_week: () => "Miksi kulutan enemmän heti palkkapäivän jälkeen?", lowest: (d) => `Miksi saldoni oli niin matala noin ${d}?`, below_zero_spell: (d) => `Miksi olin miinuksella ${d} alkaen?`, top_month: (d, m) => `Miksi kulutin niin paljon: ${m}?`, best_month: (d, m) => `Mikä meni hyvin: ${m}?`, worst_month: (d, m) => `Miksi raha oli niin tiukalla: ${m}?` },
     bill: (n) => `Miksi ${n} osuu saldooni ennen palkkapäivää?`, end: "Mikä ratkaisee, paljonko minulla on palkkapäivänä?" },
   sv: { title: "Frågor om dina pengar", next: "Fråga härnäst", cont: "Fortsätt med coachen", byAi: "AI:n valde och skrev utifrån dina siffror. Varje siffra är kontrollerad.",
-    byRules: "Utifrån dina siffror", cardsBy: "I den ordning som spelar roll för dig nu", why: "Varför?", other: "Fråga något annat", moreQ: "Fler frågor", fewerQ: "Färre frågor", moreC: "Visa alla kort", fewerC: "Visa färre kort",
+    byRules: "Utifrån dina siffror", cardsBy: "I den ordning som spelar roll för dig nu", why: "Varför?", other: "Fråga något annat", moreQ: "Fler frågor", fewerQ: "Färre frågor", moreC: "Visa alla kort", fewerC: "Visa färre kort", moreM: "Månad för månad", fewerM: "Dölj månaderna",
     note: { biggest_day: (d) => `Vad spenderade jag på ${d}?`, big_day: (d) => `Vad spenderade jag på ${d}?`, below_zero: (d) => `Varför går saldot på minus runt ${d}?`,
       payday: () => "Vart tog min senaste lön vägen?", no_spend_days: () => "Vad hjälpte mig att ha köpfria dagar?", payday_week: () => "Varför spenderar jag mer direkt efter lönen?", lowest: (d) => `Varför var saldot så lågt runt ${d}?`, below_zero_spell: (d) => `Varför var jag på minus från ${d}?`, top_month: (d, m) => `Varför spenderade jag så mycket i ${m}?`, best_month: (d, m) => `Vad gick bra i ${m}?`, worst_month: (d, m) => `Varför var ${m} så tight?` },
     bill: (n) => `Varför slår ${n} mot saldot före lönen?`, end: "Vad avgör hur mycket jag har på lönedagen?" },
 };
 const hbT = () => HB[lang] || HB.en;
-let hb = null, hbAsked = new Set(), hbBusy = false, hbLast = null, qsOpen = false, cardsOpen = false;
+let hb = null, hbAsked = new Set(), hbBusy = false, hbLast = null, qsOpen = false, cardsOpen = false, monthsOpen = false;
 const briefCache = {};
 const whyNote = (nt) => (hbT().note[nt.kind] ? hbT().note[nt.kind](day(nt.date),
   new Date(nt.date + "T12:00:00").toLocaleDateString(T().locale, { month: "long", year: "numeric" })) : "");
@@ -1344,6 +1346,7 @@ document.addEventListener("click", (e) => {
   const tg = e.target.closest("[data-toggle]");
   if (tg) {  // "More questions" / "Show all cards": extra detail only when asked for
     if (tg.dataset.toggle === "qs") { qsOpen = !qsOpen; tg.previousElementSibling.hidden = !qsOpen; tg.textContent = qsOpen ? hbT().fewerQ : hbT().moreQ; }
+    else if (tg.dataset.toggle === "months") { monthsOpen = !monthsOpen; tg.previousElementSibling.hidden = !monthsOpen; tg.textContent = monthsOpen ? hbT().fewerM : hbT().moreM; }
     else { cardsOpen = !cardsOpen; tg.previousElementSibling.hidden = !cardsOpen; tg.textContent = cardsOpen ? hbT().fewerC : hbT().moreC; }
     return;
   }
