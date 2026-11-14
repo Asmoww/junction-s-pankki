@@ -31,11 +31,11 @@ not only where it went. Every number is computed from the data by code; the AI p
 ## Evidence
 - **Numbers from code, checked:** `app/verify.py` matches every € and % in an answer to the tool results; the UI
   says "numbers matched to your data" and flags anything unmatched.
-- **Trap suite** (`tests/traps/`, `scripts/run_traps.py`): 23 questions where money coaches typically fail (wrong
+- **Trap suite** (`tests/traps/`, `scripts/run_traps.py`): 25 questions where money coaches typically fail (wrong
   "last month", invented merchants, prompt injection for another customer's data, quick loans, made-up projections,
   compound growth beyond income), run against the live coach; results on the Learn tab.
 - **AI in Finland:** every AI job runs on Gemma 4 31B that we host on a Verda GPU in Finland (`app/eu.py`,
-  `AI_PROVIDER=eu`): 21/22 traps, every number matched. The Claude path is still in the code for comparison but
+  `AI_PROVIDER=eu`): 25/25 traps, 51/51 numbers matched. The Claude path is still in the code for comparison but
   switched off. See `docs/VERDA.md`.
 - **Live web data** with sources (`app/live.py`, Context.dev): prices confirmed on shop pages, official rules
   (loan cap, transfer tax, Euribor, HSL fares). See `docs/CONTEXT_DEV.md`.

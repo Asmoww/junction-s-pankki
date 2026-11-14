@@ -243,7 +243,7 @@ for i, (h, b, f, c) in enumerate(steps):
     if i < 4:
         a = s.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, Inches(x + 2.24), Inches(3.18), Inches(0.22), Inches(0.3))
         a.fill.solid(); a.fill.fore_color.rgb = rgb(G300); a.line.fill.background(); a.name = f"Arrow {i+1}"
-stats = [("23 / 25", "trick questions passed on the live coach (latest run, Gemma)"), ("51 / 51", "numbers in those answers matched to her data"),
+stats = [("25 / 25", "trick questions passed on the live coach (latest run, Gemma)"), ("51 / 51", "numbers in those answers matched to her data"),
          ("Totals only", "leave the database: never her name, customer id or account number")]
 for i, (big, lab) in enumerate(stats):
     x = 0.6 + i * 4.15
@@ -251,7 +251,7 @@ for i, (big, lab) in enumerate(stats):
     text(s, x, 5.65, 3.6, 1.0, lab, size=15, color=INK, name=f"Proof {i+1} text")
 notes(s, DRAFT + "★ Stage slide. 2:00-2:25. Tech stack as one graph (Rasmus's Walkthrough note).\n"
       "Trap suite: scripts/run_traps.py --eu, 25 questions where money coaches typically fail; RERUN on the final build "
-      "and update '23 / 25' and '51 / 51' (a run on the current build is in progress). Number check: app/verify.py. "
+      "and update '25 / 25' and '51 / 51' (run on 15 Nov 00:xx, build 93b1f29). Number check: app/verify.py. "
       "Model: Gemma 4 31B via vLLM on a Verda GPU in Finland (docs/VERDA.md). The Claude path exists but is switched off.")
 
 # 8 ---------------------------------------------------------------- Compared with what exists

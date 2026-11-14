@@ -39,7 +39,7 @@ The app doesn't pretend a two-week trick fixes it; it shows her which basket to 
 | 2:00 | Coach suggestion (or Home → More questions): "What if I paused all my extras until payday?" → chart: usual −997 € vs with the change −676 € | "Her idea: stop all extras. Better. Still short." | Literacy |
 | 2:20 | Play your next two weeks: swipe two extras, rent card, result | "Her next two weeks as cards, with the three baskets as rules. Rent can't be skipped; moving it needs the landlord and it's still owed. And the app says it plainly: her months run about 206 € short." | Literacy (baskets) |
 | 3:10 | Learn → a quest: guess, then her data | "Then it checks she got it: she guesses under 20 % goes on extras. Her own data says 32 %." | Literacy |
-| 3:40 | "What the AI saw" under an answer | "All of this runs on Gemma in Finland. The model sees totals, never her name or account. We test it with 24 trick questions; it passes N." | Feasibility, S-mobiili |
+| 3:40 | "What the AI saw" under an answer | "All of this runs on Gemma in Finland. The model sees totals, never her name or account. We test it with 25 trick questions; it passes all 25." | Feasibility, S-mobiili |
 | 4:10 | Back to Home | "It's a mobile web view, ready to sit in S-mobiili. See your money's future, and change it." Then: "Questions?" | Integration |
 
 **Two-minute version (stage or video):** 0:00 hook → 0:20 Home sentence + line → 0:40 tapped question + live steps →

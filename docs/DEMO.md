@@ -24,7 +24,7 @@ Phone (or laptop in Chrome device mode), Emma, Finnish or English to match the r
 | 1:50 | Result **+13 € / +87 €**; point at the line under it → **Show on my graph** | "She gets through this month, and the app says straight away what that doesn't fix: her months run about 206 € short, so the gap comes back. That's the lesson: a cut helps, a delay buys time, only spending or income closes the gap." |
 | 2:10 | **Your three baskets → Sort with the AI**: answer the parking card | "Some spending only she can sort. The AI asks; her answer re-sorts her money everywhere." |
 | 2:45 | Back on Home: **Questions about your money** → tap "Why will I run short before payday?"; watch the steps tick; open **How I worked this out**. Then tap the **Rent** pill on the graph | "No chat box needed: the AI picked these questions for Emma this week, and the answer opens right here. You can see what it's doing: code computes every number, and every number is matched to the calculation results from her data. Anything on the graph can be asked about: tap rent, and it explains rent." |
-| 3:20 | Open **What the AI saw** under the answer (it names Gemma in Finland; the header badge is gone) | "Every answer you've seen ran on Gemma 4 that we host on a Verda GPU in Finland: 22 of 24 trick questions passed. A bank can keep the AI in Europe." |
+| 3:20 | Open **What the AI saw** under the answer (it names Gemma in Finland; the header badge is gone) | "Every answer you've seen ran on Gemma 4 that we host on a Verda GPU in Finland: 25 of 25 trick questions passed. A bank can keep the AI in Europe." |
 | 3:50 | **Your money year** → guess slide → poster | "And once a year, her money year: shareable, without amounts." |
 | 4:30 | Close | "Built to drop into S-mobiili as a web view (not integrated with S-Bank today; the other bank in PSD2 is demo data): the model sees totals, never names or account numbers. See your money's future, and change it." Then: "Questions?" |
 
@@ -48,7 +48,7 @@ Phone screen mirrored (or Chrome device mode, Pixel 7, zoom 125 %). Emma, Englis
 | 1:25 | **Check a purchase** → "iPhone 17 256 GB" | "Can she buy a phone? We check live prices, and every price is read from the shop's own page. Search engines guessed 879 € for a page that says 999 €; we only trust the page." |
 | 1:45 | Tap the 879 € offer | "Line drops to −1,876 €. Not this month." |
 | 2:00 | Coach tab: "Why am I always short before payday?" | "The coach answers from her data, draws the chart, and shows its work." Open **How I worked this out** → **What the AI saw**: "Gemma in Finland, totals only: no name or account number ever sent." |
-| 2:30 | Learn tab → report card → **See the questions** | "24 trick questions run against the live coach: 22 of 24 pass. The report shows the two it still fails." |
+| 2:30 | Learn tab → report card → **See the questions** | "25 trick questions run against the live coach: all 25 pass, every number matched." |
 | 2:45 | Close | "Built to live in S-mobiili: a push before payday, a card on the home screen, the rules from official sources. **See your money's future, and change it.**" |
 
 ## B. Table version (5-8 min, let the judge drive)
