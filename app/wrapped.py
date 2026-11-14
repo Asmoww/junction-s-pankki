@@ -49,7 +49,7 @@ def twins(cid: str, salary: float, age: int, start, end) -> dict | None:
     return None
 
 
-def _with_you(t: dict | None, cf: dict, eat: dict) -> dict | None:
+def _with_you(t: dict | None, cf: dict, eat: dict, neg_days: int) -> dict | None:
     """Compare the person with the twins who never went below zero (what the slide shows), not group vs group."""
     if not t:
         return None
@@ -58,7 +58,9 @@ def _with_you(t: dict | None, cf: dict, eat: dict) -> dict | None:
     return {"age_group": t["age_group"], "twins_who_never_went_below_zero": them["people"],
             "your_extras_per_month_eur": _r(you), "their_extras_per_month_eur": them["extras_per_month_eur"],
             "you_minus_them_extras_per_month_eur": _r(you - them["extras_per_month_eur"]),
-            "your_eat_out_visits_per_month": round(eat["n"] / 12, 1), "their_eat_out_visits_per_month": them["eat_out_visits_per_month"]}
+            "your_eat_out_visits_per_month": round(eat["n"] / 12, 1), "their_eat_out_visits_per_month": them["eat_out_visits_per_month"],
+            "your_eat_out_eur_per_month": _r((eat["t"] or 0) / 12), "their_eat_out_eur_per_month": them["eat_out_eur_per_month"],
+            "your_days_below_zero": neg_days}
 
 
 def facts(cid: str) -> dict:
@@ -83,6 +85,8 @@ def facts(cid: str) -> dict:
     for i in range(total_days):
         run = 0 if (start + timedelta(days=i)) in spend_days else run + 1
         streak = max(streak, run)
+    neg_days = _q("SELECT count(DISTINCT tx_date) n FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND balance < 0",
+                  [cid, start, end])[0]["n"]
     pp = insights.payday_pattern(cid, months=12)
     health = insights.money_health(cid)
     from .personas import PERSONAS
@@ -101,8 +105,9 @@ def facts(cid: str) -> dict:
         "no_spend_days": total_days - len(spend_days), "longest_no_spend_streak_days": streak,
         "payday_week_change_percent": pp["payday_week_change_percent"],
         "hourly_pay_eur": _r(hour) if hour else None,
-        "twins": _with_you(twins(cid, salary, c["age"], start, end) if salary else None, cf, eat),
-        "rahakunto": {"score": health["score"], "tier": health["tier"]},
+        "twins": _with_you(twins(cid, salary, c["age"], start, end) if salary else None, cf, eat, neg_days),
+        "rahakunto": {"score": health["score"], "tier": health["tier"], "parts": health["parts"]},
+        "spender_type": insights.spender_type(cid)["type"],
         "next_step": ({**health["steps"][0], "points": round(health["steps"][0]["points"])} if health["steps"] else None),
         # one character per day from the period start: "1" = no spending that day (drawn as a calendar, not sent to the AI)
         "_calendar": "".join("0" if (start + timedelta(days=i)) in spend_days else "1" for i in range(total_days)),
@@ -129,7 +134,7 @@ def captions(cid: str, lang: str = "en") -> dict:
               "caption per slide, max 50 characters, warm and a little playful, never shaming, never comparing the person "
               "to anyone except the 'twins' group in the facts. Each slide already shows its numbers as a chart, so write "
               "NO digits at all: say what it means or give a light nudge. 'guess' is about the first entry of top_extras "
-              "(shown after the person guesses; you don't know if they guessed right, so never say whether they did). 'next' is one encouraging line about next_step.")
+              "(shown after the person guesses; you don't know if they guessed right, so never say whether they did). 'habit' is about eating out costing hours of work: a gentle nudge to notice it, not praise. 'next' is one encouraging line about next_step.")
     trace = [{"tool": "facts", "error": False, "result": f}]
     ok = lambda v: isinstance(v, str) and len(v) <= 60 and not any(ch.isdigit() for ch in v) and all(n["status"] != "unverified" for n in verify.check(v, trace, [], lang))
     try:

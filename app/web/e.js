@@ -11,10 +11,10 @@ const ES = {
       baskets: "Where it went", habit: "Your number-one habit", meals: "meals out", hours: (h) => `= ${h} hours of your work`,
       bigDay: "Your biggest day", best: "Best month", tough: "Toughest month", leftOver: (a) => `${a} left over`, lowest: (a) => `lowest ${a}`,
       noSpend: "no-spend days", streak: (d) => `longest streak ${d} days`, payday: "more on extras the week after payday",
-      twins: (n) => `${n} people like you never went below zero`, youX: "You", themX: "Them", extrasMonth: "extras a month",
+      twins: (n) => `${n} people like you never went below zero`, youX: "You", themX: "Them", extrasMonth: "Extras a month",
       visits: (a, b) => `Eating out: they ${b}, you ${a} times a month`, score: "Rahakunto", next: "One thing for next year",
-      share: "Share (no amounts)", done: "Done", shareText: (f) => `My money year: ${f.no_spend_days} no-spend days, a ${f.longest_no_spend_streak_days}-day streak and ${f.eat_out.visits} meals out. #MoneyWrapped`,
-      tap: "Tap to continue", guessK: "Quick guess", guessQ: "Which extra cost you the most this year?", right: "Spot on.",
+      share: "Share image", done: "Done", shareText: (f) => `My money year: ${f.no_spend_days} no-spend days, a ${f.longest_no_spend_streak_days}-day streak and ${f.eat_out.visits} meals out. #MoneyWrapped`,
+      tap: "Tap to continue", scoreWhat: "Your money fitness out of 100, from four habits.", sumK: "Your year in one picture", posterTitle: "My money\nyear", posterTag: "#MoneyWrapped", pTop: "Top extra", pNoSpend: "No-spend days", pStreak: "Longest streak", pDays: (d) => `${d} days`, pPlus: "Months in plus", pMeals: "Meals out", pType: "Money type", pBest: "Best month", twinsHead: (a) => `people aged ${a} with pay like yours never went below zero`, youBelow: (d) => d ? `You were below zero on ${d} days.` : "Neither did you.", eatTimes: "Meals out a month", eatEur: "Eating out a month", ateK: "Eating out cost you", workDays: "working days", ateSub: (n, e, h) => `${n} meals · ${e} · ${h} hours of your pay`, plusMonths: "months ended with money left over", guessK: "Quick guess", guessQ: "Which extra cost you the most this year?", right: "Spot on.",
       wrong: (x, n) => `It was ${x}: ${n} times.`, inL: "In", outL: "Out", monthsK: "What was left each month", bestIn: (m) => `Best: ${m}`,
       otherWeeks: "Other weeks", paydayWeek: "Payday week" },
     hk: { name: "Rahakunto", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
@@ -53,10 +53,10 @@ const ES = {
       baskets: "Mihin se meni", habit: "Ykköstapasi", meals: "kertaa ulkona syömässä", hours: (h) => `= ${h} tuntia työtäsi`,
       bigDay: "Suurin päiväsi", best: "Paras kuukausi", tough: "Tiukin kuukausi", leftOver: (a) => `${a} jäi yli`, lowest: (a) => `alimmillaan ${a}`,
       noSpend: "päivää ilman ostoja", streak: (d) => `pisin putki ${d} päivää`, payday: "enemmän extroihin palkkaviikolla",
-      twins: (n) => `${n} kaltaistasi ei käynyt kertaakaan miinuksella`, youX: "Sinä", themX: "He", extrasMonth: "extroihin kuussa",
+      twins: (n) => `${n} kaltaistasi ei käynyt kertaakaan miinuksella`, youX: "Sinä", themX: "He", extrasMonth: "Extrat kuussa",
       visits: (a, b) => `Ulkona syöminen: he ${b}, sinä ${a} kertaa kuussa`, score: "Rahakunto", next: "Yksi asia ensi vuodelle",
-      share: "Jaa (ilman summia)", done: "Valmis", shareText: (f) => `Rahavuoteni: ${f.no_spend_days} päivää ilman ostoja, ${f.longest_no_spend_streak_days} päivän putki ja ${f.eat_out.visits} kertaa ulkona syömässä. #Rahavuosi`,
-      tap: "Napauta jatkaaksesi", guessK: "Arvaa", guessQ: "Mikä extra maksoi sinulle eniten tänä vuonna?", right: "Juuri niin.",
+      share: "Jaa kuva", done: "Valmis", shareText: (f) => `Rahavuoteni: ${f.no_spend_days} päivää ilman ostoja, ${f.longest_no_spend_streak_days} päivän putki ja ${f.eat_out.visits} kertaa ulkona syömässä. #Rahavuosi`,
+      tap: "Napauta jatkaaksesi", scoreWhat: "Raha-asioidesi kunto asteikolla 0–100, neljästä tavasta.", sumK: "Vuotesi yhdessä kuvassa", posterTitle: "Minun\nrahavuoteni", posterTag: "#Rahavuosi", pTop: "Ykkösextra", pNoSpend: "Päivää ilman ostoja", pStreak: "Pisin putki", pDays: (d) => `${d} päivää`, pPlus: "Kuukautta plussalla", pMeals: "Kertaa ulkona syömässä", pType: "Rahatyyppi", pBest: "Paras kuukausi", twinsHead: (a) => `${a}-vuotiasta kaltaisellasi palkalla ei käynyt kertaakaan miinuksella`, youBelow: (d) => d ? `Sinä olit miinuksella ${d} päivänä.` : "Et sinäkään.", eatTimes: "Kertaa ulkona kuussa", eatEur: "Ulkona syöminen kuussa", ateK: "Ulkona syöminen maksoi sinulle", workDays: "työpäivää", ateSub: (n, e, h) => `${n} kertaa · ${e} · ${h} tuntia palkkaasi`, plusMonths: "kuukautta päättyi plussalle", guessK: "Arvaa", guessQ: "Mikä extra maksoi sinulle eniten tänä vuonna?", right: "Juuri niin.",
       wrong: (x, n) => `Se oli ${x}: ${n} kertaa.`, inL: "Tuli", outL: "Meni", monthsK: "Mitä jäi kuukausittain", bestIn: (m) => `Paras: ${m}`,
       otherWeeks: "Muut viikot", paydayWeek: "Palkkaviikko" },
     hk: { name: "Rahakunto", tiers: { vulnerable: "Haavoittuva", coping: "Pärjäävä", healthy: "Hyvä" },
@@ -95,10 +95,10 @@ const ES = {
       baskets: "Vart det tog vägen", habit: "Din största vana", meals: "gånger äta ute", hours: (h) => `= ${h} timmar av ditt arbete`,
       bigDay: "Din största dag", best: "Bästa månaden", tough: "Tuffaste månaden", leftOver: (a) => `${a} över`, lowest: (a) => `lägst ${a}`,
       noSpend: "dagar utan köp", streak: (d) => `längsta svit ${d} dagar`, payday: "mer på extra veckan efter lönen",
-      twins: (n) => `${n} som du gick aldrig under noll`, youX: "Du", themX: "De", extrasMonth: "extra i månaden",
+      twins: (n) => `${n} som du gick aldrig under noll`, youX: "Du", themX: "De", extrasMonth: "Extra i månaden",
       visits: (a, b) => `Äta ute: de ${b}, du ${a} gånger i månaden`, score: "Pengakondition", next: "En sak för nästa år",
-      share: "Dela (utan belopp)", done: "Klar", shareText: (f) => `Mitt pengaår: ${f.no_spend_days} dagar utan köp, en svit på ${f.longest_no_spend_streak_days} dagar och ${f.eat_out.visits} gånger ute och åt. #Pengaåret`,
-      tap: "Tryck för att fortsätta", guessK: "Gissa", guessQ: "Vilken extra kostade dig mest i år?", right: "Helt rätt.",
+      share: "Dela bilden", done: "Klar", shareText: (f) => `Mitt pengaår: ${f.no_spend_days} dagar utan köp, en svit på ${f.longest_no_spend_streak_days} dagar och ${f.eat_out.visits} gånger ute och åt. #Pengaåret`,
+      tap: "Tryck för att fortsätta", scoreWhat: "Din pengakondition på 0–100, från fyra vanor.", sumK: "Ditt år i en bild", posterTitle: "Mitt\npengaår", posterTag: "#Pengaåret", pTop: "Största extra", pNoSpend: "Dagar utan köp", pStreak: "Längsta svit", pDays: (d) => `${d} dagar`, pPlus: "Månader på plus", pMeals: "Gånger ute och åt", pType: "Pengatyp", pBest: "Bästa månaden", twinsHead: (a) => `personer i åldern ${a} med lön som din gick aldrig under noll`, youBelow: (d) => d ? `Du var under noll ${d} dagar.` : "Det gjorde inte du heller.", eatTimes: "Gånger ute i månaden", eatEur: "Äta ute i månaden", ateK: "Att äta ute kostade dig", workDays: "arbetsdagar", ateSub: (n, e, h) => `${n} gånger · ${e} · ${h} timmar av din lön`, plusMonths: "månader slutade med pengar kvar", guessK: "Gissa", guessQ: "Vilken extra kostade dig mest i år?", right: "Helt rätt.",
       wrong: (x, n) => `Det var ${x}: ${n} gånger.`, inL: "In", outL: "Ut", monthsK: "Vad som blev över varje månad", bestIn: (m) => `Bäst: ${m}`,
       otherWeeks: "Andra veckor", paydayWeek: "Löneveckan" },
     hk: { name: "Pengakondition", tiers: { vulnerable: "Sårbar", coping: "Klarar sig", healthy: "Bra" },
@@ -415,6 +415,11 @@ function redraw() {
 }
 
 // ---------------------------------------------------------------- Money Wrapped (story slides)
+const EMOJI = { "Amusement parks": "🎢", "Attractions & museums": "🏛️", "Bars & pubs": "🍺", Books: "📚", "Car rental": "🚗", Cinema: "🎬",
+  Clothing: "👕", Electronics: "📱", Fashion: "👗", "Fast food & cafes": "☕", Flights: "✈️", Furniture: "🛋️", Hardware: "🔨", "Home supplies": "🏠",
+  Hotels: "🏨", "Kiosks & convenience stores": "🏪", "Other entertainment": "🎟️", "Other home & tech": "🔌", "Other lifestyle": "✨",
+  "Other restaurants": "🍽️", "Other shopping": "🛍️", "Other travel": "🧳", Parking: "🅿️", "Recreation & sports": "🏸", Restaurants: "🍽️",
+  "Software & apps": "💾", "Sports gear": "👟", Taxis: "🚕", "Theatre & concerts": "🎭", "Toys & games": "🧸", "Travel agencies": "🌴" };
 async function openWrapped() {
   const root = document.createElement("div");
   root.className = "wrap"; root.innerHTML = `<div class="wtop"><div class="wbars"></div><button class="wx" aria-label="Close">×</button></div><div class="wslide"><span class="typing"><i></i><i></i><i></i></span></div>`;
@@ -430,60 +435,86 @@ async function openWrapped() {
   // Guess game: the four extras that cost the most, in random order; tapping one reveals the amounts
   const top = f.top_extras || [], opts = [...top].sort(() => Math.random() - 0.5);
   const guess = top.length >= 2 ? `<div class="wk">${W.guessK}</div><h2>${W.guessQ}</h2>
-    <div class="wguess">${opts.map((o) => `<button class="wopt" data-sub="${esc(o.merchant_type)}"><span>${esc(label(o.merchant_type))}</span>
+    <div class="wguess">${opts.map((o) => `<button class="wopt" data-sub="${esc(o.merchant_type)}"><span><em>${EMOJI[o.merchant_type] || "🛍️"}</em>${esc(label(o.merchant_type))}</span>
       <i style="--w:${(o.total_eur / top[0].total_eur) * 100}%"></i><b>${eur0(o.total_eur)}</b></button>`).join("")}</div>
     <p class="wres"></p><div class="wlater">${cap("guess")}</div>` : null;
   // Baskets as a ring; the extras basket is the bright one
   const b1 = (f.baskets_eur["1"] / tot) * 100, b2 = b1 + (f.baskets_eur["2"] / tot) * 100;
   const ring = `<div class="wk">${W.baskets}</div><div class="wdonut" style="--a:${b1}%;--b:${b2}%"><span><b>${Math.round(100 - b2)} %</b>${esc(T().baskets[3][0])}</span></div>
     <ul class="wleg">${[1, 2, 3].map((b) => `<li><i class="k${b}"></i>${esc(T().baskets[b][0])}<b>${eur0(f.baskets_eur[b])}</b></li>`).join("")}</ul>${cap("baskets")}`;
-  // Meals out: one dot per meal
-  const meals = `<div class="wk">${W.habit}</div><div class="wbig">${f.eat_out.visits}</div>
-    <div class="wdots">${"<i></i>".repeat(Math.min(f.eat_out.visits, 400))}</div>
-    <p class="wsub">${W.meals} · ${eur0(f.eat_out.total_eur)}${f.eat_out.hours_of_work ? ` ${esc(W.hours(f.eat_out.hours_of_work))}` : ""}</p>${cap("habit")}`;
-  // Month by month: what was left over each month, the best one labelled
-  const ms = f.months || [], mmax = Math.max(...ms.map((m) => Math.abs(m.left_over_eur)), 1);
+  // Eating out, as the work it cost: one block per working day (8 h), the last one partly filled
+  const hrs = f.eat_out.hours_of_work, wd = hrs ? hrs / 8 : 0;
+  const meals = hrs ? `<div class="wk">${W.ateK}</div><div class="wbig">${Math.round(wd)}</div><p class="wsub strong">${W.workDays}</p>
+    <div class="wdays">${Array.from({ length: Math.ceil(wd) }, (_, k) => `<i style="--f:${Math.min(1, wd - k) * 100}%;--d:${k * 40}ms"></i>`).join("")}</div>
+    <p class="wsub">${esc(W.ateSub(f.eat_out.visits, eur0(f.eat_out.total_eur), hrs))}</p>${cap("habit")}`
+    : `<div class="wk">${W.habit}</div><div class="wbig">${f.eat_out.visits}</div><p class="wsub">${W.meals} · ${eur0(f.eat_out.total_eur)}</p>${cap("habit")}`;
+  // Month by month: how many months ended with money left, then the bars (zero placed where the data needs it)
+  const ms = f.months || [], pos = Math.max(0, ...ms.map((m) => m.left_over_eur)), neg = Math.max(0, ...ms.map((m) => -m.left_over_eur));
+  const span = pos + neg || 1, zero = (pos / span) * 100, plus = ms.filter((m) => m.left_over_eur > 0).length;
   const best = ms.reduce((a, m) => (m.left_over_eur > a.left_over_eur ? m : a), ms[0] || { left_over_eur: 0 });
-  const months = ms.length ? `<div class="wk">${W.monthsK}</div><div class="wcols">${ms.map((m) => {
-      const h = (Math.abs(m.left_over_eur) / mmax) * 50, neg = m.left_over_eur < 0;
-      return `<div class="wc${m === best ? " best" : ""}">${m === best ? `<em>${eur0(m.left_over_eur)}</em>` : ""}<i class="${neg ? "neg" : ""}" style="--h:${h}%"></i>
-        <span>${esc(new Date(m.month + "-15T12:00:00").toLocaleDateString(T().locale, { month: "narrow" }))}</span></div>`; }).join("")}</div>
+  const months = ms.length ? `<div class="wbig">${plus}<small>/${ms.length}</small></div><p class="wsub strong">${W.plusMonths}</p>
+    <div class="wcols2" style="--z:${zero}%">${ms.map((m) => {
+      const h = (Math.abs(m.left_over_eur) / span) * 100, ng = m.left_over_eur < 0;
+      return `<div class="wc${m === best ? " best" : ""}${ng ? " ng" : ""}" style="--h:${h}%">${m === best ? `<em>${eur0(m.left_over_eur)}</em>` : ""}<i></i></div>`; }).join("")}</div>
+    <div class="wmon">${ms.map((m) => `<span>${esc(new Date(m.month + "-15T12:00:00").toLocaleDateString(T().locale, { month: "narrow" }))}</span>`).join("")}</div>
     <p class="wsub">${esc(W.bestIn(mon(best.month)))}</p>${cap("months")}` : null;
   // Calendar: one row per month, a lit dot for every day without spending
   const cal = f._calendar || "", d0 = new Date(f.period.start + "T12:00:00");
+  let st0 = -1, stL = 0;  // the longest run of no-spend days, highlighted on the calendar
+  for (let k = 0, run = 0; k < cal.length; k++) { run = cal[k] === "1" ? run + 1 : 0; if (run > stL) { stL = run; st0 = k - run + 1; } }
   let rows = "", k = 0;
   for (let mo = 0; mo < 12 && k < cal.length; mo++) {
     const dt = new Date(d0.getFullYear(), d0.getMonth() + mo, 1, 12), n = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate();
     let dots = "";
-    for (let dd = 0; dd < n && k < cal.length; dd++, k++) dots += cal[k] === "1" ? `<i class="on" style="--d:${k * 3}ms"></i>` : "<i></i>";
+    for (let dd = 0; dd < n && k < cal.length; dd++, k++) dots += cal[k] === "1" ? `<i class="on${k >= st0 && k < st0 + stL ? " st" : ""}" style="--d:${k * 3}ms"></i>` : "<i></i>";
     rows += `<div class="wcal-r"><span>${esc(dt.toLocaleDateString(T().locale, { month: "narrow" }))}</span>${dots}</div>`;
   }
   const nospend = `<div class="wbig">${f.no_spend_days}</div><p class="wsub">${W.noSpend}</p><div class="wcal">${rows}</div>
-    <p class="wsub">${esc(W.streak(f.longest_no_spend_streak_days))}</p>${cap("no_spend")}`;
+    <p class="wsub"><span class="stkey"></span>${esc(W.streak(f.longest_no_spend_streak_days))}</p>${cap("no_spend")}`;
   // Payday week vs the other weeks, as two bars
   const pp = f.payday_week_change_percent, pmx = Math.max(100, 100 + (pp || 0));
   const payday = pp != null && pp >= 10 ? `<div class="wbig">+${pp} %</div><p class="wsub">${W.payday}</p>
     <div class="wvs"><div><i style="--h:${(100 / pmx) * 100}%"></i><span>${W.otherWeeks}</span></div><div><i class="hi" style="--h:${((100 + pp) / pmx) * 100}%"></i><span>${W.paydayWeek}</span></div></div>${cap("payday")}` : null;
-  const twins = f.twins ? (() => { const t = f.twins, me = t.your_extras_per_month_eur, them = t.their_extras_per_month_eur, mx = Math.max(me, them, 1);
-    return `<div class="wk">${esc(W.twins(t.twins_who_never_went_below_zero))}</div><div class="wtw">${hbar(W.youX, me, (me / mx) * 100)}${hbar(W.themX, them, (them / mx) * 100, "th")}</div>
-      <p class="wsub">${W.extrasMonth}</p>${cap("twins")}`; })() : null;
+  // Twins: people like you who never went below zero, compared on three habits
+  const twins = f.twins ? (() => { const t = f.twins;
+    const row = (em, l, me, them, fmt) => { const mx = Math.max(me, them, 1);
+      return `<div class="wcmp"><div class="wcl"><em>${em}</em>${l}</div>
+        <div class="wrow"><span>${W.youX}</span><div class="wtrack"><i style="--w:${(me / mx) * 100}%"></i></div><b>${fmt(me)}</b></div>
+        <div class="wrow"><span>${W.themX}</span><div class="wtrack"><i class="th" style="--w:${(them / mx) * 100}%"></i></div><b>${fmt(them)}</b></div></div>`; };
+    const n1 = (x) => nf(1).format(x);
+    return `<div class="wbig">${t.twins_who_never_went_below_zero}</div><p class="wsub strong">${esc(W.twinsHead(t.age_group))}</p>
+      <p class="wsub">${esc(W.youBelow(t.your_days_below_zero))}</p>
+      ${row("🛍️", W.extrasMonth, t.your_extras_per_month_eur, t.their_extras_per_month_eur, eur0)}
+      ${row("🍽️", W.eatTimes, t.your_eat_out_visits_per_month, t.their_eat_out_visits_per_month, n1)}
+      ${row("💶", W.eatEur, t.your_eat_out_eur_per_month, t.their_eat_out_eur_per_month, eur0)}${cap("twins")}`; })() : null;
+  const poster = await drawPoster(f, W, { top: top[0], best: (f.months || []).reduce((a, m) => (!a || m.left_over_eur > a.left_over_eur ? m : a), null)?.month, plus: (f.months || []).filter((m) => m.left_over_eur > 0).length, months: (f.months || []).length });
   const slides = [
     `<div class="wk">${esc(day(f.period.start))} – ${esc(day(f.period.end))}</div><h1>${esc(W.title(f.name || ""))}</h1>
      <div class="wtw">${hbar(W.inL, f.money_in_eur, (f.money_in_eur / io) * 100)}${hbar(W.outL, f.money_out_eur, (f.money_out_eur / io) * 100, "th")}</div>${cap("year")}`,
     guess, ring, meals, months, nospend, payday, twins,
-    `<div class="wk">${W.score}</div><div class="ring big w" style="background:conic-gradient(#fff ${f.rahakunto.score * 3.6}deg, rgba(255,255,255,.2) 0)"><span>${f.rahakunto.score}</span></div>
-     <p class="wsub">${esc(E().hk.tiers[f.rahakunto.tier])}</p><div class="wk" style="margin-top:22px">${W.next}</div>${f.next_step ? `<h2>${esc(stepText(f.next_step))}</h2>` : ""}${cap("next")}
+    `<div class="wk">${W.score}</div>
+     <div class="whk"><div class="ring big w" style="background:conic-gradient(var(--fg) ${f.rahakunto.score * 3.6}deg, var(--soft) 0)"><span>${f.rahakunto.score}</span></div>
+       <div><b>${esc(E().hk.tiers[f.rahakunto.tier])}</b><p>${W.scoreWhat}</p></div></div>
+     <ul class="wparts">${Object.entries(f.rahakunto.parts || {}).map(([k, v]) => `<li><span>${esc(E().hk.parts[k])}</span>
+       <div class="wtrack"><i style="--w:${v ?? 0}%"></i></div><b>${v ?? "?"}</b></li>`).join("")}</ul>
+     ${f.next_step ? `<div class="wgoal"><em>🎯</em><div><span>${W.next}</span><b>${esc(stepText(f.next_step))}</b></div></div>` : ""}${cap("next")}`,
+    `<div class="wk">${W.sumK}</div><img class="wposter" alt="${esc(W.sumK)}" src="${poster.url}">
      <div class="wact"><button class="wshare">${W.share}</button><button class="wdone">${W.done}</button></div>`,
   ].filter(Boolean);
   let i = 0;
   const bars = root.querySelector(".wbars"), sl = root.querySelector(".wslide");
   const show = () => {
+    root.classList.toggle("light", i % 2 === 1);
     bars.innerHTML = slides.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("");
     sl.innerHTML = slides[i] + (i < slides.length - 1 ? `<p class="wtap">${W.tap}</p>` : "");
     sl.classList.remove("in"); void sl.offsetWidth; sl.classList.add("in");
     const sh = sl.querySelector(".wshare");
     if (sh) sh.onclick = async (e) => { e.stopPropagation(); const text = W.shareText(f);
-      try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast("✓"); } } catch {} };
+      const file = new File([poster.blob], "money-year.png", { type: "image/png" });
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text });
+        else { const a = document.createElement("a"); a.href = poster.url; a.download = "money-year.png"; a.click(); toast("✓"); }
+      } catch {} };
     const dn = sl.querySelector(".wdone"); if (dn) dn.onclick = (e) => { e.stopPropagation(); root.remove(); };
   };
   sl.onclick = (e) => {
@@ -503,6 +534,38 @@ async function openWrapped() {
     i = x < 0.3 ? Math.max(0, i - 1) : Math.min(slides.length - 1, i + 1); show();
   };
   show();
+}
+
+// The shareable summary: a story-size image with the year's highlights and no amounts (nothing private in a share)
+async function drawPoster(f, W, x) {
+  await Promise.all(["700 100px Geologica", "500 40px Geologica"].map((q) => document.fonts.load(q).catch(() => null)));
+  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920;
+  const g = c.getContext("2d"), G = "#00843d", D = "#003d25";
+  g.fillStyle = G; g.fillRect(0, 0, 1080, 1920);
+  g.fillStyle = "#ffffff"; g.globalAlpha = 0.08; g.beginPath(); g.arc(980, 180, 300, 0, 7); g.fill(); g.globalAlpha = 1;
+  g.fillStyle = "#c9f0d8"; g.font = "500 42px Geologica"; g.fillText(`${day(f.period.start)} – ${day(f.period.end)}`, 90, 190);
+  g.fillStyle = "#fff"; g.font = "700 118px Geologica";
+  W.posterTitle.split("\n").forEach((ln, k) => g.fillText(ln, 84, 340 + k * 124));
+  g.beginPath(); g.roundRect(60, 590, 960, 1110, 56); g.fill();
+  const rows = [
+    ["🏆", W.pTop, x.top ? label(x.top.merchant_type) : "–"],
+    ["🌱", W.pNoSpend, String(f.no_spend_days)],
+    ["🔥", W.pStreak, W.pDays(f.longest_no_spend_streak_days)],
+    ["📈", W.pPlus, `${x.plus}/${x.months}`],
+    ["🍽️", W.pMeals, String(f.eat_out.visits)],
+    ["🧭", W.pType, (T().types[f.spender_type] || [f.spender_type || "–"])[0]],
+    ["☀️", W.pBest, x.best ? new Date(x.best + "-15T12:00:00").toLocaleDateString(T().locale, { month: "long" }) : "–"],
+  ];
+  rows.forEach(([em, l, v], k) => {
+    const y = 600 + k * 155;
+    if (k) { g.fillStyle = "#e3f1e8"; g.fillRect(110, y, 860, 3); }
+    g.font = "64px sans-serif"; g.textBaseline = "middle"; g.fillText(em, 110, y + 78);
+    g.fillStyle = "#5d7a68"; g.font = "500 34px Geologica"; g.fillText(l, 220, y + 52);
+    g.fillStyle = D; g.font = "700 52px Geologica"; g.fillText(v, 220, y + 106); g.textBaseline = "alphabetic";
+  });
+  g.fillStyle = "#fff"; g.font = "700 46px Geologica"; g.fillText(W.posterTag, 90, 1810);
+  const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+  return { blob, url: URL.createObjectURL(blob) };
 }
 
 function stepText(st) {
