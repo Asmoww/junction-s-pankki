@@ -16,7 +16,7 @@ constraint, every number traceable, life after buying, and one question that cha
 - `GET /api/readiness/{cid}?price=250000&property_type=apartment`
 - Coach tool `home_readiness` + system prompt rule (lead with the binding constraint, range not date, label the stress
   formula as an assumption, end with next_question).
-- `tests/test_readiness.py`: 8 offline tests. **Not run here:** test_api / the app itself (no duckdb/fastapi in
+- `tests/test_readiness.py`: 10 offline tests (incl. savings moved elsewhere, ASP). **Not run here:** test_api / the app itself (no duckdb/fastapi in
   this sandbox). Run `.venv/bin/python -m pytest -q tests` on the server before merging.
 
 ## Sanity check (pandas replica of the inputs, rules 95 % / 1.5 % / 3.293 %) — re-check on the server

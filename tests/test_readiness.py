@@ -60,3 +60,17 @@ def test_deficit_asks_to_fix_the_month_first():
     r = assess(**{**BASE, "surpluses": [-400] * 12})
     assert r["next_question"]["key"] == "fix_month"
     assert r["reachable_price"]["within_24_months_eur"] is None
+
+
+def test_money_moved_elsewhere_becomes_a_question_not_a_silent_assumption():
+    r = assess(**{**BASE, "moved_out_eur": 52_000})
+    assert r["have_eur"] == BASE["have"]                     # not counted without asking
+    assert any(c["key"] == "savings_elsewhere" for c in r["questions_considered"])
+    assert r["next_question"]["key"] == "savings_elsewhere"  # 52 k would move the date most
+
+
+def test_asp_offered_when_collateral_blocks_and_first_home_unknown():
+    r = assess(**{**BASE, "price": 200_000, "have": 40_000})
+    asp = [c for c in r["questions_considered"] if c["key"] == "asp"]
+    assert asp and asp[0]["likely_months_if_yes"] >= 20      # ASP needs at least 20 months of saving
+    assert not any(c["key"] == "asp" for c in assess(**{**BASE, "first_home": False})["questions_considered"])

@@ -61,10 +61,14 @@ def core(price: float, salary: float, have: float, cap_pct: float, tax_pct: floa
 
 
 def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct: float, euribor_pct: float,
-           surpluses: list[float], must_pays_month: float, housing_month: float, extras_month: float) -> dict:
+           surpluses: list[float], must_pays_month: float, housing_month: float, extras_month: float,
+           moved_out_eur: float = 0.0, first_home: bool | None = None) -> dict:
     """surpluses: the customer's monthly income minus spending, last months (one per month, from the data).
     must_pays_month: baskets 1+2 per month (median); housing_month: of that, current rent/housing (median);
-    extras_month: basket 3 per month (median)."""
+    extras_month: basket 3 per month (median).
+    moved_out_eur: money the customer moved to investments or another bank (net, in the data). It may still be
+    theirs, but the account can't see it, so we ask instead of counting it.
+    first_home: None = not asked yet. Drives the ASP question (state-backed first-home saving, rules from 1 Jun 2026)."""
     c = core(price, salary, have, cap_pct, tax_pct)
     good, typical, weak = (_q(surpluses, 0.75), statistics.median(surpluses), _q(surpluses, 0.25)) if surpluses else (0, 0, 0)
     rng = {"earliest_months": _months(c["gap"], good), "likely_months": _months(c["gap"], typical),
@@ -112,6 +116,21 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
         m2 = _months(c2["gap"], typical + kw.get("extra", 0.0))
         gain = (base_m - m2) if base_m is not None and m2 is not None else (HORIZON_MONTHS if base_m is None and m2 is not None else 0)
         cands.append({"key": key, "question": text, "likely_months_if_yes": m2, "months_saved": gain})
+    if moved_out_eur >= 1_000:
+        c3 = core(price, salary, have + moved_out_eur, cap_pct, tax_pct)
+        m3 = _months(c3["gap"], typical)
+        gain = (base_m - m3) if base_m is not None and m3 is not None else (HORIZON_MONTHS if m3 is not None else 0)
+        cands.append({"key": "savings_elsewhere", "likely_months_if_yes": m3, "months_saved": gain,
+                      "question": f"You've moved {moved_out_eur:,.0f} € to savings or investments. Could that go to the home?"})
+    if first_home is None and (binding["key"] == "collateral" or c["extra_collateral"] > 0):
+        # ASP (from 1 Jun 2026): save on an ASP account at least 20 months, 50-1,500 €/month, at least 10 % of the
+        # price; the ASP loan comes with a free state guarantee (answers the collateral gap) and interest subsidy.
+        need_asp = 0.10 * price + price * tax_pct / 100 + FEES_EUR
+        m_asp = _months(max(need_asp - have, 0.0), min(max(typical, 0.0), 1_500.0))
+        m_asp = max(m_asp, 20) if m_asp is not None else None
+        cands.append({"key": "asp", "likely_months_if_yes": m_asp, "months_saved": 0, "unblocks": "collateral",
+                      "question": "Is this your first home? An ASP account gives a free state guarantee instead of extra "
+                                  "collateral (save at least 20 months, 10 % of the price)."})
     if binding["key"] == "collateral":
         cands.append({"key": "guarantee", "question": "Could someone (e.g. a parent) give a guarantee, or would "
                       "you use the state guarantee?", "likely_months_if_yes": base_m, "months_saved": 0,
@@ -127,15 +146,20 @@ def assess(*, price: float, salary: float, have: float, cap_pct: float, tax_pct:
                 best = p_
         return best
     reach = {"within_24_months_eur": reachable(24), "within_60_months_eur": reachable(60)}
-    cands.sort(key=lambda x: (x.get("unblocks") is None, -x["months_saved"]))
-    nbq = cands[0] if cands and (cands[0]["months_saved"] > 0 or cands[0].get("unblocks")) else None
-    if nbq is None and binding["key"] != "monthly_gap" and reach["within_60_months_eur"]:
+    # Pick: a deficit comes first (nothing else works before it); then an answer that removes the binding
+    # constraint; then the answer that saves the most months; then the reachable price.
+    cands.sort(key=lambda x: (x.get("unblocks") != binding["key"], -(x["months_saved"] or 0)))
+    if binding["key"] == "monthly_gap":
+        nbq = {"key": "fix_month", "months_saved": None, "likely_months_if_yes": None,
+               "question": "Shall we look at closing the monthly gap first? Saving can't start before that."}
+    elif cands and (cands[0].get("unblocks") == binding["key"] or cands[0]["months_saved"] > 0):
+        nbq = cands[0]
+    elif reach["within_60_months_eur"]:
         nbq = {"key": "reachable_price", "months_saved": None, "likely_months_if_yes": None,
                "question": f"Would a home around {reach['within_60_months_eur']:,.0f} € work? That is reachable "
                            "within 5 years at your usual pace."}
-    if nbq is None and binding["key"] == "monthly_gap":
-        nbq = {"key": "fix_month", "months_saved": None, "likely_months_if_yes": None,
-               "question": "Shall we look at closing the monthly gap first? Saving can't start before that."}
+    else:
+        nbq = None
 
     prov = {"rule": ["loan cap", "transfer tax", "12-month Euribor"],
             "assumption": [f"stress formula: required income = {STRESS_INCOME_PER_LOAN} x loan (6 %, 25 years); seen in "
@@ -167,7 +191,9 @@ def home_readiness(cid: str, price: float, property_type: str = "apartment") -> 
              [cid, twelve, _month_start(TODAY)])
     housing = q("SELECT date_trunc('month', tx_date) mo, -sum(amount) h FROM tx WHERE customer_id = ? "
                 "AND category = 'Housing' AND tx_date >= ? AND tx_date < ? GROUP BY 1", [cid, six, _month_start(TODAY)])
-    out = assess(price=price, salary=plan["salary_month_eur"] or 0.0, have=plan["savings_counted_eur"],
+    moved = q("SELECT -coalesce(sum(amount), 0) v FROM tx WHERE customer_id = ? AND category IN "
+              "('Invest Deposit', 'Invest Withdraw', 'Salary Sweep')", [cid])
+    out = assess(price=price, moved_out_eur=max(moved[0]["v"], 0.0) if moved else 0.0, salary=plan["salary_month_eur"] or 0.0, have=plan["savings_counted_eur"],
                  cap_pct=live.rule_value("loan_cap_general"), tax_pct=live.rule_value(tax_key),
                  euribor_pct=live.rule_value("euribor_12m"),
                  surpluses=[r["s"] for r in rows],
