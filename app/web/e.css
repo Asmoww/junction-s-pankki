@@ -189,6 +189,23 @@ body.e #view-learn { gap: 12px; }
 .wx { color: var(--fg); font-size: 28px; line-height: 1; padding: 0 4px; }
 .wslide { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 28px 40px; cursor: pointer; user-select: none; }
 .wslide.in > * { animation: wup .45s ease both; } .wslide.in > *:nth-child(2) { animation-delay: .06s; } .wslide.in > *:nth-child(3) { animation-delay: .12s; } .wslide.in > *:nth-child(4) { animation-delay: .18s; }
+/* Wrapped loader: a receipt prints out of a slot, one line per month */
+.wload { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.wrcp { position: relative; width: 190px; height: 340px; overflow: hidden; display: flex; justify-content: center; }
+.wslot { position: absolute; top: 0; left: 0; right: 0; height: 8px; border-radius: 4px; background: var(--acc); z-index: 1; }
+.wrap.light .wslot { background: var(--fg); }
+.wpaper { position: absolute; top: 4px; width: 158px; padding: 18px 14px 18px; background: #fff; color: #0f2219; font: 500 12px/1.85 ui-monospace, Menlo, monospace;
+  transform: translateY(-100%); animation: wprint 5s steps(14) infinite;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 6px) no-repeat, radial-gradient(circle at 5px 6px, transparent 4px, #000 4.5px) bottom / 10px 6px repeat-x;
+  mask: linear-gradient(#000 0 0) top / 100% calc(100% - 6px) no-repeat, radial-gradient(circle at 5px 6px, transparent 4px, #000 4.5px) bottom / 10px 6px repeat-x; }
+.wrap.light .wpaper { background: var(--chip); } .wrap.light .wpaper p i { background: #bfe3cd; }
+.wpaper b { display: block; text-align: center; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.wpaper p { display: flex; justify-content: space-between; align-items: center; margin: 0; }
+.wpaper p i { width: 44px; height: 6px; border-radius: 3px; background: #d7efe0; }
+@keyframes wprint { from { transform: translateY(-100%); } 75%, to { transform: translateY(0); } }
+.wlcap { margin: 0; font-size: 15px; color: var(--muted); min-height: 20px; text-align: center; transition: opacity .3s; }
+.wlcap.fade { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .wpaper { animation: none; transform: none; } .wlcap { transition: none; } }
 @keyframes wup { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .wslide.in > * { animation: none; } .wrap { transition: none; } }
 .wslide h1 { font: 700 42px/1.05 Geologica; letter-spacing: -1.2px; margin: 8px 0 14px; color: var(--fg); } .wslide h2 { font: 600 26px/1.2 Geologica; margin: 8px 0; color: var(--fg); }

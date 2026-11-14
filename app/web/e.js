@@ -16,7 +16,7 @@ const ES = {
       see: "See what changed", working: "Re-sorting your money…", resultT: "Your money, re-sorted", year: "Last 12 months", week: "Safe this week",
       payday: "Safe until payday", everywhere: "Your answers now count everywhere: the graph, safe-to-spend and the coach.", done: "Done", ask: "Ask the coach",
       askQ: "What do my three baskets say about my money now?", undo: "Undo my answers" },
-    wr: { card: "Your money year", open: "Watch", title: (n) => `${n}, your money year`, inOut: (i, o) => `Money in ${i} · out ${o}`,
+    wr: { card: "Your money year", rcpHead: "My money year", load: ["Printing your year", "One line per month", "Adding it all up"], open: "Watch", title: (n) => `${n}, your money year`, inOut: (i, o) => `Money in ${i} · out ${o}`,
       baskets: "Where it went", habit: "Your number-one habit", meals: "meals out", hours: (h) => `= ${h} hours of your work`,
       bigDay: "Your biggest day", best: "Best month", tough: "Toughest month", leftOver: (a) => `${a} left over`, lowest: (a) => `lowest ${a}`,
       noSpend: "no-spend days", streak: (d) => `longest streak ${d} days`, payday: "more on extras the week after payday",
@@ -82,7 +82,7 @@ const ES = {
       see: "Katso mikä muuttui", working: "Lajitellaan rahojasi uudelleen…", resultT: "Rahasi uudelleen lajiteltuna", year: "Viimeiset 12 kuukautta", week: "Turvallista tällä viikolla",
       payday: "Turvallista palkkapäivään", everywhere: "Vastauksesi näkyvät nyt kaikkialla: kuvaajassa, turvallisessa summassa ja valmentajassa.", done: "Valmis", ask: "Kysy valmentajalta",
       askQ: "Mitä kolme koriani kertovat rahoistani nyt?", undo: "Peru vastaukseni" },
-    wr: { card: "Rahavuotesi", open: "Katso", title: (n) => `${n}, rahavuotesi`, inOut: (i, o) => `Rahaa tuli ${i} · meni ${o}`,
+    wr: { card: "Rahavuotesi", rcpHead: "Rahavuoteni", load: ["Tulostetaan vuottasi", "Rivi per kuukausi", "Lasketaan yhteen"], open: "Katso", title: (n) => `${n}, rahavuotesi`, inOut: (i, o) => `Rahaa tuli ${i} · meni ${o}`,
       baskets: "Mihin se meni", habit: "Ykköstapasi", meals: "kertaa ulkona syömässä", hours: (h) => `= ${h} tuntia työtäsi`,
       bigDay: "Suurin päiväsi", best: "Paras kuukausi", tough: "Tiukin kuukausi", leftOver: (a) => `${a} jäi yli`, lowest: (a) => `alimmillaan ${a}`,
       noSpend: "päivää ilman ostoja", streak: (d) => `pisin putki ${d} päivää`, payday: "enemmän extroihin palkkaviikolla",
@@ -148,7 +148,7 @@ const ES = {
       see: "Se vad som ändrades", working: "Sorterar om dina pengar…", resultT: "Dina pengar, omsorterade", year: "Senaste 12 månaderna", week: "Säkert denna vecka",
       payday: "Säkert till lönen", everywhere: "Dina svar räknas nu överallt: grafen, säkert att spendera och coachen.", done: "Klar", ask: "Fråga coachen",
       askQ: "Vad säger mina tre korgar om mina pengar nu?", undo: "Ångra mina svar" },
-    wr: { card: "Ditt pengaår", open: "Titta", title: (n) => `${n}, ditt pengaår`, inOut: (i, o) => `In ${i} · ut ${o}`,
+    wr: { card: "Ditt pengaår", rcpHead: "Mitt pengaår", load: ["Skriver ut ditt år", "En rad per månad", "Räknar ihop"], open: "Titta", title: (n) => `${n}, ditt pengaår`, inOut: (i, o) => `In ${i} · ut ${o}`,
       baskets: "Vart det tog vägen", habit: "Din största vana", meals: "gånger äta ute", hours: (h) => `= ${h} timmar av ditt arbete`,
       bigDay: "Din största dag", best: "Bästa månaden", tough: "Tuffaste månaden", leftOver: (a) => `${a} över`, lowest: (a) => `lägst ${a}`,
       noSpend: "dagar utan köp", streak: (d) => `längsta svit ${d} dagar`, payday: "mer på extra veckan efter lönen",
@@ -701,10 +701,29 @@ const EMOJI = { "Amusement parks": "🎢", "Attractions & museums": "🏛️", "
   Hotels: "🏨", "Kiosks & convenience stores": "🏪", "Other entertainment": "🎟️", "Other home & tech": "🔌", "Other lifestyle": "✨",
   "Other restaurants": "🍽️", "Other shopping": "🛍️", "Other travel": "🧳", Parking: "🅿️", "Recreation & sports": "🏸", Restaurants: "🍽️",
   "Software & apps": "💾", "Sports gear": "👟", Taxis: "🚕", "Theatre & concerts": "🎭", "Toys & games": "🧸", "Travel agencies": "🌴" };
+// Wrapped loader: a receipt prints the year, one line per month (amounts shown as blank bars: nothing to verify yet)
+function wrapLoader() {
+  const W = E().wr, y = (home && home.year) || { start: "2025-10-01" }, d0 = new Date(y.start + "T12:00:00");
+  const months = Array.from({ length: 12 }, (_, k) => new Date(d0.getFullYear(), d0.getMonth() + k, 15).toLocaleDateString(T().locale, { month: "short" }));
+  return `<div class="wload" role="status" aria-live="polite"><div class="wrcp" aria-hidden="true"><div class="wslot"></div>
+    <div class="wpaper"><b>${esc(W.rcpHead)}</b>${months.map((m) => `<p><span>${esc(m)}</span><i></i></p>`).join("")}</div></div>
+    <p class="wlcap">${esc(W.load[0])}</p></div>`;
+}
+function loaderCaptions(root) {
+  const caps = E().wr.load;
+  let n = 0;
+  const t = setInterval(() => {
+    const el = root.querySelector(".wlcap");
+    if (!el || !root.isConnected) return clearInterval(t);
+    el.classList.add("fade");
+    setTimeout(() => { n = (n + 1) % caps.length; el.textContent = caps[n]; el.classList.remove("fade"); }, 300);
+  }, 2200);
+}
 async function openWrapped() {
   const root = document.createElement("div");
-  root.className = "wrap"; root.innerHTML = `<div class="wtop"><div class="wbars"></div><button class="wx" aria-label="Close">×</button></div><div class="wslide"><span class="typing"><i></i><i></i><i></i></span></div>`;
+  root.className = "wrap"; root.innerHTML = `<div class="wtop"><div class="wbars"></div><button class="wx" aria-label="Close">×</button></div><div class="wslide">${wrapLoader()}</div>`;
   document.body.appendChild(root);
+  loaderCaptions(root);
   root.querySelector(".wx").onclick = () => root.remove();
   let w;
   try { w = await api(`/api/wrapped/${cid}?lang=${lang}`); } catch { root.remove(); return; }
