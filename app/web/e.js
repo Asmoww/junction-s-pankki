@@ -208,10 +208,16 @@ function graph() {
   }
   for (const g of groups) {
     const i = base.findIndex((q) => q.date === g.date); if (i < 0) continue;
-    const [x, y] = pBase[i + 1], neg = base[i].balance_eur < 0, txt = `${g.names.join(" + ")} ${eur0(g.eur)}`;
-    const left = x - 8 + txt.length * 7 > W - px;  // under the marker; right-aligned to it near the right edge
-    marks.push(`<g class="mk bill ${neg ? "neg" : ""}" transform="translate(${x},${y})"><rect x="-8" y="-8" width="16" height="16" rx="5"/><path d="M-3.5 1.5V-1.5L0 -4 3.5 -1.5V3.5H-3.5Z"/></g>
-      <text class="mlab ${neg ? "neg" : ""}" x="${left ? x + 8 : x - 8}" y="${y + 26}" text-anchor="${left ? "end" : "start"}">${esc(txt)}</text>`);
+    // The bill is marked where it leaves the account (top of the drop); an arrow runs down the drop and the label
+    // sits beside it as an outflow ("Rent −763 €"), so it reads as the cause of the drop, not something after it.
+    const [x0, y0] = pBase[i], [x1, y1] = pBase[i + 1], neg = base[i].balance_eur < 0;
+    const txt = `${g.names.join(" + ")} −${eur0(g.eur)}`, tall = y1 - y0 >= 22;
+    const ax = x1 + 10, left = (tall ? ax + 8 : x0 - 8) + txt.length * 7 > W - px;
+    const lx = tall ? (left ? x0 - 12 : ax + 8) : (left ? x0 + 8 : x0 - 8), ly = tall ? (y0 + y1) / 2 + 4 : y0 + 26;
+    marks.push(`${tall ? `<line class="drop ${neg ? "neg" : ""}" x1="${ax}" x2="${ax}" y1="${y0 + 2}" y2="${y1 - 3}"/>
+      <path class="droph ${neg ? "neg" : ""}" d="M${ax - 4.5},${y1 - 9} L${ax},${y1 - 3} L${ax + 4.5},${y1 - 9}"/>` : ""}
+      <g class="mk bill ${neg ? "neg" : ""}" transform="translate(${x0},${y0})"><rect x="-8" y="-8" width="16" height="16" rx="5"/><path d="M-3.5 1.5V-1.5L0 -4 3.5 -1.5V3.5H-3.5Z"/></g>
+      <text class="mlab ${neg ? "neg" : ""}" x="${lx}" y="${ly}" text-anchor="${left ? "end" : "start"}">${esc(txt)}</text>`);
   }
   const end = pBase[pBase.length - 1];
   marks.push(`<g class="mk pay" transform="translate(${end[0]},${end[1]})"><circle r="9"/><path d="M0 4V-4M-3.5 -0.5L0 -4 3.5 -0.5"/></g>`);
