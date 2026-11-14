@@ -50,8 +50,8 @@ const ES = {
     askQ: (d) => `What did I spend on ${d}, and was it a lot for me?`, thinking: "Reading your words…",
     aiNote: "Notes written by AI from your numbers", noAmount: "Tell me an amount, e.g. 150 €.", failed: "Couldn't do that one. Try again.",
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
-    cards: { safe: "Safe this week", month: (m) => m, payday: "After payday", pot: "Surprises", fin: "vs Finland", psd2: "Other bank" },
-    perMonth: "a month", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
+    cards: { safe: "Free to spend this week", month: (m) => m, payday: "After payday", pot: "Surprise costs", fin: "vs Finland", psd2: "Other bank" },
+    perMonth: "a month", missing: (a, d) => `${a} missing until ${d}`, perDayTo: (a, d) => `${a}/day until ${d}`, have: "Available", must: "Must-pays", mo: "mo", potSub: "on average, e.g. repairs", last12: "last 12 months", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
   fi: { euOn: "Tekoäly Suomessa", euOff: "Tekoäly: Claude", euToast: (l) => `Tekoäly toimii nyt mallilla ${l}, avoin malli Suomessa. Luvut tulevat yhä koodista.`, claudeToast: "Tekoäly toimii nyt Claudella.", pl: { card: "Pelaa kaksi seuraavaa viikkoa", cardB: "Pääsetkö palkkapäivään plussalla?", go: "Pelaa", title: "Kaksi seuraavaa viikkoasi",
       onPayday: (d) => `Palkkapäivänä ${d}`, usual: (v) => `Tavallisella tahdilla: ${v}`, goal: "Pääse palkkapäivään plussalla", rules: "Todennäköiset päiväsi kortti kerrallaan. Kolme koria ovat säännöt:",
       r1: "Kiinteitä pakollisia ei voi ohittaa. Vuokran voi siirtää.", r2: "Yllätyspuskuri pysyy: yllätyksiä tulee joka tapauksessa.", r3: "Arjen extrat ovat sinun valintasi: pidä tai ohita.",
@@ -101,8 +101,8 @@ const ES = {
     askQ: (d) => `Mihin käytin rahaa ${d}, ja oliko se minulle paljon?`, thinking: "Luen pyyntöäsi…",
     aiNote: "Tekoälyn muistiinpanot lukujesi pohjalta", noAmount: "Kerro summa, esim. 150 €.", failed: "Tämä ei onnistunut. Yritä uudelleen.",
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
-    cards: { safe: "Turvallisesti", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätykset", fin: "vs Suomi", psd2: "Toinen pankki" },
-    perMonth: "kuussa", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
+    cards: { safe: "Vapaata käyttöön tällä viikolla", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätysmenot", fin: "vs Suomi", psd2: "Toinen pankki" },
+    perMonth: "kuussa", missing: (a, d) => `${d} asti puuttuu ${a}`, perDayTo: (a, d) => `${a}/pv ${d} asti`, have: "Käytettävissä", must: "Pakolliset", mo: "kk", potSub: "keskimäärin, esim. korjaukset", last12: "viimeiset 12 kk", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
   sv: { euOn: "AI i Finland", euOff: "AI: Claude", euToast: (l) => `AI körs nu på ${l}, en öppen modell i Finland. Siffrorna kommer fortfarande från koden.`, claudeToast: "AI körs nu på Claude.", pl: { card: "Spela dina två nästa veckor", cardB: "Klarar du lönedagen på plus?", go: "Spela", title: "Dina två nästa veckor",
       onPayday: (d) => `På lönedagen ${d}`, usual: (v) => `I din vanliga takt: ${v}`, goal: "Nå lönedagen på plus", rules: "Dina troliga dagar, ett kort i taget. De tre korgarna är reglerna:",
       r1: "Fasta måsten kan inte hoppas över. Hyran kan flyttas.", r2: "Bufferten för överraskningar stannar: de kommer ändå.", r3: "Vardagsextra är ditt val: behåll eller hoppa över.",
@@ -152,8 +152,8 @@ const ES = {
     askQ: (d) => `Vad spenderade jag den ${d}, och var det mycket för mig?`, thinking: "Läser det du skrev…",
     aiNote: "Anteckningar skrivna av AI utifrån dina siffror", noAmount: "Ange ett belopp, t.ex. 150 €.", failed: "Det gick inte. Försök igen.",
     bills: { Housing: "Hyra", Utilities: "Räkningar" }, nothing: "Inga köp",
-    cards: { safe: "Tryggt nu", month: (m) => m, payday: "Efter lön", pot: "Överraskningar", fin: "vs Finland", psd2: "Annan bank" },
-    perMonth: "i månaden", vsFin: (a) => `${a} i Finland`, moved: "flyttades" },
+    cards: { safe: "Fritt att använda i veckan", month: (m) => m, payday: "Efter lön", pot: "Oväntade kostnader", fin: "vs Finland", psd2: "Annan bank" },
+    perMonth: "i månaden", missing: (a, d) => `${a} saknas till ${d}`, perDayTo: (a, d) => `${a}/dag till ${d}`, have: "Tillgängligt", must: "Måsten", mo: "mån", potSub: "i snitt, t.ex. reparationer", last12: "senaste 12 mån", vsFin: (a) => `${a} i Finland`, moved: "flyttades" },
 };
 const E = () => ES[lang] || ES.en;
 const SPARK = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
@@ -185,8 +185,21 @@ function graph() {
   const n = past.length + base.length - 1, iT = past.length - 1;
   const X = (i) => px + (i * (W - 2 * px)) / n, Y = (v) => top + ((hi - v) / (hi - lo)) * (H - top - bot);
   const P = (arr, off) => arr.map((p, k) => [X(off + k), Y(p.balance_eur)]);
+  // Forecast lines drop straight down on a bill's day (a step, not a curve), so the drop reads as the bill itself.
+  const stepped = (pts, vals) => {
+    const d = vals.slice(1).map((v, k) => Math.abs(v - vals[k])).sort((a, b) => a - b), med = d[Math.floor(d.length / 2)] || 0;
+    const out = [pts[0]];
+    for (let k = 1; k < pts.length; k++) {
+      if (Math.abs(vals[k] - vals[k - 1]) > Math.max(50, 4 * med)) out.push([pts[k][0], pts[k - 1][1]]);
+      out.push(pts[k]);
+    }
+    return out;
+  };
+  const straight = (p) => (p.length < 2 ? "" : "M" + p.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(" L"));
   const pPast = P(past, 0), todayPt = pPast[iT];
   const pBase = [todayPt, ...P(base, iT + 1)], pNo = [todayPt, ...P(noext, iT + 1)];
+  const now = past[iT].balance_eur, vBase = [now, ...base.map((q) => q.balance_eur)], vNo = [now, ...noext.map((q) => q.balance_eur)];
+  const sBase = stepped(pBase, vBase), sNo = stepped(pNo, vNo);
   const neg = fut.base.runs_out, zeroY = Y(0);
   const grid = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
@@ -194,7 +207,7 @@ function graph() {
     const lab = Math.abs(Y(v) - Y(past[0].balance_eur)) > 16;
     grid.push(`<line class="grid" x1="${px}" x2="${W - px}" y1="${Y(v)}" y2="${Y(v)}"/>${lab ? `<text class="ylab" x="${px + 14}" y="${Y(v) - 4}">${v < 0 ? "−" : ""}${eur0(Math.abs(v))}</text>` : ""}`);
   }
-  const band = smooth(pNo) + " L" + [...pBase].reverse().map((q) => q.map((v) => v.toFixed(1)).join(",")).join(" L") + " Z";
+  const band = straight(sNo) + " L" + [...sBase].reverse().map((q) => q.map((v) => v.toFixed(1)).join(",")).join(" L") + " Z";
   const ticks = [];
   for (let i = 0; i <= n; i += 7) ticks.push(`<text x="${X(i)}" y="${H - 14}" text-anchor="middle" class="tick">${day((past[i] || base[i - past.length]).date)}</text>`);
   const marks = [];
@@ -208,16 +221,14 @@ function graph() {
   }
   for (const g of groups) {
     const i = base.findIndex((q) => q.date === g.date); if (i < 0) continue;
-    // The bill is marked where it leaves the account (top of the drop); an arrow runs down the drop and the label
-    // sits beside it as an outflow ("Rent −763 €"), so it reads as the cause of the drop, not something after it.
-    const [x0, y0] = pBase[i], [x1, y1] = pBase[i + 1], neg = base[i].balance_eur < 0;
-    const txt = `${g.names.join(" + ")} −${eur0(g.eur)}`, tall = y1 - y0 >= 22;
-    const ax = x1 + 10, left = (tall ? ax + 8 : x0 - 8) + txt.length * 7 > W - px;
-    const lx = tall ? (left ? x0 - 12 : ax + 8) : (left ? x0 + 8 : x0 - 8), ly = tall ? (y0 + y1) / 2 + 4 : y0 + 26;
-    marks.push(`${tall ? `<line class="drop ${neg ? "neg" : ""}" x1="${ax}" x2="${ax}" y1="${y0 + 2}" y2="${y1 - 3}"/>
-      <path class="droph ${neg ? "neg" : ""}" d="M${ax - 4.5},${y1 - 9} L${ax},${y1 - 3} L${ax + 4.5},${y1 - 9}"/>` : ""}
-      <g class="mk bill ${neg ? "neg" : ""}" transform="translate(${x0},${y0})"><rect x="-8" y="-8" width="16" height="16" rx="5"/><path d="M-3.5 1.5V-1.5L0 -4 3.5 -1.5V3.5H-3.5Z"/></g>
-      <text class="mlab ${neg ? "neg" : ""}" x="${lx}" y="${ly}" text-anchor="${left ? "end" : "start"}">${esc(txt)}</text>`);
+    // One pill beside the step: the house icon and "Rent −763 €" (red when it takes the balance below zero)
+    const [xb, y1] = pBase[i + 1], y0 = pBase[i][1], neg = base[i].balance_eur < 0;
+    const txt = `${g.names.join(" + ")} −${eur0(g.eur)}`, tw = txt.length * 6.7 + 34, ph = 24;
+    const my = y1 - y0 >= 30 ? (y0 + y1) / 2 : y0 - 22;
+    let lx = xb + 10; if (lx + tw > W - px) lx = xb - 10 - tw;
+    marks.push(`<g class="billpill ${neg ? "neg" : ""}" transform="translate(${lx.toFixed(1)},${(my - ph / 2).toFixed(1)})">
+      <rect width="${tw.toFixed(1)}" height="${ph}" rx="12"/><path transform="translate(15,12.5)" d="M-4.5 2V-1.5L0 -5.5 4.5 -1.5V4.5H-4.5Z"/>
+      <text x="27" y="16.5">${esc(txt)}</text></g>`);
   }
   const end = pBase[pBase.length - 1];
   marks.push(`<g class="mk pay" transform="translate(${end[0]},${end[1]})"><circle r="9"/><path d="M0 4V-4M-3.5 -0.5L0 -4 3.5 -0.5"/></g>`);
@@ -231,14 +242,14 @@ function graph() {
     nl.push(`<div class="note" data-x="${pt[0].toFixed(1)}" data-y="${pt[1].toFixed(1)}">${SPARK}<span>${esc(nt.text).replace(/ (€|%)/g, "\u00a0$1")}</span></div>
       <span class="ndot" style="left:${pt[0]}px;top:${pt[1]}px"></span>`);
   });
-  const scLine = sc ? `<path class="scen" d="${smooth([todayPt, ...P(sc, iT + 1)])}"/>` : "";
+  const scLine = sc ? `<path class="scen" d="${straight(stepped([todayPt, ...P(sc, iT + 1)], [now, ...sc.map((q) => q.balance_eur)]))}"/>` : "";
   const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
     <defs><linearGradient id="ga" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2e9c5e" stop-opacity=".22"/><stop offset="1" stop-color="#2e9c5e" stop-opacity="0"/></linearGradient></defs>
     ${zeroY < H - bot ? `<rect class="redzone" x="${px}" y="${zeroY}" width="${W - 2 * px}" height="${H - bot - zeroY}"/>` : ""}
     ${grid.join("")}<line class="zero" x1="${px}" x2="${W - px}" y1="${zeroY}" y2="${zeroY}"/><text class="ylab z" x="${px}" y="${zeroY - 4}">0 €</text>
     <path d="${smooth(pPast)} L${todayPt[0]},${zeroY} L${pPast[0][0]},${zeroY} Z" fill="url(#ga)"/>
     <path class="band ${neg ? "neg" : ""}" d="${band}"/>
-    <path class="base ${neg ? "neg" : ""} ${sc ? "dim" : ""}" d="${smooth(pBase)}"/>
+    <path class="base ${neg ? "neg" : ""} ${sc ? "dim" : ""}" d="${straight(sBase)}"/>
     ${scLine}
     <path class="past" d="${smooth(pPast)}"/>
     ${ticks.join("")}${marks.join("")}
@@ -334,13 +345,19 @@ function strip() {
   const cards = [playCard()];
   const days = s.days_until_payday;
   const shortE = s.safe_until_payday_eur < 0;
+  // Free to spend: never a negative "safe" number. The bars show why: money on the account vs must-pays until payday.
+  const must = -(s.steps[2].eur + s.steps[3].eur + s.steps[4].eur), have = s.safe_until_payday_eur + must, hm = Math.max(have, must, 1);
   cards.push(`<button class="mini ${shortE ? "neg" : ""}" data-ask="${esc(T().suggestions[0])}"><span class="t">${E().cards.safe}</span>
-    <b>${shortE ? "−" + eur0(-s.safe_until_payday_eur) : eur0(s.safe_this_week_eur)}</b>
-    <span class="s">${shortE ? E().shortBy(day(s.next_payday)) : eur0(s.safe_per_day_eur) + "/" + (lang === "en" ? "day" : lang === "fi" ? "pv" : "dag")}</span>
-    <div class="dots">${Array.from({ length: Math.min(days, 15) }, (_, i) => `<i class="${shortE ? "short" : i < 7 ? "wk" : ""}"></i>`).join("")}</div></button>`);
+    <b>${shortE ? "0 €" : eur0(s.safe_this_week_eur)}</b>
+    <span class="s">${shortE ? E().missing(eur0(-s.safe_until_payday_eur), day(s.next_payday)) : E().perDayTo(eur0(s.safe_per_day_eur), day(s.next_payday))}</span>
+    <span class="hv"><span><em>${E().have}</em><i style="width:${(Math.max(have, 0) / hm) * 100}%"></i><u>${eur0(have)}</u></span>
+      <span class="m"><em>${E().must}</em><i style="width:${(must / hm) * 100}%"></i><u>${eur0(must)}</u></span></span></button>`);
+  // Surprise costs (basket 2): the monthly average, what counts as one, and the last 12 months as bars
   const mx = Math.max(...pot.months.slice(-12).map((x) => x.eur), 1);
-  cards.push(`<button class="mini" data-act="pot"><span class="t">${E().cards.pot}</span><b>${eur0(pot.average_per_month_last_12_eur)}</b><span class="s">${E().perMonth}</span>
-    <div class="spark12">${pot.months.slice(-12).map((x) => `<i style="height:${Math.max(4, (x.eur / mx) * 100)}%"></i>`).join("")}<u style="bottom:${(pot.average_per_month_last_12_eur / mx) * 100}%"></u></div></button>`);
+  cards.push(`<button class="mini" data-act="pot"><span class="t">${E().cards.pot}</span><b>${eur0(pot.average_per_month_last_12_eur)}<small>/${E().mo}</small></b>
+    <span class="s">${E().potSub}</span>
+    <div class="spark12">${pot.months.slice(-12).map((x) => `<i style="height:${Math.max(4, (x.eur / mx) * 100)}%"></i>`).join("")}<u style="bottom:${(pot.average_per_month_last_12_eur / mx) * 100}%"></u></div>
+    <span class="cap">${E().last12}</span></button>`);
   cards.push(sortCard());
   cards.push(wrapCard());
   const psd2 = home.cards.find((c) => c.id === "psd2");

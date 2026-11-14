@@ -368,3 +368,18 @@ body.e #trust .link { padding: 0; margin-top: 8px; font-weight: 600; color: var(
 .g .drop { stroke: var(--g900); stroke-width: 2; stroke-linecap: round; } .g .drop.neg { stroke: var(--neg); }
 .g .droph { fill: none; stroke: var(--g900); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .g .droph.neg { stroke: var(--neg); }
 .chip.busy { opacity: .75; } #g.dim svg { opacity: .55; transition: opacity .15s; }
+
+/* Bill pill beside the forecast's step */
+#g .billpill rect { fill: #fff; stroke: var(--g900); stroke-width: 1.5; } #g .billpill path { fill: var(--g900); }
+#g .billpill text { font: 600 12px Geologica; fill: var(--g900); }
+#g .billpill.neg rect { stroke: var(--neg); } #g .billpill.neg path { fill: var(--neg); } #g .billpill.neg text { fill: var(--neg); }
+/* Free-to-spend card: money on the account vs must-pays until payday */
+.mini .hv { display: flex; flex-direction: column; gap: 4px; margin-top: auto; }
+.mini .hv > span { display: grid; grid-template-columns: 58px 1fr auto; gap: 6px; align-items: center; font-size: 11px; }
+.mini .hv em { font-style: normal; color: var(--muted); } .mini .hv i { display: block; height: 8px; border-radius: 999px; background: var(--g500); }
+.mini .hv .m i { background: var(--g900); } .mini.neg .hv .m i { background: var(--neg); } .mini .hv u { text-decoration: none; font-weight: 600; }
+.mini b small { font-size: 14px; font-weight: 500; opacity: .7; margin-left: 2px; }
+.mini .cap { font-size: 10px; color: var(--muted); margin-top: 2px; } .mini .spark12 { height: 40px; }
+.mini.neg b { color: var(--neg); }
+.strip .mini { height: auto; min-height: 148px; } .mini .hv > span { grid-template-columns: 74px 1fr auto; }
+.mini .spark12 { flex: none; height: 40px; margin-top: 8px; }
