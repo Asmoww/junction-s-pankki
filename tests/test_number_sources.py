@@ -99,3 +99,10 @@ def test_calculation_from_data_lists_its_parts():
     e = n["2,094.20 €"]
     assert e["status"] == "verified" and [p["value"] for p in e["parts"]] == [2412.60, 318.40]
     assert [p["ti"] for p in e["parts"]] == [0, 1]
+
+
+def test_chart_json_is_removed_from_answers():
+    from app.coach import strip_data_dumps
+    t = '{\n"chart_type": "category_trend",\n"data": [\n{"x": "2025-10", "y": 0.0}\n]\n}\n\nThe highest was **993.20 €**.'
+    assert strip_data_dumps(t) == "The highest was **993.20 €**."
+    assert strip_data_dumps("A\n```json\n{\"a\": 1}\n```\nB [x] {y}") == "A\n\nB [x] {y}"

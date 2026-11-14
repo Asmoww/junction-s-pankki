@@ -359,7 +359,8 @@ function describeSource(n, trace) {
   }
   const t = trace[n.ti], inp = t.input || {}, res = t.result || {}, path = n.path || "", per = res.period;
   const filt = { category: inp.category, subcategory: inp.subcategory, basket: inp.basket };
-  const flabel = inp.subcategory ? label(inp.subcategory) : inp.category ? label(inp.category) : inp.basket ? T().baskets[inp.basket][0] : D.all;
+  const catLabel = (c) => (c === "Restaurants" ? D.eatingOut : label(c));  // category Restaurants = all eating out
+  const flabel = inp.subcategory ? label(inp.subcategory) : inp.category ? catLabel(inp.category) : inp.basket ? T().baskets[inp.basket][0] : D.all;
   const list = (extra = {}, p = per) => (p ? { ...filt, ...extra, start: p.start, end: p.end } : null);
   if (t.tool === "get_spending") {
     if (path === "total_eur") return { what: flabel, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions };
@@ -371,7 +372,7 @@ function describeSource(n, trace) {
     if (m && res.breakdown && res.breakdown[+m[1]]) {
       const row = res.breakdown[+m[1]], gb = inp.group_by, pays = D.pays(row.transactions), count = row.transactions;
       if (gb === "month") { const p = monthRange(row.key, per); return { what: flabel, meta: [periodText(p), pays], list: list({}, p), count }; }
-      if (gb === "category") return { what: label(row.key), meta: [periodText(per), pays], list: list({ category: row.key }), count };
+      if (gb === "category") return { what: catLabel(row.key), meta: [periodText(per), pays], list: list({ category: row.key }), count };
       if (gb === "subcategory") return { what: label(row.key), meta: [periodText(per), pays], list: list({ subcategory: row.key }), count };
       if (gb === "basket") { const b = basketNo(row.key); return { what: b ? T().baskets[b][0] : row.key, meta: [periodText(per), pays], list: b ? list({ basket: b }) : null, count }; }
       if (gb === "weekday") {
@@ -385,14 +386,17 @@ function describeSource(n, trace) {
       "income_minus_spending_eur": D.net, "balance_eur.start": D.balStart, "balance_eur.end": D.balEnd, "balance_eur.change": D.balChange };
     const b = path.startsWith("spending_eur.") && basketNo(path.slice(13));
     const what = map[path] || (b ? T().baskets[b][0] : path.startsWith("moved_to_own") ? D.saved : humanKey(path));
-    return { what, meta: [periodText(per)] };
+    // basket lines sum the same payments as the payments list (every basket row is spending), so they can show them
+    return { what, meta: [periodText(per)], list: b ? { basket: b, start: per.start, end: per.end } : null, count: b ? -1 : 0 };
   }
   if (t.tool === "get_three_baskets") {
     const m = path.match(/^baskets\[(\d+)\](?:\.top\[(\d+)\])?/), bk = m && res.baskets && res.baskets[+m[1]];
     if (bk) {
-      if (m[2] !== undefined && bk.top[+m[2]]) return { what: label(bk.top[+m[2]].merchant_type), meta: [periodText(per), D.pays(bk.top[+m[2]].transactions)] };
+      const lb = { basket: bk.basket, start: per.start, end: per.end };
+      if (m[2] !== undefined && bk.top[+m[2]]) { const tp = bk.top[+m[2]];
+        return { what: label(tp.merchant_type), meta: [periodText(per), D.pays(tp.transactions)], list: { ...lb, subcategory: tp.merchant_type }, count: tp.transactions }; }
       const avg = path.includes("per_month") ? { total: bk.total_eur, months: per.months_with_data || per.months } : null;
-      return { what: (avg ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)], avg };
+      return { what: (avg ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)], avg, list: lb, count: bk.transactions };
     }
   }
   if (t.tool === "get_safe_to_spend") {
@@ -425,7 +429,7 @@ function dataSheet(n, trace) {
     }
     partRows.push(`<div class="sum"><span>${D.together}</span><span>${eur(n.value)}</span></div>`);
   }
-  const see = d.list && d.count && n.status !== "derived" ? `<button class="nsee" type="button">${D.see(d.count)}</button>` : "";
+  const see = d.list && d.count && n.status !== "derived" ? `<button class="nsee" type="button">${d.count > 0 ? D.see(d.count) : D.seeAny}</button>` : "";
   return { html: `<span class="nkind data">${SHIELD}${D.acct}</span><div class="nval">${esc(n.text)}</div><p class="nwhat">${esc(d.what)}</p>
     ${d.meta.filter(Boolean).length ? `<p class="nfact">${esc(d.meta.filter(Boolean).join(" · "))}</p>` : ""}
     ${partRows.length ? `<div class="nparts">${partRows.join("")}</div>` : ""}${see}
@@ -439,7 +443,7 @@ async function paymentsSheet(n, trace, el) {
   let r;
   try { r = await api(`/api/payments/${cid}?${q}`); } catch { s.querySelector(".swait").innerHTML = `<p class="sub">${T().failed || "Error"}</p>`; return; }
   const rows = r.transactions.map((x) => { const dt = new Date(x.date + "T12:00:00");
-    return `<div class="nrow"><span class="nd"><b>${dt.getDate()}</b>${esc(dt.toLocaleDateString(T().locale, { weekday: "short" }))}</span>
+    return `<div class="nrow"><span class="nd"><b>${esc(day(x.date))}</b>${esc(dt.toLocaleDateString(T().locale, { weekday: "short" }))}</span>
       <span class="nt">${esc(label(x.merchant_type || x.category))}<small>${esc(T().baskets[x.basket] ? T().baskets[x.basket][0] : D.card)}</small></span><span class="na">−${eur(x.amount_eur)}</span></div>`; }).join("");
   s.querySelector(".swait").outerHTML = `${rows}<div class="ntotal"><span>${D.total}</span><span>${eur(r.total_eur)}</span></div>
     <p class="nfine">${D.noShop}${r.shown < r.count ? " " + D.shown(r.shown, r.count) : ""}</p>`;

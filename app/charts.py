@@ -61,7 +61,7 @@ def show_chart(cid: str, kind: str, months: int = 12, category: str | None = Non
         out["income_minus_spending_eur"] = _r(sum(iv) - sum(sv))
     hi = max(range(len(sv)), key=lambda i: sv[i])
     lo = min(range(len(sv)), key=lambda i: sv[i])
-    out.update({"title": {"monthly_spend": "Spending per month", "category_trend": f"{subcategory or category or f'Basket {basket}'} per month",
+    out.update({"title": {"monthly_spend": "Spending per month", "category_trend": f"{subcategory or ('Eating out' if category == 'Restaurants' else category) or f'Basket {basket}'} per month",
                           "income_vs_spend": "Income and spending per month"}[kind],
                 "series": series, "spending_trend_eur_per_month": _trend(sv), "total_eur": _r(sum(sv)),
                 "highest_month": {"month": ms[hi], "eur": sv[hi]}, "lowest_month": {"month": ms[lo], "eur": sv[lo]},

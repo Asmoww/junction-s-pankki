@@ -83,3 +83,5 @@ full files (sha256 of the transactions CSV `49b3265d…6f1e63`).
 - Extras +30 % per day in the week after payday vs the week before; weekend days 1.45x weekdays.
 - Half of all negative-balance transactions happen within 7 days before payday.
 - Only 15 % of extras are under 10 €; median cafe/fast-food purchase 23 € (no "latte factor" in this data).
+
+- 2026-11-14 "Restaurants" is both a category and a merchant type (the only such clash). The category is all eating out: Restaurants, Fast food & cafes, Bars & pubs, Other restaurants. Evidence: CUST04588, Jul-Sep 2026: merchant type Restaurants 926.41 € (20 payments), category Restaurants 1,400.60 € (30). The coach and charts call the category "eating out"; get_spending adds a note when filtered by it.

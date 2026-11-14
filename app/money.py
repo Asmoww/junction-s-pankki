@@ -144,6 +144,12 @@ def _per_month(total: float | None, info: dict) -> float | None:
     return _r((total or 0) / info["months_with_data"]) if info["months_with_data"] else None
 
 
+# A category whose name is also a merchant type: say which one a number is, or "Restaurants" 1,400 € (category) and
+# "Restaurants" 926 € (merchant type) look like a contradiction.
+CATEGORY_SPANS = {"Restaurants": "Category Restaurants = all eating out: Restaurants, Fast food & cafes, Bars & pubs and "
+                                 "Other restaurants. Call it 'eating out'; the merchant type Restaurants is only one part of it."}
+
+
 def _filters(category=None, subcategory=None, basket=None) -> tuple[str, list]:
     where, params = ["kind = 'spend'"], []
     if category:
@@ -184,6 +190,8 @@ def get_spending(cid: str, period: str | None = None, start: str | None = None, 
            "total_eur": _r(tot["total"]), "transactions": tot["n"],
            "average_per_month_eur": _per_month(tot["total"], _period_info(s, e)),
            "one_off_large_purchases": {"count": tot["n_oneoff"], "total_eur": _r(tot["oneoff_total"])}}
+    if category in CATEGORY_SPANS and not subcategory:
+        out["note"] = CATEGORY_SPANS[category]
     if subcategory and subcategory in MCC_LABELS.values():
         # Purchases without a merchant code cannot be split into sub-categories; say how much that is.
         cat = _q("SELECT category FROM tx WHERE sub = ? LIMIT 1", [subcategory])
@@ -218,11 +226,12 @@ def list_transactions(cid: str, period: str | None = None, start: str | None = N
     if not order:
         raise ToolError("sort must be latest or largest")
     limit = max(1, min(int(limit), 25))
-    rows = _q(f"SELECT ts, category, sub, -amount amount, basket, one_off FROM tx WHERE customer_id = ? "
+    # The alias must not be "amount": DuckDB would ORDER BY the negated alias and "largest" would list the smallest.
+    rows = _q(f"SELECT ts, category, sub, -amount spent, basket, one_off FROM tx WHERE customer_id = ? "
               f"AND tx_date BETWEEN ? AND ? AND {where} ORDER BY {order} LIMIT {limit}", [cid, s, e] + params)
     return {"period": _period_info(s, e), "note": "Merchant names are not in the data; merchant type is shown.",
             "transactions": [{"time": r["ts"].strftime("%Y-%m-%d %H:%M"), "category": r["category"],
-                              "merchant_type": r["sub"], "amount_eur": _r(r["amount"]),
+                              "merchant_type": r["sub"], "amount_eur": _r(r["spent"]),
                               "basket": BASKETS[r["basket"]]["name"], "one_off": r["one_off"]} for r in rows]}
 
 
@@ -235,11 +244,11 @@ def payments(cid: str, start: str, end: str, category: str | None = None, subcat
     base = [cid, s, e] + params
     tot = _q(f"SELECT -sum(amount) total, count(*) n FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND {where}", base)[0]
     limit = max(1, min(int(limit), 500))
-    rows = _q(f"SELECT tx_date, category, sub, -amount amount, basket, one_off FROM tx WHERE customer_id = ? "
+    rows = _q(f"SELECT tx_date, category, sub, -amount spent, basket, one_off FROM tx WHERE customer_id = ? "
               f"AND tx_date BETWEEN ? AND ? AND {where} ORDER BY tx_date, seq LIMIT {limit}", base)
     return {"period": _period_info(s, e), "count": tot["n"], "total_eur": _r(tot["total"]), "shown": len(rows),
             "transactions": [{"date": str(r["tx_date"]), "category": r["category"], "merchant_type": r["sub"],
-                              "amount_eur": _r(r["amount"]), "basket": r["basket"], "one_off": r["one_off"]} for r in rows]}
+                              "amount_eur": _r(r["spent"]), "basket": r["basket"], "one_off": r["one_off"]} for r in rows]}
 
 
 def get_cashflow(cid: str, period: str | None = None, start: str | None = None, end: str | None = None) -> dict:
@@ -287,10 +296,10 @@ def get_three_baskets(cid: str, period: str | None = "last_3_months", start: str
                     "transactions": sum(r["n"] for r in items),
                     "top": [{"merchant_type": r["sub"], "total_eur": _r(r["total"]), "transactions": r["n"]}
                             for r in items[:4]]})
-    oneoffs = _q("SELECT tx_date, sub, -amount amount FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? "
-                 "AND one_off ORDER BY amount", [cid, s, e])
+    oneoffs = _q("SELECT tx_date, sub, -amount spent FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? "
+                 "AND one_off ORDER BY amount", [cid, s, e])  # largest first (amount is negative for spending)
     return {"period": info, "baskets": out, "total_spending_eur": _r(total if rows else 0),
-            "large_one_offs": [{"date": str(o["tx_date"]), "merchant_type": o["sub"], "amount_eur": _r(o["amount"])}
+            "large_one_offs": [{"date": str(o["tx_date"]), "merchant_type": o["sub"], "amount_eur": _r(o["spent"])}
                                for o in oneoffs]}
 
 
