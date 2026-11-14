@@ -3,6 +3,8 @@ explains the returned summary.
 """
 from __future__ import annotations
 
+import re
+
 from datetime import date, timedelta
 
 from . import future, insights, money
@@ -69,6 +71,56 @@ def show_chart(cid: str, kind: str, months: int = 12, category: str | None = Non
     return out
 
 
+_WEEKDAYS = {name: i for i, names in enumerate([
+    ("monday", "mon", "maanantai", "maanantaina", "måndag"), ("tuesday", "tue", "tiistai", "tiistaina", "tisdag"),
+    ("wednesday", "wed", "keskiviikko", "keskiviikkona", "onsdag"), ("thursday", "thu", "torstai", "torstaina", "torsdag"),
+    ("friday", "fri", "perjantai", "perjantaina", "fredag"), ("saturday", "sat", "lauantai", "lauantaina", "lördag"),
+    ("sunday", "sun", "sunnuntai", "sunnuntaina", "söndag")]) for name in names}
+_NEXT = ("next", "ensi", "nästa")
+_THIS = ("this", "on", "tämä", "tänä", "på", "den här", "denna")
+
+
+def resolve_day(text: str) -> date:
+    """A date the user said, resolved by code so the model never does weekday arithmetic. ISO dates pass through.
+    "Thursday" / "this Thursday" = the next Thursday after today; "next Thursday" = Thursday of NEXT calendar week
+    (said on Wednesday 30 Sep: 8 Oct, not tomorrow). Also tomorrow, "in 3 days", "in 2 weeks", "the 10th"."""
+    t = str(text).strip().lower()
+    try:
+        return date.fromisoformat(t[:10])
+    except ValueError:
+        pass
+    t = re.sub(r"[.,!?]", " ", t)
+    words = t.split()
+    if t in ("tomorrow", "huomenna", "i morgon", "imorgon"):
+        return TODAY + timedelta(days=1)
+    if t in ("day after tomorrow", "ylihuomenna", "i övermorgon"):
+        return TODAY + timedelta(days=2)
+    m = re.search(r"(\d+)\s*(days?|päivä\w*|dag\w*)", t)
+    if m:
+        return TODAY + timedelta(days=int(m.group(1)))
+    m = re.search(r"(\d+)\s*(weeks?|viik\w*|veck\w*)", t)
+    if m:
+        return TODAY + timedelta(days=7 * int(m.group(1)))
+    wd = next((_WEEKDAYS[w] for w in words if w in _WEEKDAYS), None)
+    if wd is not None:
+        if any(w in _NEXT for w in words):
+            return TODAY + timedelta(days=7 - TODAY.weekday() + wd)  # next week's Monday + weekday
+        ahead = (wd - TODAY.weekday()) % 7 or 7
+        return TODAY + timedelta(days=ahead)
+    m = re.search(r"\b(\d{1,2})(st|nd|rd|th|\.)?\b", t)
+    if m and 1 <= int(m.group(1)) <= 31:
+        n, y, mo = int(m.group(1)), TODAY.year, TODAY.month
+        while True:
+            try:
+                d = date(y, mo, n)
+                if d > TODAY:
+                    return d
+            except ValueError:
+                pass
+            y, mo = (y + 1, 1) if mo == 12 else (y, mo + 1)
+    raise ValueError(f"can't read the date {text!r}")
+
+
 def forecast_with_events(cid: str, events: list[dict], pause_extras: bool = False) -> dict:
     """Costs or income the user tells us about, placed on their own dates. One model gives both figures: the week is its
     share of the until-payday money (income included); a cost after the next 7 days lowers safe-until-payday only."""
@@ -78,15 +130,16 @@ def forecast_with_events(cid: str, events: list[dict], pause_extras: bool = Fals
     clean, sc = [], {"one_offs": [], "income": [], "pause_extras": bool(pause_extras)}
     for e in events[:10]:
         try:
-            d = date.fromisoformat(str(e["date"]))
+            d = resolve_day(e["date"])
             amt = abs(float(e["amount"]))
         except (KeyError, ValueError, TypeError):
-            raise money.ToolError("each event needs label, amount and an ISO date")
+            raise money.ToolError("each event needs label, amount and a date (ISO, or words like 'next Thursday')")
         if d <= TODAY:
             raise money.ToolError("event dates must be after today (2026-09-30)")
         kind = "income" if e.get("kind") == "income" else "spend"
         (sc["income"] if kind == "income" else sc["one_offs"]).append({"label": str(e.get("label", ""))[:40], "amount": amt, "date": d.isoformat()})
-        clean.append({"label": str(e.get("label", ""))[:40], "amount_eur": _r(amt), "date": d.isoformat(), "kind": kind,
+        clean.append({"label": str(e.get("label", ""))[:40], "amount_eur": _r(amt), "date": d.isoformat(),
+                      "day": f"{d:%A} {d.day} {d:%B %Y}", "you_said": str(e["date"])[:40], "kind": kind,
                       "in_next_7_days": d <= week_end, "before_payday": d <= payday})
     spend_before = sum(e["amount_eur"] for e in clean if e["kind"] == "spend" and e["before_payday"])
     inc_before = sum(e["amount_eur"] for e in clean if e["kind"] == "income" and e["before_payday"])

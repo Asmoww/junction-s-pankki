@@ -24,7 +24,8 @@ def cases():
          "must": [r"(short|overdrawn|nothing|0 €|0\.00 €)"]},
         {"trap": "Compound growth plan bigger than the income (gave up: 'too many steps')", "persona": EMMA,
          "q": "If I were to invest in S&P 500 $4000 a month for 4 years with 8 % expected return, how much money would I have?",
-         "must": [r"225[,  .]?4\d\d", r"(income|earn|afford|more than|too much|safe to save|realistic)"],
+         # 225,399.66 € (deposits at month end, the formula in the prompt), "about 225,400 €", or 226,902 € (month start)
+         "must": [r"(225[,  .]?(399|4\d\d)|226[,  .]?9\d\d)", r"(income|earn|afford|more than|too much|safe to save|realistic)"],
          "must_not": [r"too many steps"]},
         {"trap": "Averages month rows that leave out empty months", "persona": EMMA,
          "q": "How much did I spend on kiosks per month on average from April to September 2026?",

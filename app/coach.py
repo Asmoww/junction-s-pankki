@@ -111,10 +111,13 @@ TOOLS = [
     {"name": "forecast_with_events",
      "description": "Costs or income the user mentions (a dentist next Thursday, tickets on Friday, a gift on the 10th), "
                     "each on its own date: what is safe until payday and this week afterwards, and the balance at payday. "
-                    "Use it instead of subtracting amounts yourself. Today is 2026-09-30 (Wednesday).",
+                    "Use it instead of subtracting amounts yourself. Today is 2026-09-30 (Wednesday). Pass the date "
+                    "in the user's own words (e.g. 'next Thursday', 'Friday', 'tomorrow', 'the 10th') and the tool works "
+                    "out the day; always say that day in your answer (e.g. 'Thursday 8 October') so the user can correct it.",
      "input_schema": {"type": "object", "properties": {
          "events": {"type": "array", "items": {"type": "object", "properties": {
-             "label": {"type": "string"}, "amount": {"type": "number"}, "date": {"type": "string", "description": "ISO date"},
+             "label": {"type": "string"}, "amount": {"type": "number"},
+             "date": {"type": "string", "description": "The user's words ('next Thursday', 'Friday', 'tomorrow', 'the 10th') or an ISO date"},
              "kind": {"type": "string", "enum": ["spend", "income"]}}, "required": ["label", "amount", "date"],
              "additionalProperties": False}},
          "pause_extras": {"type": "boolean"}}, "required": ["events"], "additionalProperties": False}},
