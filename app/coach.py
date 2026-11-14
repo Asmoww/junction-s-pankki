@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import homeplan, insights, live, money, verify
+from . import charts, homeplan, insights, live, money, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -99,6 +99,28 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"price": {"type": "number"},
                       "property_type": {"type": "string", "enum": ["apartment", "house"]}},
                       "required": ["price"], "additionalProperties": False}},
+    {"name": "show_chart",
+     "description": "Draw a chart in the chat from the customer's own transactions. Use whenever the user asks to see, "
+                    "plot, chart, graph, compare over time or see a trend or trendline. For a vague request use "
+                    "monthly_spend for 12 months. month_runway = this pay month's balance and the forecast to payday.",
+     "input_schema": {"type": "object", "properties": {
+         "kind": {"type": "string", "enum": charts.KINDS}, "months": {"type": "integer", "minimum": 3, "maximum": 24},
+         **_area}, "required": ["kind"], "additionalProperties": False}},
+    {"name": "forecast_with_events",
+     "description": "Costs or income the user mentions (a dentist next Thursday, tickets on Friday, a gift on the 10th), "
+                    "each on its own date: what is safe until payday and this week afterwards, and the balance at payday. "
+                    "Use it instead of subtracting amounts yourself. Today is 2026-09-30 (Wednesday).",
+     "input_schema": {"type": "object", "properties": {
+         "events": {"type": "array", "items": {"type": "object", "properties": {
+             "label": {"type": "string"}, "amount": {"type": "number"}, "date": {"type": "string", "description": "ISO date"},
+             "kind": {"type": "string", "enum": ["spend", "income"]}}, "required": ["label", "amount", "date"],
+             "additionalProperties": False}},
+         "pause_extras": {"type": "boolean"}}, "required": ["events"], "additionalProperties": False}},
+    {"name": "money_health",
+     "description": "Rahakunto, a 0-100 money health score from four measured indicators (spend less than you earn, no "
+                    "days below zero, buffer before payday, long-term saving) with tier, trend and at most two next steps. "
+                    "Use for 'how am I doing overall'. Never compare the person with others.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
                     "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
@@ -145,6 +167,9 @@ def calculate(cid: str, expression: str, what: str = "") -> dict:
 
 
 _FUNCS["calculate"] = calculate
+_FUNCS["show_chart"] = charts.show_chart
+_FUNCS["money_health"] = insights.money_health
+_FUNCS["forecast_with_events"] = charts.forecast_with_events
 _FUNCS["check_purchase"] = lambda cid, item: live.check_purchase(item)
 _FUNCS["plan_home"] = homeplan.plan_home
 
@@ -163,9 +188,12 @@ money by talking with their real transaction data. Today is {money.TODAY.isoform
 Rules:
 - Every number you state must come from a tool result in this conversation. Never estimate, add up or invent
   amounts yourself. If you need a number, call a tool; for sums, differences or percentages use calculate.
+  That includes "small" steps such as a monthly average from a yearly total: call calculate for it too.
   If no tool can answer, say what you can't see.
 - Always say which period an amount covers (e.g. "in August 2026").
 - Answer exactly what was asked, in the user's own words and categories. Do not swap their question for another.
+- Be precise about labels: "fixed must-pays" groceries are supermarkets, butchers and bakeries; kiosk and convenience-store
+  purchases are everyday extras. Say so when someone asks about groceries or the baskets.
 - Teach with the three baskets: {'; '.join(f"{b['name']} = {b['explain']}" for b in BASKETS.values())}
   Mention the basket when it helps the user understand where money goes.
 - Transfers to the customer's own savings or investments are saving, not spending.
@@ -176,6 +204,9 @@ Rules:
   extras" (get_safe_to_spend). Say which one you mean.
 - Explain financial terms in plain language. Be warm and practical, never preachy.
 - No investment, loan or tax product advice; suggest talking to S-Bank for those.
+- You can draw charts: call show_chart. Never say you can't draw charts. Under a chart, write at most two sentences
+  from its summary (trend, highest month) and describe the trend without judging it.
+- When the user mentions a future cost or income with a day, use forecast_with_events; never subtract it yourself.
 - This is a phone screen: keep answers short (usually under 90 words). Use **bold** for key amounts. Use short
   bullet lists only when listing 3+ items. End with at most one helpful follow-up suggestion.
 - Use the user's exact numbers when they give them (e.g. "cut by 20 %").
@@ -231,6 +262,12 @@ def _attachments(trace: list[dict]) -> list[dict]:
             kind = {"type": "compare", "age_group": r["age_group"], "source": r["source"],
                     "items": [{"label": a["area"], "you": a["you_per_month_eur"],
                                "finland": a["finland_same_age_per_month_eur"]} for a in r["areas"]]}
+        elif t["tool"] == "show_chart":
+            kind = {"type": "chart", "spec": r}
+        elif t["tool"] == "forecast_with_events" and r.get("_future"):
+            f = r["_future"]
+            kind = {"type": "chart", "spec": {"kind": "month_runway", "title": "", "future": [{"x": p["date"], "v": p["balance_eur"]} for p in f["base"]["path"]],
+                                              "scenario": [{"x": p["date"], "v": p["balance_eur"]} for p in f["scenario"]["path"]], "past": []}}
         if kind:
             out.append(kind)
         if len(out) == 2:
@@ -255,7 +292,9 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
     messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in history[-12:] if h.get("text")]
     lang = lang if lang in LANGS else "en"
     system = [{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}},
-              {"type": "text", "text": f"Reply in {LANGS[lang]}\nCustomer: age {c['age']}, postal code "
+              {"type": "text", "text": f"App language: {LANGS[lang]} If the user's latest message is clearly written in "
+                                       "another of English, Finnish or Swedish, reply in that language and its number "
+                                       f"format instead.\nCustomer: age {c['age']}, postal code "
                                        f"{c['postal_code']}, balance now {c['balance']} €."}]
     trace = []
     usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "calls": 0}
@@ -303,7 +342,8 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
         for u in uses:
             out, is_err = _run_tool(cid, u.name, dict(u.input))
             trace.append({"tool": u.name, "input": dict(u.input), "result": out, "error": is_err})
-            results.append({"type": "tool_result", "tool_use_id": u.id, "content": json.dumps(out, default=str),
+            results.append({"type": "tool_result", "tool_use_id": u.id,
+                            "content": json.dumps({k: v for k, v in out.items() if not k.startswith("_")} if isinstance(out, dict) else out, default=str),
                             "is_error": is_err})
         messages.append({"role": "user", "content": results})
     return {"answer": "That took too many steps. Could you ask in a simpler way?", "trace": trace, "error": True}

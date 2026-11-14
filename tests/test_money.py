@@ -99,3 +99,33 @@ def test_future_engine_matches_forecast_and_safe_to_spend():
     assert s["delta_at_payday_eur"] == pytest.approx(-150, abs=0.01)
     moved = future.future(EMMA, {"move_bills": [{"bill": "Housing", "date": "2026-10-16"}]})["scenario"]
     assert moved["delta_at_payday_eur"] == pytest.approx(762.79, abs=0.05)
+
+
+def test_rahakunto_matches_reference_backtest_people():
+    from app import insights
+    m = insights.money_health(MIKKO)
+    assert m["score"] == 70 and m["parts"] == {"spend": 81, "on_time": 100, "buffer": 100, "long_term": 0}
+    assert m["steps"][0]["part"] == "long_term"
+    e = insights.money_health(EMMA)
+    assert e["score"] == 19 and e["tier"] == "vulnerable" and e["tone"] == "comfort"
+    assert e["steps"][0]["target"] == "break_even" and e["steps"][0]["gap_eur_month"] == pytest.approx(206, abs=3)
+    j = insights.money_health(JUSSI)
+    assert j["parts"]["long_term"] is None and j["coverage"] == "3 of 8"  # unknown is never averaged in as 0
+
+
+def test_charts_and_dated_events():
+    from app import charts
+    c = charts.show_chart(MIKKO, "monthly_spend", months=12)
+    aug = next(p["v"] for p in c["series"][0]["points"] if p["x"] == "2026-08")
+    assert aug == pytest.approx(money.get_cashflow(MIKKO, "last_month")["spending_eur"]["total"], abs=0.01)
+    f = charts.forecast_with_events(MIKKO, [{"label": "Dentist", "amount": 150, "date": "2026-10-08"}])
+    assert f["safe_this_week_after_eur"] == f["safe_this_week_before_eur"]  # next week's cost doesn't hit this week
+    assert f["safe_until_payday_after_eur"] == pytest.approx(f["safe_until_payday_before_eur"] - 150, abs=0.01)
+
+
+def test_verify_derived_sums_only_within_one_tool():
+    from app import verify
+    tr = [{"tool": "a", "error": False, "result": {"groceries": 397.73, "buffer": 163.30}},
+          {"tool": "b", "error": False, "result": {"x": 100.00}}]
+    got = {n["text"]: n["status"] for n in verify.check("About 561.03 € more, and 497.73 € elsewhere, and 777.77 €.", tr, [])}
+    assert got == {"561.03 €": "derived", "497.73 €": "unverified", "777.77 €": "unverified"}

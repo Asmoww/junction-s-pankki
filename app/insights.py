@@ -264,3 +264,101 @@ def cards(cid: str) -> list[dict]:
                             f"{pot['average_per_month_last_12_eur']:,.0f} € over the last 12 months.",
                     "numbers": pot, "ask": "How would a surprise pot work for me?"})
     return out
+
+
+# ------------------------------------------------------------------------------------------- Rahakunto (money health)
+# Based on the Spend and Save pillars of the Financial Health Network framework (our own name; FHN's "FinHealth Score"
+# may not be used in commercial software). Proposal and backtest: branch review/rasmus-health-score.
+BUFFER_BANDS = [(0.25, 0), (1, 25), (3, 50), (6, 75)]  # months of must-pays the pay-period low covers -> points
+
+
+def _buffer_points(mo: float) -> int:
+    for th, pts in BUFFER_BANDS:
+        if mo < th:
+            return pts
+    return 100
+
+
+def _health_parts(cid: str, start, end) -> tuple[dict, dict]:
+    r = _q("""WITH w AS (SELECT * FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ?)
+              SELECT count(DISTINCT strftime(tx_date, '%Y-%m')) nm,
+                     sum(amount) FILTER (WHERE amount > 0) inc,
+                     -sum(amount) FILTER (WHERE basket IN (1, 2, 3)) spend,
+                     -sum(amount) FILTER (WHERE basket IN (1, 2)) must,
+                     -sum(amount) FILTER (WHERE basket = 3) extras,
+                     -sum(amount) FILTER (WHERE category = 'Invest Deposit') invested,
+                     count(*) FILTER (WHERE category = 'Salary Sweep') sweeps,
+                     least(min(balance), 0) deepest FROM w""", [cid, start, end])[0]
+    neg = _q("""SELECT count(*) n FROM (SELECT tx_date, min(balance) m FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ?
+                GROUP BY 1) WHERE m < 0""", [cid, start, end])[0]["n"]
+    low = _q("""WITH w AS (SELECT balance, seq, sum((category = 'Salary')::INT) OVER (ORDER BY seq) p
+                           FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ?)
+                SELECT median(l) low FROM (SELECT p, min(balance) l FROM w WHERE p > 0 GROUP BY p)""", [cid, start, end])[0]["low"]
+    nm = r["nm"] or 1
+    inc, spend = float(r["inc"] or 0), float(r["spend"] or 0)
+    must, extras, invested = float(r["must"] or 0) / nm, float(r["extras"] or 0) / nm, float(r["invested"] or 0) / nm
+    s = (inc - spend) / inc if inc else 0.0
+    low = float(low or 0)
+    mo = max(low, 0) / must if must else 0.0
+    parts = {"spend": max(0.0, min(100.0, 50 + 500 * s)), "on_time": max(0.0, min(100.0, 100 - neg / 30 * 100)),
+             "buffer": float(_buffer_points(mo)),
+             # long-term: invested share of income vs a 5 % target; unknown when the salary is swept elsewhere
+             "long_term": None if r["sweeps"] else (max(0.0, min(100.0, 100 * (invested / (inc / nm)) / 0.05)) if inc else 0.0)}
+    raw = {"income_month": inc / nm, "spend_month": spend / nm, "savings_rate": s, "must_month": must, "extras_month": extras,
+           "days_below_zero": int(neg), "deepest": float(r["deepest"] or 0), "low_median": low, "buffer_months": mo,
+           "invested_month": invested, "months": int(nm), "sweeps": bool(r["sweeps"])}
+    return parts, raw
+
+
+def _overall(parts: dict) -> tuple[float, int]:
+    v = [x for x in parts.values() if x is not None]
+    return (sum(v) / len(v) if v else 0.0), len(v)
+
+
+def money_health(cid: str) -> dict:
+    """Rahakunto: 0-100 from four measured indicators (last 12 months), tier, trend, and at most two next steps in the
+    standard planning order (stop a deficit -> no days below zero -> buffer -> long-term saving)."""
+    start, prev_start, prev_end = _month_start(TODAY, 11), _month_start(TODAY, 14), _month_start(TODAY, 2) - timedelta(days=1)
+    P, r = _health_parts(cid, start, TODAY)
+    score, n = _overall(P)
+    Pp, _ = _health_parts(cid, prev_start, prev_end)
+    prev, _ = _overall(Pp)
+    trend = score - prev
+    tier = "vulnerable" if score < 40 else "coping" if score < 80 else "healthy"
+    shock = bool(_q("SELECT count(*) n FROM tx WHERE customer_id = ? AND tx_date >= ? AND basket = 2 AND amount <= -300",
+                    [cid, _month_start(TODAY, 2)])[0]["n"])
+    if score < 40:
+        tone = "comfort" if trend <= 0 else "encourage"
+    elif shock and trend < 0:
+        tone = "reassure"
+    elif score < 80:
+        tone = "encourage" if trend > 2 else "steady" if trend >= -2 else "gentle_warning"
+    else:
+        tone = "celebrate" if trend >= 0 else "gentle_warning"
+    steps = []
+    if P["spend"] < 100:
+        if r["savings_rate"] < 0:  # first stop the deficit (break even = 50 points), then aim for 10 %
+            steps.append({"part": "spend", "target": "break_even", "gap_eur_month": _r(-r["savings_rate"] * r["income_month"]),
+                          "points": _r((50 - P["spend"]) / n), "order": 0})
+        else:
+            steps.append({"part": "spend", "target": "keep_10_percent", "gap_eur_month": _r((0.10 - r["savings_rate"]) * r["income_month"]),
+                          "points": _r((100 - P["spend"]) / n), "order": 3})
+    if P["on_time"] < 100:
+        steps.append({"part": "on_time", "gap_eur": _r(-r["deepest"]), "points": _r((100 - P["on_time"]) / n), "order": 1})
+    if P["buffer"] < 100:
+        nxt = next(th for th, _ in BUFFER_BANDS if r["buffer_months"] < th)
+        steps.append({"part": "buffer", "target_months": nxt, "gap_eur": _r(nxt * r["must_month"] - max(r["low_median"], 0)),
+                      "points": _r((_buffer_points(nxt) - P["buffer"]) / n), "order": 2 if r["buffer_months"] < 1 else 2.6})
+    if P["long_term"] is not None and P["long_term"] < 100:
+        steps.append({"part": "long_term", "gap_eur_month": _r(0.05 * r["income_month"] - r["invested_month"]),
+                      "points": _r((100 - P["long_term"]) / n), "order": 3})
+    steps.sort(key=lambda x: (x["order"], -x["points"]))
+    for s in steps:
+        s.pop("order")
+    return {"score": round(score), "tier": tier, "trend_points": _r(trend), "tone": tone, "coverage": f"{n} of 8",
+            "parts": {k: (None if v is None else round(v)) for k, v in P.items()},
+            "unknown_parts": ["manageable debt", "credit", "insurance", "planning"] + (["long-term saving"] if P["long_term"] is None else []),
+            "facts": {k: (_r(v) if isinstance(v, float) else v) for k, v in r.items()}, "steps": steps[:2],
+            "based_on": _period_info(start, TODAY),
+            "method": "Based on the Spend and Save pillars of the Financial Health Network framework; four of eight indicators "
+                      "can be measured from one bank account. Never compared with other people."}

@@ -1,7 +1,17 @@
 // Design E v2: the future as a graph. Code draws every number; the AI annotates the line and turns
 // "what if…" sentences into scenarios that redraw the future. Loaded after app.js on /e.
 const ES = {
-  en: { buy: "Check a purchase", buyPh: "e.g. iPhone 17 256 GB", checking: "Checking shop pages…",
+  en: { hk: { name: "Rahakunto", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
+      tones: { comfort: "A tight year, and it can get better. One thing first.", encourage: (t) => `Up ${t} points in three months. Keep going.`,
+        reassure: (t) => `Down ${t} points: surprise costs did that, and your buffer handled them.`, steady: "Steady. One thing could lift it.",
+        gentle_warning: (t) => `Down ${t} points. Here's what slipped.`, celebrate: "Strong. Keep the habit." },
+      parts: { spend: "Spend less than you earn", on_time: "No days below zero", buffer: "Buffer before payday", long_term: "Long-term saving" },
+      steps: { break_even: (g) => `Spend ${g} a month less to break even`, keep_10_percent: (g) => `Keep 10 % of income: ${g} a month less spending`,
+        on_time: (g) => `Keep ${g} more on your account before payday`, buffer: (g, m) => `Build your buffer to ${m} months of must-pays: ${g} more`,
+        long_term: (g) => `Put ${g} a month into long-term saving` },
+      points: (p) => `+${p} points`, next: "What would lift it", unknown: (n) => `${n} measured; debt, credit, insurance and planning aren't in your account data`,
+      method: "Based on the Spend and Save pillars of the Financial Health Network framework. Never compared with other people.", askQ: (s) => `Help me with this step: ${s}.` },
+    shortBy: (d) => `short by payday ${d}`, buy: "Check a purchase", buyPh: "e.g. iPhone 17 256 GB", checking: "Checking shop pages…",
     checked: (m) => `price read from the shop page${m != null ? `, ${m} min old` : ""}`, claimDiff: (c) => `Search said ${c}; the page says otherwise`,
     notConf: (n) => `${n} shop${n === 1 ? "" : "s"} couldn't be confirmed`, noneConf: "No price could be confirmed, so it stays unknown.",
     own: "Use my own estimate", ownPh: "your estimate, €", ownLabel: "your estimate", notConnected: "Live prices aren't connected yet.",
@@ -17,7 +27,17 @@ const ES = {
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
     cards: { safe: "Safe this week", month: (m) => m, payday: "After payday", pot: "Surprises", fin: "vs Finland", psd2: "Other bank" },
     perMonth: "a month", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
-  fi: { buy: "Tarkista ostos", buyPh: "esim. iPhone 17 256 Gt", checking: "Tarkistan kauppojen sivuja…",
+  fi: { hk: { name: "Rahakunto", tiers: { vulnerable: "Haavoittuva", coping: "Pärjäävä", healthy: "Hyvä" },
+      tones: { comfort: "Tiukka vuosi, ja se voi parantua. Yksi asia ensin.", encourage: (t) => `${t} pistettä ylös kolmessa kuussa. Hyvä suunta.`,
+        reassure: (t) => `${t} pistettä alas: yllättävät menot tekivät sen, ja puskurisi kesti ne.`, steady: "Vakaa. Yksi asia voisi nostaa sitä.",
+        gentle_warning: (t) => `${t} pistettä alas. Tässä mikä lipsui.`, celebrate: "Vahva. Jatka samaan malliin." },
+      parts: { spend: "Kuluta vähemmän kuin ansaitset", on_time: "Ei miinuspäiviä", buffer: "Puskuri ennen palkkaa", long_term: "Pitkäaikainen säästäminen" },
+      steps: { break_even: (g) => `Kuluta ${g} vähemmän kuussa, niin tulot riittävät`, keep_10_percent: (g) => `Säästä 10 % tuloista: ${g} vähemmän kuussa`,
+        on_time: (g) => `Pidä tilillä ${g} enemmän ennen palkkapäivää`, buffer: (g, m) => `Kasvata puskuri ${m} kuukauden pakollisiin menoihin: ${g} lisää`,
+        long_term: (g) => `Laita ${g} kuussa pitkäaikaiseen säästöön` },
+      points: (p) => `+${p} pistettä`, next: "Mikä nostaisi sitä", unknown: (n) => `${n} mitattu; velka, luotto, vakuutukset ja suunnitelmat eivät näy tilitiedoista`,
+      method: "Perustuu Financial Health Networkin Spend- ja Save-pilareihin. Sinua ei verrata muihin.", askQ: (s) => `Auta minua tässä: ${s}.` },
+    shortBy: (d) => `vajetta palkkapäivään ${d}`, buy: "Tarkista ostos", buyPh: "esim. iPhone 17 256 Gt", checking: "Tarkistan kauppojen sivuja…",
     checked: (m) => `hinta luettu kaupan sivulta${m != null ? `, ${m} min vanha` : ""}`, claimDiff: (c) => `Haku sanoi ${c}; sivu sanoo toisin`,
     notConf: (n) => `${n} kauppaa ei voitu vahvistaa`, noneConf: "Hintaa ei voitu vahvistaa, joten se on tuntematon.",
     own: "Käytä omaa arviotani", ownPh: "oma arvio, €", ownLabel: "oma arvio", notConnected: "Live-hinnat eivät ole vielä käytössä.",
@@ -33,7 +53,17 @@ const ES = {
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
     cards: { safe: "Turvallisesti", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätykset", fin: "vs Suomi", psd2: "Toinen pankki" },
     perMonth: "kuussa", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
-  sv: { buy: "Kolla ett köp", buyPh: "t.ex. iPhone 17 256 GB", checking: "Kollar butikernas sidor…",
+  sv: { hk: { name: "Pengakondition", tiers: { vulnerable: "Sårbar", coping: "Klarar sig", healthy: "Bra" },
+      tones: { comfort: "Ett tufft år, och det kan bli bättre. En sak först.", encourage: (t) => `Upp ${t} poäng på tre månader. Fortsätt så.`,
+        reassure: (t) => `Ner ${t} poäng: oväntade kostnader gjorde det, och din buffert klarade dem.`, steady: "Stabilt. En sak kunde lyfta det.",
+        gentle_warning: (t) => `Ner ${t} poäng. Här är vad som halkade.`, celebrate: "Starkt. Fortsätt så." },
+      parts: { spend: "Spendera mindre än du tjänar", on_time: "Inga dagar under noll", buffer: "Buffert före lön", long_term: "Långsiktigt sparande" },
+      steps: { break_even: (g) => `Spendera ${g} mindre i månaden för att gå jämnt ut`, keep_10_percent: (g) => `Spara 10 % av inkomsten: ${g} mindre i månaden`,
+        on_time: (g) => `Ha ${g} mer på kontot före lönedagen`, buffer: (g, m) => `Bygg bufferten till ${m} månaders måsten: ${g} till`,
+        long_term: (g) => `Sätt ${g} i månaden i långsiktigt sparande` },
+      points: (p) => `+${p} poäng`, next: "Vad skulle lyfta det", unknown: (n) => `${n} mätta; skulder, kredit, försäkringar och planering syns inte i kontodata`,
+      method: "Baserat på Spend- och Save-pelarna i Financial Health Networks ramverk. Jämförs aldrig med andra.", askQ: (s) => `Hjälp mig med detta: ${s}.` },
+    shortBy: (d) => `saknas till lönedagen ${d}`, buy: "Kolla ett köp", buyPh: "t.ex. iPhone 17 256 GB", checking: "Kollar butikernas sidor…",
     checked: (m) => `pris läst från butikens sida${m != null ? `, ${m} min gammalt` : ""}`, claimDiff: (c) => `Sökningen sa ${c}; sidan säger annat`,
     notConf: (n) => `${n} butiker kunde inte bekräftas`, noneConf: "Inget pris kunde bekräftas, så det är okänt.",
     own: "Använd min egen uppskattning", ownPh: "din uppskattning, €", ownLabel: "egen uppskattning", notConnected: "Livepriser är inte anslutna än.",
@@ -189,9 +219,11 @@ function strip() {
   if (psd2) cards.push(`<button class="mini" data-act="psd2"><span class="t">${E().cards.psd2}</span><b>${eur0(psd2.numbers.moved_to_other_bank_eur)}</b><span class="s">${E().moved}</span>
     <div class="flow"><i style="width:${Math.round(psd2.numbers.share_of_income * 100)}%"></i></div></button>`);
   const days = s.days_until_payday;
-  cards.push(`<button class="mini ${s.safe_until_payday_eur < 0 ? "neg" : ""}" data-ask="${esc(T().suggestions[0])}"><span class="t">${E().cards.safe}</span><b>${eur0(s.safe_this_week_eur)}</b>
-    <span class="s">${s.safe_until_payday_eur < 0 ? "−" + eur0(-s.safe_until_payday_eur) : eur0(s.safe_per_day_eur) + "/" + (lang === "en" ? "day" : lang === "fi" ? "pv" : "dag")}</span>
-    <div class="dots">${Array.from({ length: Math.min(days, 15) }, (_, i) => `<i class="${s.safe_until_payday_eur < 0 ? "r" : i < 7 ? "g" : ""}"></i>`).join("")}</div></button>`);
+  const shortE = s.safe_until_payday_eur < 0;
+  cards.push(`<button class="mini ${shortE ? "neg" : ""}" data-ask="${esc(T().suggestions[0])}"><span class="t">${E().cards.safe}</span>
+    <b>${shortE ? "−" + eur0(-s.safe_until_payday_eur) : eur0(s.safe_this_week_eur)}</b>
+    <span class="s">${shortE ? E().shortBy(day(s.next_payday)) : eur0(s.safe_per_day_eur) + "/" + (lang === "en" ? "day" : lang === "fi" ? "pv" : "dag")}</span>
+    <div class="dots">${Array.from({ length: Math.min(days, 15) }, (_, i) => `<i class="${shortE ? "r" : i < 7 ? "g" : ""}"></i>`).join("")}</div></button>`);
   const tot = m.total_spending_eur || 1;
   cards.push(`<button class="mini" data-ask="${esc(T().suggestions[4])}"><span class="t">${E().cards.month(monthName(m.period.start))}</span><b>${eur0(m.total_spending_eur)}</b>
     <div class="seg">${m.baskets.map((b) => `<i style="flex:${b.total_eur / tot};background:${BASKET_COLORS[b.basket]}"></i>`).join("")}</div></button>`);
@@ -212,6 +244,12 @@ function strip() {
     cards.push(`<button class="mini" data-ask="${esc(T().suggestions[5])}"><span class="t">${esc(label(big.area))} ${E().cards.fin}</span><b>${eur0(big.you_per_month_eur)}</b>
       <span class="s">${esc(E().vsFin(eur0(big.finland_same_age_per_month_eur)))}</span>
       <div class="pair"><i style="width:${(big.you_per_month_eur / mx) * 100}%"></i><i class="fi" style="width:${(big.finland_same_age_per_month_eur / mx) * 100}%"></i></div></button>`);
+  }
+  const hk = home.health;
+  if (hk) {
+    const ring = `conic-gradient(var(--g700) ${hk.score * 3.6}deg, var(--g100) 0)`;
+    cards.splice(psd2 ? 1 : 0, 0, `<button class="mini health" data-health><span class="t">${E().hk.name}</span>
+      <div class="ring" style="background:${ring}"><span>${hk.score}</span></div><span class="s">${E().hk.tiers[hk.tier]}</span></button>`);
   }
   if (liveSt) {
     const cap = liveSt.rules.loan_cap_general, eu = liveSt.rules.euribor_12m;
@@ -322,6 +360,29 @@ function redraw() {
   layoutNotes(); bindGraph(G); bindDock();
 }
 
+function stepText(st) {
+  const h = E().hk.steps;
+  if (st.part === "spend") return h[st.target](eur0(st.gap_eur_month));
+  if (st.part === "on_time") return h.on_time(eur0(st.gap_eur));
+  if (st.part === "buffer") return h.buffer(eur0(st.gap_eur), st.target_months);
+  return h.long_term(eur0(st.gap_eur_month));
+}
+
+function healthSheet() {
+  const hk = home.health, H = E().hk, t = Math.abs(Math.round(hk.trend_points));
+  const tone = typeof H.tones[hk.tone] === "function" ? H.tones[hk.tone](t) : H.tones[hk.tone];
+  const bars = Object.entries(hk.parts).map(([k, v]) => `<li><span>${esc(H.parts[k])}</span>${v === null
+    ? `<div class="hb unk"><i></i></div><b>?</b>` : `<div class="hb"><i style="width:${v}%"></i></div><b>${v}</b>`}</li>`).join("");
+  const steps = hk.steps.map((st) => { const tx = stepText(st);
+    return `<button class="hstep" data-ask="${esc(H.askQ(tx))}"><span>${esc(tx)}</span><b>${H.points(Math.round(st.points))}</b></button>`; }).join("");
+  const s = sheet(`<div class="hhead"><div class="ring big" style="background:conic-gradient(var(--g700) ${hk.score * 3.6}deg, var(--g100) 0)"><span>${hk.score}</span></div>
+    <div><h2>${H.name}</h2><div class="sub">${H.tiers[hk.tier]} · ${hk.trend_points >= 0 ? "+" : "−"}${t}</div></div></div>
+    <p class="lead">${esc(tone)}</p><ul class="hbars">${bars}</ul>
+    ${steps ? `<div class="label" style="margin:14px 2px 8px">${H.next}</div>${steps}` : ""}
+    <p class="note left">${esc(H.unknown(hk.coverage))}. ${esc(H.method)}</p>`);
+  s.querySelectorAll("[data-ask]").forEach((b) => b.addEventListener("click", () => { closeSheet(); ask(b.dataset.ask); }));
+}
+
 function rulesSheet() {
   const rows = Object.values(liveSt.rules).map((r) => `<li><div class="rh"><b>${esc(r.label)}</b><span>${r.status === "confirmed" ? `${r.value} ${esc(r.unit)}` : E().unknown}</span></div>
     <div class="rs">${r.source_url ? `<a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(host(r.source_url))}</a>` : ""}
@@ -362,6 +423,7 @@ window.renderHomeE = async function () {
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
   $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
+  $("#view-home").querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
   const fc = home.cards.find((c) => c.id === "forecast");
   if (fc && !notifShown[cid]) { notifShown[cid] = true; showNotif(fc); }
   const want = `${cid}:${lang}`;

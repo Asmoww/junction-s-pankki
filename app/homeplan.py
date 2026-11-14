@@ -50,6 +50,15 @@ def plan_home(cid: str, price: float, property_type: str = "apartment") -> dict:
     need = price - loan + tax_eur + FEES_EUR if loan is not None and tax_eur is not None else None
     gap = max(need - have, 0.0) if need is not None else None
     months_to = (0 if gap == 0 else math.ceil(gap / surplus) if surplus and surplus > 0 else None) if gap is not None else None
+    reach = None
+    if cap is not None and tax is not None and by_income and surplus and surplus > 0 and (months_to is None or months_to > 24):
+        budget = have + 24 * surplus  # what 24 months at the usual pace can add up to
+        lo_p, hi_p = 0.0, 3_000_000.0
+        for _ in range(50):
+            mid = (lo_p + hi_p) / 2
+            n_mid = mid - min(mid * cap / 100, by_income) + mid * tax / 100 + FEES_EUR
+            lo_p, hi_p = (mid, hi_p) if n_mid <= budget else (lo_p, mid)
+        reach = math.floor(lo_p / 1000) * 1000.0  # round down, so the plan at this price really fits in 24 months
     used = {k: {f: reg[k].get(f) for f in ("label", "value", "unit", "status", "source_url", "source_date", "fetched_at",
                                            "request_id", "effective_from")}
             for k in ("loan_cap_general", tax_key, "euribor_12m")}
@@ -65,6 +74,7 @@ def plan_home(cid: str, price: float, property_type: str = "apartment") -> dict:
         "gap_eur": _r(gap) if gap is not None else None,
         "surplus_per_month_eur": _r(surplus) if surplus is not None else None,
         "months_to_goal": months_to,
+        "price_reachable_in_24_months_eur": reach,
         "extra_collateral_needed_eur": _r(max(loan - COLLATERAL_SHARE * price, 0)) if loan is not None else None,
         "monthly_payment_at_euribor_only_eur": _r(loan * _annuity(eur12, TERM_YEARS)) if loan is not None and eur12 is not None else None,
         "unknown": [k for k, v in (("loan cap", cap), ("transfer tax", tax), ("12-month Euribor", eur12)) if v is None]

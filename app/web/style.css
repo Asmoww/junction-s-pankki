@@ -234,3 +234,6 @@ body:not([data-tab="coach"]) main { padding-bottom: calc(90px + var(--safe-botto
 .traps li.ok .mark { color: var(--green-2); }
 .traps li.bad .mark, .traps .why { color: var(--warn); }
 .traps .why { font-size: 13px; }
+.num.yours { border-color: var(--muted); border-bottom-style: dashed; }
+.cht { width: 100%; height: auto; display: block; margin: 4px 0; } .cht .ctk { font-size: 9px; fill: #66786e; }
+.num.derived { border-color: var(--green-2); border-bottom-style: dashed; }

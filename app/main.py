@@ -129,7 +129,8 @@ def home(cid: str):
     """Everything the home and learn screens need in one call."""
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
-            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid)}
+            "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid),
+            "health": insights.money_health(cid)}
 
 
 @app.get("/api/future/{cid}")

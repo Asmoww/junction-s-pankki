@@ -78,7 +78,50 @@ function sliderWidget(a) {
   return `<div class="slider" id="${id}"><div>${T().slider(esc(label(a.area)))} <b class="pct"></b></div>
     <input type="range" min="5" max="60" step="5" value="${a.cut_percent}"><div class="save"></div></div>`;
 }
+// Chart specs come from the show_chart tool (code computes every point); drawn as inline SVG.
+function chartSvg(spec) {
+  const W = 300, H = 150, L = 6, R = 6, TP = 14, B = 22;
+  const mk = (pts) => pts.map((p) => p.v);
+  let all = [];
+  const runway = spec.kind === "month_runway";
+  const lines = runway ? [["past", spec.past || []], ["future", spec.future || []], ["scenario", spec.scenario || []]] : spec.series.map((s) => [s.label, s.points]);
+  lines.forEach(([, pts]) => (all = all.concat(mk(pts))));
+  let lo = Math.min(0, ...all), hi = Math.max(...all, 1); const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+  const Y = (v) => TP + ((hi - v) / (hi - lo)) * (H - TP - B);
+  const zero = lo < 0 ? `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#d7efe0" stroke-width="1.5"/>` : "";
+  if (runway) {
+    const pts = [...(spec.past || []), ...(spec.future || [])], n = Math.max(pts.length - 1, 1), idx = {};
+    pts.forEach((p, i) => (idx[p.x] = i));
+    const X = (i) => L + (i * (W - L - R)) / n;
+    const path = (arr) => arr.map((p) => `${X(idx[p.x] ?? 0).toFixed(1)},${Y(p.v).toFixed(1)}`).join(" ");
+    const neg = (spec.future || []).some((p) => p.v < 0);
+    return `<svg viewBox="0 0 ${W} ${H}" class="cht" role="img" aria-label="${esc(spec.title || "")}">${zero}
+      ${spec.past && spec.past.length ? `<polyline points="${path(spec.past)}" fill="none" stroke="#00703c" stroke-width="3" stroke-linejoin="round"/>` : ""}
+      <polyline points="${path(spec.future)}" fill="none" stroke="${neg ? "#c2402f" : "#2e9c5e"}" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round" opacity="${spec.scenario && spec.scenario.length ? 0.5 : 1}"/>
+      ${spec.scenario && spec.scenario.length ? `<polyline points="${path(spec.scenario)}" fill="none" stroke="#003d25" stroke-width="2.5"/>` : ""}
+      <text x="${L}" y="${H - 6}" class="ctk">${pts.length ? day(pts[0].x) : ""}</text><text x="${W - R}" y="${H - 6}" class="ctk" text-anchor="end">${pts.length ? day(pts[pts.length - 1].x) : ""}</text></svg>`;
+  }
+  const ms = spec.series[0].points.map((p) => p.x), n = ms.length, bw = (W - L - R) / n;
+  const X = (i) => L + bw * i + bw / 2;
+  const mon = (ym) => new Date(ym + "-15T12:00:00").toLocaleDateString(T().locale, { month: "narrow" });
+  let body = "";
+  if (spec.series.length === 1) {
+    body = spec.series[0].points.map((p, i) => `<rect x="${(X(i) - bw * 0.32).toFixed(1)}" y="${Y(p.v).toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${Math.max(1, Y(0) - Y(p.v)).toFixed(1)}" rx="2" fill="#2e9c5e"/>`).join("");
+    if (spec.spending_trend_eur_per_month != null) {
+      const avg = spec.average_per_month_eur, k = spec.spending_trend_eur_per_month, mid = (n - 1) / 2;
+      body += `<line x1="${X(0)}" x2="${X(n - 1)}" y1="${Y(avg - k * mid)}" y2="${Y(avg + k * mid)}" stroke="#003d25" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    }
+  } else {
+    const col = ["#003d25", "#8fd0a8"];
+    body = spec.series.map((s, j) => `<polyline points="${s.points.map((p, i) => `${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(" ")}" fill="none" stroke="${col[j]}" stroke-width="2.5" stroke-linejoin="round"/>`).join("");
+  }
+  const ticks = ms.map((m, i) => `<text x="${X(i)}" y="${H - 6}" class="ctk" text-anchor="middle">${mon(m)}</text>`).join("");
+  const legend = spec.series.length > 1 ? `<div class="legend"><span><i style="background:#003d25"></i>${esc(spec.series[0].label)}</span><span><i style="background:#8fd0a8"></i>${esc(spec.series[1].label)}</span></div>` : "";
+  return `<svg viewBox="0 0 ${W} ${H}" class="cht" role="img" aria-label="${esc(spec.title || "")}">${zero}${body}${ticks}</svg>${legend}`;
+}
+
 function renderAttachment(a) {
+  if (a.type === "chart") return `${a.spec.title ? `<div class="chart-title">${esc(a.spec.title)}</div>` : ""}${chartSvg(a.spec)}`;
   if (a.type === "bars") return barsChart(a);
   if (a.type === "baskets") return basketsChart(a.items);
   if (a.type === "pot") return `<div class="chart-title">${T().potChart}</div>${potChart(a.months, a.average)}`;
@@ -118,7 +161,7 @@ function safeCard(s) {
   const short = s.safe_until_payday_eur < 0;
   const steps = s.steps.map((st) => `<li><span>${esc(st.step)}</span><span class="amt">${eur(st.eur)}</span></li>`).join("");
   return `<section class="card ${short ? "warn" : ""}"><div class="label">${T().safeWeek}</div>
-    <div class="big">${eur0(s.safe_this_week_eur)}</div>
+    <div class="big">${short ? "−" + eur0(-s.safe_until_payday_eur) : eur0(s.safe_this_week_eur)}</div>
     <div class="sub">${short ? T().short(eur0(-s.safe_until_payday_eur), day(s.next_payday))
       : T().perDay(eur0(s.safe_per_day_eur), day(s.next_payday), eur0(s.your_usual_extras_per_week_eur))}</div>
     <details class="how"><summary>${T().howCalc}</summary><ul class="steps">${steps}
@@ -286,6 +329,8 @@ const TOOL_LABEL = {
   get_spender_profile: "Compared your habits with your age group", get_surprise_pot: "Looked at surprise costs month by month",
   get_payday_pattern: "Compared spending before and after payday", get_payday_forecast: "Projected your balance to payday",
   get_benchmark: "Compared with Statistics Finland", get_spender_type: "Worked out your spender type", calculate: "Calculated",
+  show_chart: "Drew a chart from your transactions", forecast_with_events: "Put your planned costs on their dates",
+  check_purchase: "Checked live prices on shop pages", plan_home: "Planned a home purchase with live rules", money_health: "Worked out your Rahakunto score",
 };
 function traceLine(t) {
   const r = t.result || {}, i = t.input || {};
@@ -298,7 +343,7 @@ function traceLine(t) {
 }
 
 function answerHtml(r) {
-  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion"), v = nums.filter((n) => n.status !== "unverified").length;
+  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion" && n.status !== "yours"), v = nums.filter((n) => n.status !== "unverified").length;
   const badge = nums.length ? `<div class="vbadge ${v === nums.length ? "all" : "some"}">${v === nums.length ? "✓" : "!"} ${T().verified(v, nums.length)}</div>` : "";
   const att = (r.attachments || []).map((a) => `<div class="att">${renderAttachment(a)}</div>`).join("");
   const u = r.usage || {}, pv = r.privacy || {};
@@ -388,7 +433,8 @@ document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("c
 $("#thread").addEventListener("click", (e) => {
   const n = e.target.closest(".num"); if (!n) return;
   const st = n.dataset.status;
-  toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : `<b>${st === "verified" ? T().numVerified : T().numRounded}</b><br><code>${esc(n.dataset.src)}</code>`);
+  toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : st === "yours" ? `<b>${T().numYours}</b>`
+    : `<b>${st === "verified" ? T().numVerified : st === "derived" ? T().numDerived : T().numRounded}</b><br><code>${esc(n.dataset.src)}</code>`);
 });
 
 (async () => {

@@ -6,4 +6,5 @@ PERSONAS = [
     {"id": "CUST04588", "name": "Mikko", "tagline": "40, family budget, a typical month"},
     {"id": "CUST00388", "name": "Aino", "tagline": "22, invests every month, spends little"},
     {"id": "CUST00724", "name": "Jussi", "tagline": "32, salary moves to another bank on payday"},
+    {"id": "CUST04138", "name": "Ville", "tagline": "32, saving for a first home"},
 ]

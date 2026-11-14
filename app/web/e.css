@@ -157,3 +157,18 @@ body.e .composer { background: rgba(255, 255, 255, .96); border-top-color: var(-
 body.e .composer input { border-color: var(--g100); }
 body.e .composer input:focus { border-color: var(--g500); }
 body.e #view-learn { padding-top: 10px; }
+
+/* Rahakunto */
+.ring { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin-top: 8px; }
+.ring span { width: 50px; height: 50px; border-radius: 50%; background: var(--g50); display: grid; place-items: center; font-size: 20px; font-weight: 500; color: var(--g900); }
+.mini.health .ring span { background: var(--g50); }
+.ring.big { width: 76px; height: 76px; margin: 0; } .ring.big span { width: 60px; height: 60px; background: #fff; font-size: 24px; }
+.hhead { display: flex; gap: 14px; align-items: center; } .hhead h2 { margin: 0; }
+.hbars { list-style: none; padding: 0; margin: 10px 0 0; }
+.hbars li { display: grid; grid-template-columns: 1fr 90px 28px; gap: 8px; align-items: center; padding: 6px 2px; font-size: 14px; }
+.hbars b { text-align: right; font-weight: 500; }
+.hb { height: 8px; border-radius: 999px; background: var(--g100); overflow: hidden; } .hb i { display: block; height: 100%; background: var(--g700); }
+.hb.unk { background: repeating-linear-gradient(90deg, var(--g100) 0 6px, transparent 6px 10px); }
+.hstep { display: flex; justify-content: space-between; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 12px 14px; margin-top: 6px;
+  border-radius: 14px; background: var(--g50); color: var(--g900); font-size: 14px; }
+.hstep b { white-space: nowrap; color: var(--g700); font-weight: 600; }

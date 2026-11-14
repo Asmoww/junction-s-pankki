@@ -23,7 +23,7 @@ from tests.traps.cases import cases  # noqa: E402
 def run_case(c):
     r = coach.chat(c["persona"], [{"role": "user", "text": c["q"]}], c.get("lang", "en"))
     ans, failed = r["answer"], []
-    nums = [n for n in r.get("numbers", []) if n["status"] != "suggestion"]
+    nums = [n for n in r.get("numbers", []) if n["status"] not in ("suggestion", "yours")]
     if r.get("error"):
         failed.append("coach error")
     bad = [n["text"] for n in nums if n["status"] == "unverified"]
@@ -33,6 +33,8 @@ def run_case(c):
         if not any(abs(n["value"] - round(v, 2)) <= 0.01 or (n["status"] == "rounded" and abs(n["value"] - v) <= max(5, 0.06 * v))
                    or abs(n["value"] - round(v)) < 0.01 for n in nums):
             failed.append(f"expected {v:.2f} € not in answer")
+    if c.get("attachment") and not r.get("attachments"):
+        failed.append("no chart drawn")
     for rx in c.get("must", []):
         if not re.search(rx, ans, re.I):
             failed.append(f"missing: {rx}")
