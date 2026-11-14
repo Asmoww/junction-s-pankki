@@ -100,3 +100,10 @@ def test_guesses_show_getting_sharper():
 
 def test_curiosity_names_in_all_languages():
     assert all(set(L.CONCEPT_NAMES[l]) == set(L.CONCEPTS) for l in ("en", "fi", "sv"))
+
+
+def test_quest_predict_carries_numbers_for_guess_calibration():
+    for q in L.QUESTS:
+        p = L.quest(q, L.PRACTICE_FACTS)["predict"]
+        assert len(p["values"]) == len(p["options"])
+        assert p["metric"] and p["actual"] is not None

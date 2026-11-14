@@ -237,3 +237,26 @@ body:not([data-tab="coach"]) main { padding-bottom: calc(90px + var(--safe-botto
 .num.yours { border-color: var(--muted); border-bottom-style: dashed; }
 .cht { width: 100%; height: auto; display: block; margin: 4px 0; } .cht .ctk { font-size: 9px; fill: #66786e; }
 .num.derived { border-color: var(--green-2); border-bottom-style: dashed; }
+
+/* Money Detective (learn.js): a map of the corners of your own money you've looked into */
+.detective .lmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 6px; }
+.ltile { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-height: 74px; padding: 10px; border-radius: 14px;
+  background: #f4f6f5; color: var(--muted); text-align: left; font-size: 12px; line-height: 1.25; border: 1px solid transparent; }
+.ltile.lit { background: var(--mint); color: var(--ink); border-color: var(--green-2, var(--green)); }
+.ltile .pips { display: flex; gap: 3px; } .ltile .pips i { width: 7px; height: 7px; border-radius: 50%; background: #d6dcd9; }
+.ltile .pips i.on { background: var(--green); }
+.lline { font-size: 13px; margin: 8px 2px 0; }
+.lquests { display: flex; flex-direction: column; gap: 6px; }
+.lquest { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #f4f6f5; text-align: left; font-size: 14px; }
+.lquest > span:first-child { flex: 1; } .lquest em { display: block; font-style: normal; font-size: 11px; color: var(--muted); }
+.lquest .lst { font-size: 12px; color: var(--muted); } .lquest.explained .lst, .lquest.revisited .lst { color: var(--green); font-weight: 700; }
+.lms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; font-size: 12px; } .lms span { padding: 4px 8px; border-radius: 999px; background: #f4f6f5; color: var(--muted); }
+.lms span.on { background: var(--mint); color: var(--ink); }
+.lfoot { display: flex; gap: 16px; margin-top: 6px; } .lfoot .link { font-size: 12px; color: var(--muted); background: none; padding: 0; }
+.lopts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; } .lopts .btn { text-align: left; border-radius: 14px; font-weight: 500; }
+.lopts .btn.right { background: var(--green); color: #fff; } .lopts .btn.wrong { background: #fbe9e6; color: #c2402f; }
+.lfb { font-size: 14px; } .lreveal { background: var(--mint); padding: 12px; border-radius: 14px; }
+.lnote { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 10px; border-radius: 999px; background: var(--mint); color: var(--green);
+  font-size: 12px; font-weight: 600; text-align: left; animation: lpop .5s ease-out; }
+.lnote .go { margin-left: auto; font-weight: 400; color: var(--muted); } .lnote .spark { color: var(--green); }
+@keyframes lpop { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }

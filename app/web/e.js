@@ -568,6 +568,7 @@ function bindDock() {
         msg.textContent = p.unsupported || E().noAmount; return;
       }
       scen = r; active = "ai"; redraw();
+      if (window.learnNote) learnNote(["what_if"], "tried_whatif");
     } catch { msg.textContent = E().failed; }
   });
 }
@@ -731,6 +732,7 @@ async function openWrapped() {
         g.querySelector(`[data-sub="${CSS.escape(top[0].merchant_type)}"]`).classList.add("right");
         sl.querySelector(".wres").textContent = right ? W.right : W.wrong(label(top[0].merchant_type), top[0].times);
         sl.querySelector(".wlater").classList.add("on");
+        if (window.learnNote) learnNote(["where_money_goes"], "guessed");
         return;
       }
       if (x >= 0.3) return;
@@ -913,6 +915,7 @@ async function openSort() {
     try { r = await api(`/api/sort/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: ans, lang }) }); }
     catch { box.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
     result(r);
+    if (window.learnNote) learnNote(["baskets"], "corrected");
   };
   const refresh = async () => { closeSheet(); fut = null; await load(); };
   const result = (r) => {
@@ -1030,6 +1033,7 @@ async function openPlay() {
     body.innerHTML = `<div class="swait"><span class="typing"><i></i><i></i><i></i></span></div>`;
     let r; try { r = await api(`/api/play/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kept, move_rent: moveRent, swap: swapped, lang }) }); }
     catch { body.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
+    if (window.learnNote) learnNote(["forecast"], "tried_whatif");
     const ok = r.end_eur >= 0;
     body.innerHTML = `<h2 class="${ok ? "win" : "lose"}">${ok ? S.win : S.lose}</h2>
       ${r.summary ? `<p class="sq">${SPARK}<span>${esc(r.summary)}</span></p>${listenBtn(r.summary)}` : ""}

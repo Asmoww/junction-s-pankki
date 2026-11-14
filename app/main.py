@@ -97,7 +97,7 @@ def healthz():
 
 
 # Cloudflare caches /static for hours: version asset URLs by content so each deploy is picked up at once.
-_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js", "e.css", "e.js"))).hexdigest()[:10]
+_ver = hashlib.sha256(b"".join((WEB / f).read_bytes() for f in ("style.css", "app.js", "i18n.js", "e.css", "e.js", "learn.js"))).hexdigest()[:10]
 INDEX = (WEB / "index.html").read_text().replace(".css\"", f".css?v={_ver}\"").replace(".js\"", f".js?v={_ver}\"")
 LOGIN = LOGIN.replace(".css\"", f".css?v={_ver}\"")
 

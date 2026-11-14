@@ -262,11 +262,13 @@ function renderLearn() {
     : k === "transactions_while_overdrawn" ? v : `${Math.round(v * 100)} %`);
   const sig = Object.entries(t.signals).map(([k, v]) => `<li><span>${esc(T().signals[k] || k)}</span><span class="amt">${fmtSig(k, v)}</span></li>`).join("");
   $("#view-learn").innerHTML = `
+    ${window.learnCard ? window.learnCard() : ""}
     ${window.openSort ? sortCard().replace("mini sortcard", "card sortcard learn") : ""}
     <section class="card typecard"><div class="label">${T().typeTitle}</div><div class="type">${esc(tname)}</div><p class="lead">${esc(tsum)}</p>
       <details class="how"><summary>${T().typeSignals}</summary><ul class="steps">${sig}</ul></details></section>
     <section class="card" id="trust"><div class="label">${T().trustTitle}</div><div class="skeleton"></div></section>`;
   $("#view-learn").querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", window.openSort));
+  if (window.renderDetective) window.renderDetective();
   renderTrust();
 }
 
@@ -375,6 +377,7 @@ async function ask(text) {
     const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customer_id: cid, history, lang }) });
     pending.innerHTML = answerHtml(r);
+    if (window.learnAfterAnswer) window.learnAfterAnswer(r, pending);  // Money Detective: a new question lights up the map
     if (r.error) { pending.classList.add("err"); history.pop(); } else history.push({ role: "assistant", text: r.answer });
   } catch (e) {
     pending.classList.add("err"); pending.textContent = T().wentWrong; history.pop();

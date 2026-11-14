@@ -107,3 +107,27 @@ this out" → second kind lit → "Guess first: what share went to extras?" → 
 worked this out", on a what-if, on a Sort answer; post `{metric, guess, actual}` after any guess game.
 Tests: `tests/test_learning.py` (12; curiosity can't be farmed, tools map to concepts, guesses get sharper, all
 languages).
+
+## 6. UI built (14 Nov, 16:40, Rasmus's Claude)
+Rasmus: gamified retention has worked before and fits the challenge, so build it. Built on this branch, not on the live one.
+
+- `app/web/learn.js` (new, loaded after app.js on `/` and `/classic`; part of the asset hash). EN/FI/SV.
+- **Learn tab, first card: Money Detective.** 9 corners of your money as a 3×3 map; each tile has 5 dots (asked, opened
+  the steps, tried a what-if, corrected, guessed first). Tap a tile and the coach gets a starter question for it.
+  Below: weekly goal ("A missed week resets nothing"), guess calibration ("earlier off by X %, lately Y %" after 4
+  guesses), the three Check-yourself quests with status, milestones, Hide rewards, Start over.
+- **Where curiosity is recorded:** every coach answer (its `concepts`), opening "How I worked this out", a typed
+  what-if, finishing Play two weeks, answering Sort, the Wrapped guess, and each quest guess (also stored as a
+  numeric guess against the real number, so calibration works).
+- **Feedback in the flow:** a small "✦ New on your money map: Spending room" pill under the coach answer, or a toast
+  elsewhere. Only shown when something is new, so it can't be farmed.
+- Backend change: quest `predict` now carries `values`, `actual`, `metric` (1 new test). Offline tests: same 22
+  data-dependent failures as `feature/context-dev` without data; learning 13/13.
+- Checked in headless Chrome against the real `learning.py` logic (stubbed app): map lights, steps counted once,
+  quest wrong → feedback → retry → right → "Understood ✓", tile tap asks the coach.
+
+**Demo (30 s):** Coach: "Why am I always short before payday?" → pill "New on your money map: Payday and forecast" →
+open "How I worked this out" → second dot → Learn tab: the lit map → tap "Saving" → coach answers → third corner lit.
+
+**To ship:** Pyry merges this branch into `feature/context-dev` (it already contains it, so a fast-forward-free
+merge with no conflicts as of e4b919a) and restarts `spankki-coach`. Ask Asmoww first.

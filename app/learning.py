@@ -157,7 +157,8 @@ def quest(qid: str, facts: dict, lang: str = "en", revisit: bool = False) -> dic
     if qid == "q1":
         share = f["everyday_share"] * 100
         opts, right = _bands(share, [20, 40, 60], ["< 20 %", "20-40 %", "40-60 %", "> 60 %"])
-        predict = {"question": t["q1_predict"], "options": opts, "closest": right}
+        predict = {"question": t["q1_predict"], "options": opts, "closest": right,
+                   "values": [10, 30, 50, 75], "actual": round(share, 1), "metric": "extras_share"}
         reveal = t["q1_reveal"].format(share=round(share), per_month=_fmt(f["everyday_per_month"]))
         evidence = {"tool": "get_three_baskets", "period": "last_3_months"}
         check = {"question": t["q1_check"], "options": t["q1_opts"]}
@@ -166,7 +167,8 @@ def quest(qid: str, facts: dict, lang: str = "en", revisit: bool = False) -> dic
         cands = sorted({round(b, -1), round(b / 2, -1), round(s, -1), 0.0}, reverse=True)
         opts = [f"{_fmt(c)} €" for c in cands]
         right = min(range(len(cands)), key=lambda i: abs(cands[i] - s))
-        predict = {"question": t["q2_predict"].format(balance=_fmt(b)), "options": opts, "closest": right}
+        predict = {"question": t["q2_predict"].format(balance=_fmt(b)), "options": opts, "closest": right,
+                   "values": cands, "actual": round(s, 2), "metric": "spending_room"}
         reveal = t["q2_reveal"].format(safe=_fmt(s), balance=_fmt(b), savings=_fmt(f["savings"]), bills=_fmt(f["bills"]),
                                        essentials=_fmt(f["essentials"]), buffer=_fmt(f["buffer"]))
         evidence = {"tool": "get_safe_to_spend", "steps": True}
@@ -177,7 +179,9 @@ def quest(qid: str, facts: dict, lang: str = "en", revisit: bool = False) -> dic
         labels = [f"0-{int(edges[0])}", f"{int(edges[0]) + 1}-{int(edges[1])}", f"{int(edges[1]) + 1}-{int(edges[2])}",
                   f"{int(edges[2]) + 1}-{n}"]
         opts, right = _bands(hit, [e + 0.5 for e in edges], labels)
-        predict = {"question": t["q3_predict"].format(n=n), "options": opts, "closest": right}
+        mids = [edges[0] / 2, (edges[0] + edges[1]) / 2, (edges[1] + edges[2]) / 2, (edges[2] + n) / 2]
+        predict = {"question": t["q3_predict"].format(n=n), "options": opts, "closest": right,
+                   "values": [round(m, 1) for m in mids], "actual": hit, "metric": "surprise_months"}
         reveal = t["q3_reveal"].format(hit=hit, n=n, big=_fmt(f["biggest_surprise"]), pot=_fmt(f["pot"]))
         evidence = {"tool": "surprise_pot"}
         check = {"question": t["q3_check"].format(pot=_fmt(f["pot"])), "options": t["q3_opts"]}
