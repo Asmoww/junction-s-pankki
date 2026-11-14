@@ -166,3 +166,16 @@ def test_rule_without_a_note_needs_the_same_sentence_test():
     assert _st("A common rule of thumb is to save 10-20 % of your income.")["20 %"] == "rule"
     assert _st("You spend 20 % on rent, a common rule of thumb.")["20 %"] == "unverified"
     assert _st("Most people save 20 %, a common rule of thumb.")["20 %"] == "unverified"
+
+
+def test_chart_json_is_removed_from_answers():
+    from app.coach import strip_data_dumps
+    t = '{\n"chart_type": "category_trend",\n"data": [\n{"x": "2025-10", "y": 0.0}\n]\n}\n\nThe highest was **993.20 €**.'
+    assert strip_data_dumps(t) == "The highest was **993.20 €**."
+    assert strip_data_dumps("A\n```json\n{\"a\": 1}\n```\nB [x] {y}") == "A\n\nB [x] {y}"
+
+
+def test_a_stray_fence_does_not_swallow_the_answer():
+    from app.coach import strip_data_dumps
+    assert strip_data_dumps("Use ``` carefully, then more text.") == "Use ``` carefully, then more text."
+    assert strip_data_dumps("Answer.\n```json\n{\"cut\": 1") == "Answer."

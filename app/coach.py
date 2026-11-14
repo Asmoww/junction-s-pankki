@@ -5,6 +5,7 @@ Returns the answer plus a trace of the tool calls, so the UI can show "How I wor
 from __future__ import annotations
 
 import ast
+import re
 import json
 import logging
 import operator
@@ -238,6 +239,9 @@ Rules:
   That includes "small" steps such as a monthly average from a yearly total: call calculate for it too.
   If no tool can answer, say what you can't see.
 - Always say which period an amount covers (e.g. "in August 2026").
+- Within one answer, use the same unit for every amount you compare: all per month or all totals for the period, and
+  say which ("a month" / "in total, July-September"). If a tool gives totals and you talk per month, use the tool's
+  per-month field or calculate (total / months); never mix an average and totals in one list.
 - Answer exactly what was asked, in the user's own words and categories. Do not swap their question for another.
 - Be precise about labels: "fixed must-pays" groceries are supermarkets, butchers and bakeries; kiosk and convenience-store
   purchases are everyday extras. Say so when someone asks about groceries or the baskets.
@@ -267,12 +271,16 @@ Rules:
   4000 * ((1 + 0.08/12) ** 48 - 1) / (0.08/12)); say the return is an assumption, not a promise. Then check the
   plan against their own money (get_cashflow, get_safe_to_save): if the monthly amount is more than they can
   safely save, or more than their income, say so plainly and show the version that fits what they can save.
-- You can draw charts: call show_chart. Never say you can't draw charts. Under a chart, write at most two sentences
+- You can draw charts: call show_chart; the app draws it under your answer. Never write chart data, JSON, code or
+  tables of chart points in the answer. Never say you can't draw charts. Under a chart, write at most two sentences
   from its summary (trend, highest month) and describe the trend without judging it.
 - When the user mentions a future cost or income with a day, use forecast_with_events; never subtract it yourself.
 - This is a phone screen: keep answers short (usually under 90 words). Use **bold** for key amounts. Use short
   bullet lists only when listing 3+ items. End with at most one helpful follow-up suggestion.
 - Use the user's exact numbers when they give them (e.g. "cut by 20 %").
+- "Restaurants" is both a category (all eating out: restaurants, fast food & cafes, bars & pubs) and a merchant type
+  (sit-down restaurants only). Say "eating out" for the category and "restaurants" for the merchant type, and use the
+  same one throughout an answer.
 - Never state statistics about other people ("most people save 15 %", "on average Finns…") unless a tool returned
   them (e.g. get_benchmark). Give general advice as a rule of thumb ("a common rule of thumb is to save 10-20 %") or
   as a what-if you calculate with ("say you save 20 %": put the 20 % into calculate).
@@ -382,6 +390,42 @@ def _privacy(trace: list[dict]) -> dict:
 REFUSAL_TEXT = "I can't help with that one. Try asking about your spending, saving or bills."
 
 
+# A closed code block anywhere, or an unclosed one that starts a line (a cut-off answer); a stray ``` inside a
+# sentence is left alone so it can't swallow the rest of the answer.
+_FENCE = re.compile(r"```.*?```|(?m:^)```.*\Z", re.DOTALL)
+
+
+def strip_data_dumps(text: str) -> str:
+    """Remove code blocks and raw JSON (e.g. a chart spec the model wrote out) from an answer. Charts are drawn by the
+    app from show_chart results; a phone chat must never show data structures."""
+    text = _FENCE.sub("", text)
+    out, i = [], 0
+    while i < len(text):
+        line_start = i == 0 or text[i - 1] == "\n"
+        if line_start and text[i] in "{[":
+            depth, j, in_str = 0, i, False
+            while j < len(text):
+                ch = text[j]
+                if in_str:
+                    in_str = not (ch == '"' and text[j - 1] != "\\")
+                elif ch == '"':
+                    in_str = True
+                elif ch in "{[":
+                    depth += 1
+                elif ch in "}]":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                j += 1
+            block = text[i:j + 1]
+            if depth == 0 and '":' in block and len(block) > 20:
+                i = j + 1
+                continue
+        out.append(text[i])
+        i += 1
+    return re.sub(r"\n{3,}", "\n\n", "".join(out)).strip()
+
+
 def _drop_refused(history: list[dict]) -> list[dict]:
     """Remove refused exchanges (user turn + the refusal reply) so they are never resent to the model; the newest user
     message is always kept. (Rasmus's Claude: one refused message made every later question fail.)"""
@@ -420,7 +464,7 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
         if not calls:
             text = (m.get("content") or "").strip()
             usage.update({"model": out["model"], "where": eu.label(), "cost_usd": None})
-            text, notes = verify.split_notes(text)
+            text, notes = verify.split_notes(strip_data_dumps(text))
             progress("check", {})
             numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
                                    {"balance": c["balance"], "age": c["age"]}, earlier=[h["text"] for h in history if h["role"] == "assistant"],
@@ -502,7 +546,7 @@ def chat(cid: str, history: list[dict], lang: str = "en", progress=None) -> dict
             usage["cost_usd"] = round((usage["input_tokens"] * PRICE_IN + usage["output_tokens"] * PRICE_OUT
                                        + usage["cache_read_tokens"] * PRICE_CACHE_READ
                                        + usage["cache_write_tokens"] * PRICE_CACHE_WRITE) / 1e6, 4)
-            text, notes = verify.split_notes(text)
+            text, notes = verify.split_notes(strip_data_dumps(text))
             numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
                                    {"balance": c["balance"], "age": c["age"]}, earlier=[h["text"] for h in history if h["role"] == "assistant"],
                                    explain=True, notes=notes)
