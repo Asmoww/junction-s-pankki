@@ -7,6 +7,28 @@ All numbers below were computed from the app on 14 Nov 02:40 (data as of 30 Sep 
 overdraft moments in the data happen in the last 7 days before payday; small purchases under 10 € are only
 15 % of extras. So the coach shows your money's **future**, explains it, and lets you **change it in words**.
 
+## P. Peer review, Sunday 15 Nov (5 minutes at the table, demo included)
+Be at the saved table by 10:30 (save it in the Junction Platform Teams tab first). Round 1 10:45, round 2 11:45. Half
+pitch while half review, then swap: **Pyry and Rasmus most likely each pitch alone once**, so both rehearse this.
+Phone (or laptop in Chrome device mode), Emma, Finnish or English to match the reviewer.
+
+| Time | Do | Say (short) |
+|---|---|---|
+| 0:00 | Home, Emma | "People don't run out of money because of coffee. They run out because of timing. In S-Bank-style data, half of all overdrafts happen in the last week before payday." |
+| 0:30 | Point at the line: red zone, rent step, −997 € | "Emma has 700 €. Rent takes her below zero on the 3rd; she'll be 997 € short on payday. The AI notes explain the line; every number is checked against her data." |
+| 1:00 | **Play your next two weeks** → show the coach's plan, then play: swipe two extras away, taxi card → **Swap for HSL ticket** (live price from hsl.fi), rent card → **Pay after payday** | "Her likely next two weeks as cards, from her own habits. The three baskets are the rules: rent can't be skipped, surprises stay, extras are her choice. Skipping every coffee isn't enough. Timing is." |
+| 1:50 | Result **+13 € / +87 €** → **Show on my graph** | "She makes it to payday, and the plan lands on her real forecast." |
+| 2:10 | **Your three baskets → Sort with the AI**: answer the parking card | "Some spending only she can sort. The AI asks; her answer re-sorts her money everywhere." |
+| 2:45 | **Coach**: "Why am I always short before payday?" → open **How I worked this out** | "Claude picks the tools, code computes every number, and every number is matched to her data." |
+| 3:20 | Tap **AI: Claude → AI in Finland**, ask again | "Same coach on Gemma 4 that we host on a Verda GPU in Finland: 21 of 22 trick questions, every number matched. A bank can keep the AI in Europe." |
+| 3:50 | **Your money year** → guess slide → poster | "And once a year, her money year: shareable, without amounts." |
+| 4:30 | Close | "Built to drop into S-mobiili as a web view: about 2 cents an answer, nothing identifying leaves the bank. See your money's future, and change it." Then: "Questions?" |
+
+**Before each round (2 minutes):** Emma selected, Home tab, no scenario chip active, Sort answers cleared (Sort →
+"Undo my answers"), language matched to the reviewer, "AI in Finland" off. The presets, the coach plan and Wrapped are
+cached; the coach and EU answers take 1-3 s. **Fallback:** if the network dies, use the screenshots folder and tell the
+story from the graph.
+
 ## A. 3-minute version (stage, video, first minutes at the table)
 Phone screen mirrored (or Chrome device mode, Pixel 7, zoom 125 %). Emma, English, logged in, home tab.
 
