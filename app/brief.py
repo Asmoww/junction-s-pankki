@@ -17,7 +17,7 @@ import threading
 from datetime import date
 from pathlib import Path
 
-from . import drains, eu, future, insights, money, psd2, saving, verify
+from . import drains, eu, future, insights, money, psd2, saving, style, verify
 from .money import TODAY
 
 log = logging.getLogger("brief")
@@ -216,12 +216,15 @@ def brief(cid: str, lang: str = "en", explored: list[str] | None = None) -> dict
                          for x in f["findings"]]}
     source, cards = "ai", None
     try:
-        r = future._json_call(SYSTEM.format(lang=LANG_NAMES[lang]), json.dumps(user, default=str), SCHEMA, max_tokens=600)
+        system = SYSTEM.format(lang=LANG_NAMES[lang]) + ("\n" + style.STYLE[lang] if lang in style.STYLE else "")
+        r = future._json_call(system, json.dumps(user, default=str), SCHEMA, max_tokens=600)
         head = " ".join(str(r.get("headline", "")).split())
         nums = verify.check(head, [{"tool": "facts", "result": user}], [], lang)
         if not head or len(head) > 220 or any(n["status"] == "unverified" for n in nums):
             log.warning("brief headline rejected (%s): %r", [n["text"] for n in nums if n["status"] == "unverified"], head)
             head, source = fb["headline"], "rules"
+        if source == "ai" and lang in style.STYLE:  # native copy edit; it keeps every number exactly as written
+            head = style.proofread({"h": head}, lang)["h"]
         ranked = sorted(f["findings"], key=lambda x: -x["weight"])
         picks = _spread(ranked, [p for p in r.get("questions", []) if p in byid])
         cards = [c for c in dict.fromkeys(r.get("cards", [])) if c in CARDS]

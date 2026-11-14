@@ -16,7 +16,7 @@ log = logging.getLogger("style")
 
 GLOSSARY = {
     "fi": ("Käytä sovelluksen termejä: arjen extrat (everyday extras), kiinteät pakolliset menot, yllättävät pakolliset "
-           "menot, ostoton päivä (no-spend day), menopäivä (spending day), palkkapäivä, palkkaviikko, miinuksella / "
+           "menot, ostoton päivä (no-spend day), menopäivä (spending day), palkkapäivä, palkkaviikko, saldo / tililläsi on (balance; ei 'kassa'), miinuksella / "
            "miinukselle (below zero), puskuri, kaltaisesi tai ikätoverisi (people like you), ulkona syöminen. Vältä "
            "anglismeja ja slangia (skippaus, shoppailu, kaksoset ihmisistä) ja suoria käännöksiä englannista."),
     "sv": ("Använd appens termer: vardagsextra (everyday extras), fasta måsten, oväntade måsten, köpfri dag (no-spend "
