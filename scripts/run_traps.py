@@ -4,8 +4,8 @@ state/traps.json, which the app shows on the Learn tab. Usage: .venv/bin/python 
 """
 import json
 import os
-import re
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,31 +20,38 @@ for line in (ROOT / ".env").read_text().splitlines():
 from app import coach, eu  # noqa: E402
 EU = "--eu" in sys.argv
 from tests.traps.cases import cases  # noqa: E402
+from tests.traps.grade import check, public_reasons  # noqa: E402
+
+_hid_lock = threading.Lock()
+
+
+def _save_hidden(entry):
+    """Newest 20 hidden failures in state/ (gitignored, never served). A broken file is replaced, not fatal, and
+    the write is atomic, so a crash or a parallel --eu run can't leave half a file behind."""
+    hid = ROOT / "state" / "traps_hidden_failures.json"
+    hid.parent.mkdir(exist_ok=True)
+    with _hid_lock:
+        try:
+            old = json.loads(hid.read_text())
+            old = old if isinstance(old, list) else []
+        except (OSError, ValueError):
+            old = []
+        tmp = hid.with_suffix(f".{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(([entry] + old)[:20], indent=1))
+        os.replace(tmp, hid)
 
 
 def run_case(c):
     if EU:  # worker threads don't inherit the context variable, so set it here
         eu.provider.set("eu")
     r = coach.chat(c["persona"], [{"role": "user", "text": c["q"]}], c.get("lang", "en"))
-    ans, failed = r["answer"], []
+    ans, failed = r["answer"], check(c, r)
     nums = [n for n in r.get("numbers", []) if n["status"] not in ("suggestion", "yours", "earlier")]
-    if r.get("error"):
-        failed.append("coach error")
-    bad = [n["text"] for n in nums if n["status"] == "unverified"]
-    if bad:
-        failed.append(f"unverified numbers: {', '.join(bad)}")
-    for v in c.get("values", []):
-        if not any(abs(n["value"] - round(v, 2)) <= 0.01 or (n["status"] == "rounded" and abs(n["value"] - v) <= max(5, 0.06 * v))
-                   or abs(n["value"] - round(v)) < 0.01 for n in nums):
-            failed.append(f"expected {v:.2f} € not in answer")
-    if c.get("attachment") and not r.get("attachments"):
-        failed.append("no chart drawn")
-    for rx in c.get("must", []):
-        if not re.search(rx, ans, re.I):
-            failed.append(f"missing: {rx}")
-    for rx in c.get("must_not", []):
-        if re.search(rx, ans, re.I):
-            failed.append(f"forbidden: {rx}")
+    bad = [n for n in nums if n["status"] == "unverified"]
+    if failed and "shown" in c:  # hidden question: keep the answer out of the app, but in a local file for debugging
+        _save_hidden({"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "eu": EU, "trap": c["trap"],
+                      "failed": failed, "answer": ans})
+    failed = public_reasons(c, failed)  # a hidden case shows only the kind of failure, never words from the answer
     return {"trap": c["trap"], "question": c.get("shown", c["q"]), "persona": c["persona"], "ok": not failed, "failed": failed,
             "answer": ans if "shown" not in c else "(not stored: the question is hidden)", "tools": [t["tool"] for t in r.get("trace", [])],
             "numbers_total": len(nums), "numbers_verified": len(nums) - len(bad),

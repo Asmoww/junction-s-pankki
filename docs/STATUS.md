@@ -17,6 +17,7 @@ Update at the end of every session (or run `/handoff`).
 - Team: module owners
 
 ## Done
+- 2026-11-14 Trap suite: hateful-request case no longer fails correct refusals and stereotypes no longer slip through (32 offline grading tests); Money year receipt loader (Joona's Claude)
 - 2026-11-13 Repo set up, dataset profiled (ASSUMPTIONS.md) (Pyry's Claude)
 - 2026-11-13 Money tools, Claude coach, mobile UI live at spankki.psavela.com (Pyry's Claude)
 - 2026-11-13 Verified numbers, surprise pot, payday-week + overdraft forecast cards with push mockup, inline charts and
