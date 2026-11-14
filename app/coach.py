@@ -163,6 +163,16 @@ _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, as
         ast.USub: operator.neg, ast.UAdd: operator.pos}
 
 
+def _pow(base, exp):
+    # Compound growth needs powers; bounded so a result can't blow up (e.g. 1.0067 ** 600 is fine, 10 ** 999 isn't).
+    if abs(exp) > 600 or abs(base) > 1e6:
+        raise money.ToolError("Power too large: keep the exponent within 600 and the base within 1,000,000.")
+    return operator.pow(base, exp)
+
+
+_OPS[ast.Pow] = _pow
+
+
 def _calc(node):
     if isinstance(node, ast.Expression):
         return _calc(node.body)
@@ -172,7 +182,7 @@ def _calc(node):
         return _OPS[type(node.op)](_calc(node.left), _calc(node.right))
     if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
         return _OPS[type(node.op)](_calc(node.operand))
-    raise money.ToolError("Only numbers, + - * / and parentheses are allowed.")
+    raise money.ToolError("Only numbers, + - * / ** and parentheses are allowed.")
 
 
 def calculate(cid: str, expression: str, what: str = "") -> dict:
@@ -180,8 +190,10 @@ def calculate(cid: str, expression: str, what: str = "") -> dict:
         raise money.ToolError("Expression too long.")
     try:
         val = _calc(ast.parse(expression.replace(",", ""), mode="eval"))
-    except (SyntaxError, ZeroDivisionError) as e:
+    except (SyntaxError, ZeroDivisionError, OverflowError) as e:
         raise money.ToolError(f"Can't calculate: {e}")
+    if isinstance(val, complex):
+        raise money.ToolError("Can't calculate: no real result.")
     return {"expression": expression, "what": what, "result": round(val, 2)}
 
 
@@ -232,6 +244,10 @@ Rules:
   extras" (get_safe_to_spend). Say which one you mean.
 - Explain financial terms in plain language. Be warm and practical, never preachy.
 - No investment, loan or tax product advice; suggest talking to S-Bank for those.
+- Growth and savings plans ("X a month for N years at R %"): compute them with calculate (it supports **, e.g.
+  4000 * ((1 + 0.08/12) ** 48 - 1) / (0.08/12)); say the return is an assumption, not a promise. Then check the
+  plan against their own money (get_cashflow, get_safe_to_save): if the monthly amount is more than they can
+  safely save, or more than their income, say so plainly and show the version that fits what they can save.
 - You can draw charts: call show_chart. Never say you can't draw charts. Under a chart, write at most two sentences
   from its summary (trend, highest month) and describe the trend without judging it.
 - When the user mentions a future cost or income with a day, use forecast_with_events; never subtract it yourself.
@@ -368,12 +384,14 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
     trace = []
     usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "calls": 0}
     client = _client()
-    for _ in range(MAX_STEPS):
+    for step in range(MAX_STEPS + 1):
+        # Last round: no more tools, write the answer from what the tools already returned.
+        last = {"tool_choice": {"type": "none"}} if step == MAX_STEPS else {}
         try:
             # No refusal fallback on purpose: it may retry on a bigger model, and the team caps the app at Sonnet.
             resp = client.messages.create(
                 model=MODEL, max_tokens=4000, system=system, tools=TOOLS, messages=messages,
-                output_config={"effort": "low"})
+                output_config={"effort": "low"}, **last)
         except anthropic.RateLimitError:
             return {"answer": "The coach is busy right now. Please try again in a moment.", "trace": trace, "error": True}
         except anthropic.APIStatusError as e:
