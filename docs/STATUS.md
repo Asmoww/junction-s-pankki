@@ -17,7 +17,7 @@ Update at the end of every session (or run `/handoff`).
 - Team: module owners
 
 ## Done
-- 2026-11-14 Number sources in the coach chat (colours, badges, number sheet with coach's note); branch `claude/number-sources`, no PR yet, needs a live check of the notes block on Claude and the EU model (Joona's Claude)
+- 2026-11-14 Number sources in the coach chat (colours, badges, number sheet with coach's note); branch `claude/number-sources`, no PR yet, needs a live check of the notes block on Claude and the EU model (Joona's Claude). Same branch: plain-language "From your S-Bank account" popup with See the payments (`/api/payments`); untested against real data. Known gap: safe-to-spend step names come from money.py in English
 - 2026-11-14 Trap suite: hateful-request case no longer fails correct refusals (13 offline grading tests); Money year receipt loader (Joona's Claude)
 - 2026-11-13 Repo set up, dataset profiled (ASSUMPTIONS.md) (Pyry's Claude)
 - 2026-11-13 Money tools, Claude coach, mobile UI live at spankki.psavela.com (Pyry's Claude)

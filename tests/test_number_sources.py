@@ -78,3 +78,24 @@ def test_default_mode_unchanged_for_captions():
     # Captions (wrapped, sorter, play) call check() without explain: same rules as before, no assumption statuses.
     found = verify.check("Saving 20 % is 482.52 €.", TRACE, [], "en")
     assert {f["text"]: f["status"] for f in found} == {"20 %": "unverified", "482.52 €": "verified"}
+
+
+def test_data_numbers_point_to_their_tool_call():
+    trace = [{"tool": "get_spending", "input": {"period": "last_month"}, "result": {"total_eur": 997.40}},
+             {"tool": "get_spending", "input": {"period": "last_month", "subcategory": "Restaurants"}, "result": {"total_eur": 412.80}},
+             {"tool": "get_safe_to_spend", "input": {}, "result": {"steps": [{"step": "Groceries", "eur": -675.71}, {"step": "Buffer", "eur": -150.04}]}}]
+    found = {n["text"]: n for n in verify.check("About **1,000 €**, restaurants **412.80 €**, together **825.75 €**.",
+                                               trace, [], "en", explain=True)}
+    assert found["412.80 €"]["ti"] == 1 and found["412.80 €"]["path"] == "total_eur"
+    assert found["1,000 €"]["status"] == "rounded" and found["1,000 €"]["rounded_from"] == 997.40 and found["1,000 €"]["ti"] == 0
+    d = found["825.75 €"]
+    assert d["status"] == "derived" and [p["value"] for p in d["parts"]] == [675.71, 150.04]
+    assert [p["path"] for p in d["parts"]] == ["steps[0].eur", "steps[1].eur"] and d["ti"] == 2
+
+
+def test_calculation_from_data_lists_its_parts():
+    trace = TRACE + [{"tool": "calculate", "input": {"expression": "2412.60 - 318.40", "what": "left"}, "result": {"result": 2094.2}}]
+    _, n = run("That leaves **2,094.20 €**.", trace)
+    e = n["2,094.20 €"]
+    assert e["status"] == "verified" and [p["value"] for p in e["parts"]] == [2412.60, 318.40]
+    assert [p["ti"] for p in e["parts"]] == [0, 1]

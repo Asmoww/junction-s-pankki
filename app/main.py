@@ -525,6 +525,16 @@ def traps():
     return out
 
 
+@app.get("/api/payments/{cid}")
+def payments(cid: str, start: str, end: str, category: str | None = None, subcategory: str | None = None,
+             basket: int | None = None):
+    """Payments behind a number in a coach answer ("See the payments")."""
+    try:
+        return money.payments(_cid(cid), start, end, category, subcategory, basket)
+    except money.ToolError as e:
+        raise HTTPException(400, str(e))
+
+
 @app.get("/api/baskets/{cid}")
 def baskets(cid: str, period: str = "this_month"):
     try:

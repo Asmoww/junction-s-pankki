@@ -76,6 +76,15 @@ _STATISTIC = re.compile(r"\b(most|many|average|on average|typical(ly)?|studies|r
 _PCT_UNITS = ("%", "prosenttia", "procent")
 
 
+class _Src(str):
+    """A source label ("get_spending.total_eur") that also remembers its trace entry and path, so the app can describe
+    the number in plain words (category, period, payments) and list the payments behind it."""
+    def __new__(cls, label: str, ti: int | None = None, path: str = ""):
+        o = super().__new__(cls, label)
+        o.ti, o.path = ti, path
+        return o
+
+
 def _word_numbers(text: str) -> list[float]:
     """'millionaire', 'a million', '2 million', 'miljoona', 'miljon' -> euro amounts the user named in words."""
     out = []
@@ -141,19 +150,24 @@ def _operands(expr: str) -> list[float]:
     return vals
 
 
+def _ref(src) -> dict:
+    """Pointer from a number to the tool result behind it: trace index + path inside the result (customer.* has none)."""
+    return {"ti": src.ti, "path": src.path} if isinstance(src, _Src) and src.ti is not None else {}
+
+
 def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en",
           context: dict | None = None, explain: bool = False, notes: list[dict] | None = None) -> list[dict]:
     """context: values the coach was given up front (e.g. the customer's balance).
     explain: coach chat mode (assumption / calculated / rule statuses, notes); off for captions, which must be data only."""
     sources = [(abs(float(v)), f"customer.{k}") for k, v in (context or {}).items() if isinstance(v, (int, float))]
     per_tool, calcs, inputs = [], [], []
-    for t in trace:
+    for ti, t in enumerate(trace):
         if t.get("error"):
             continue
         if explain and t["tool"] == "calculate":
             calcs.append(t)
             continue
-        vals = [(v, f"{t['tool']}.{p}") for v, p in _collect(t["result"])]
+        vals = [(v, _Src(f"{t['tool']}.{p}", ti, p)) for v, p in _collect(t["result"])]
         sources += vals
         per_tool.append([(v, p) for v, p in vals if v >= 1 and " (as %)" not in p][:80])
         if explain:
@@ -169,7 +183,7 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
         if explain:
             yours += [(v, "your question") for v in _word_numbers(u)]
     sources += yours
-    calc_data, calc_assumed, assumed = [], [], list(inputs)
+    calc_data, calc_assumed, assumed, calc_parts = [], [], list(inputs), {}
     for t in calcs:  # a calculate result is data only if every input is data; otherwise it rests on an assumption
         expr, res = str(t["input"].get("expression", "")), t["result"].get("result")
         ops = _operands(expr)
@@ -177,6 +191,9 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
         src = f"{expr} = {res}" + (f" ({t['input'].get('what')})" if t["input"].get("what") else "")
         if isinstance(res, (int, float)):
             (calc_assumed if own else calc_data).append((abs(float(res)), src))
+            if not own:  # all inputs are data: keep them so the app can name each part
+                hits = [(o, _hit(o, 2, data_sources)[1]) for o in _operands(expr) if o not in (0, 1, 100) and o >= 1]
+                calc_parts[src] = [{"value": o, **_ref(h)} for o, h in hits if h is not None]
         assumed += [(o, f"calculate: {expr}") for o in own]
     sources += calc_data
     found = []
@@ -185,7 +202,7 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
             val, dec = _parse(num)
         except ValueError:
             continue
-        status, src = "unverified", None
+        status, src, rounded_from, parts = "unverified", None, None, None
         tol = 0.5 * 10 ** -dec + 1e-6
         for v, p in sources:
             if abs(round(v, dec) - val) < 1e-6 or abs(v - val) <= tol:
@@ -195,7 +212,7 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
             for v, p in sources:
                 for step in (10, 50, 100):
                     if val % step == 0 and abs(v - val) <= step / 2 and abs(v - val) <= 0.06 * max(v, 1):
-                        status, src = "rounded", p
+                        status, src, rounded_from = "rounded", p, v
                         break
                 if src:
                     break
@@ -203,11 +220,14 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
             # Exact sum or difference of two numbers from the SAME tool result (e.g. groceries + surprise buffer).
             # Only cent-exact matches, so an invented number almost never passes by chance.
             for tool_vals in per_tool:
-                hit = next(((a, b, op) for i, (a, pa) in enumerate(tool_vals) for (b, pb) in tool_vals[i + 1:]
+                hit = next(((a, pa, b, pb, op) for i, (a, pa) in enumerate(tool_vals) for (b, pb) in tool_vals[i + 1:]
                             for op, v in (("+", a + b), ("−", abs(a - b))) if abs(round(v, 2) - val) < 1e-6), None)
                 if hit:
-                    a, b, op = hit
-                    status, src = "derived", f"{max(a, b) if op == '−' else a:.2f} {op} {min(a, b) if op == '−' else b:.2f}"
+                    a, pa, b, pb, op = hit
+                    if op == "−" and b > a:
+                        a, pa, b, pb = b, pb, a, pa
+                    status, src = "derived", _Src(f"{a:.2f} {op} {b:.2f}", pa.ti, "")
+                    parts = [{"value": a, "op": "", **_ref(pa)}, {"value": b, "op": op, **_ref(pb)}]
                     break
         if status == "unverified" and unit in ("%", "prosenttia", "procent"):
             # A percentage inside a closing question ("Want to see a 30 % cut?") is an offer, not a claim.
@@ -225,6 +245,14 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
                     status, src = st, p
                     break
         entry = {"text": full, "value": val, "status": status, "source": src}
+        if explain and status in ("verified", "rounded", "derived"):
+            entry.update(_ref(src))
+            if rounded_from is not None:
+                entry["rounded_from"] = round(rounded_from, 2)
+            if parts:
+                entry["parts"] = parts
+            elif src in calc_parts:
+                entry["parts"], entry["expression"] = calc_parts[src], str(src)
         if explain:
             pct = unit in _PCT_UNITS
             at = answer.find(full)
