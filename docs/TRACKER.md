@@ -8,9 +8,9 @@
 ## A. Home screen (Design E)
 | # | Item | Status | Where it's described |
 |---|---|---|---|
-| A1 | **Move the "Live rules" card (loan cap, Euribor, finanssivalvonta.fi) off Home** into the home planner / Plan view. A regular user doesn't need it on the front page; outside UX review agrees. Still on Home in `e.js` (line ~280) | **OPEN** (you agreed to demote) | `review/rasmus-next-build` docs/proposals/NEXT-BUILD.md §2; this branch docs/REVIEW-UX-0510.md |
-| A2 | Rules card attribution: Euribor is published by Suomen Pankki (EMMI), not FIN-FSA; one source chip + date per value; "95 % for all" is **temporary** (FIN-FSA 30 Jun 2026 release) | **OPEN** | NEXT-BUILD.md §2; docs/RESEARCH-NEXT.md F3 |
-| A3 | Score name per UI language: EN still says "Rahakunto" (`e.js` hk.name). Proposal: en "Money fitness", fi "Rahakunto", sv keeps "Pengakondition" | **OPEN** | NEXT-BUILD.md §0c |
+| A1 | **Move the "Live rules" card (loan cap, Euribor, finanssivalvonta.fi) off Home** into the home planner / Plan view. A regular user doesn't need it on the front page; outside UX review agrees. Still on Home in `e.js` (line ~280) | **ON BRANCH** 11:55: Home shows a small "Buying a home? · Today's rules and sources ›" entry (EN/FI/SV) that opens the same sheet; no values or single source on Home. Full move into a Plan view = C2 | `review/rasmus-next-build` docs/proposals/NEXT-BUILD.md §2; this branch docs/REVIEW-UX-0510.md |
+| A2 | Rules card attribution: Euribor is published by Suomen Pankki (EMMI), not FIN-FSA; one source chip + date per value; "95 % for all" is **temporary** (FIN-FSA 30 Jun 2026 release) | **ON BRANCH** for Home (no single source shown); the sheet already lists each rule with its own source. Still OPEN: say "temporary" for the 95 % cap | NEXT-BUILD.md §2; docs/RESEARCH-NEXT.md F3 |
+| A3 | Score name per UI language: EN still says "Rahakunto" (`e.js` hk.name). Proposal: en "Money fitness", fi "Rahakunto", sv keeps "Pengakondition" | **ON BRANCH** (EN "Money fitness" in e.js, app.js tool label, coach tool description per language) | NEXT-BUILD.md §0c |
 | A4 | Demote the score; plain wording ("Your budget needs attention" + reason + one step) instead of "19 Vulnerable" | **PYRY** (you agreed to demote) | docs/REVIEW-UX-0510.md |
 | A5 | Decision first: "spending room" (as a range, with its steps) + one action above a shorter graph | **PYRY** | docs/REVIEW-UX-0510.md; docs/REVIEW-RESPONSE.md §3.1 |
 | A6 | Graph legend: actual vs forecast, "Today" line, is the payday point before or after salary | **OPEN** | docs/REVIEW-UX-0510.md |
@@ -27,7 +27,7 @@
 | B3 | Badge wording "numbers matched to your data" | **DONE** 6ad3248 | — |
 | B4 | Meaning check in `verify.py` (category, period, sign) + 5 traps | **OPEN** (after demo-critical items) | docs/REVIEW-RESPONSE.md §3.3 |
 | B5 | Slider 60 % clamp | **DONE** 6ad3248 | — |
-| B6 | Widget must follow the scenario the answer states (it shows the last `simulate_cut`, e.g. restaurants while the answer was all extras) | **OPEN** | docs/REVIEW-BROWSER-TESTS-R2-1107.md |
+| B6 | Widget must follow the scenario the answer states (it shows the last `simulate_cut`, e.g. restaurants while the answer was all extras) | **ON BRANCH** (`_pick_cut`: slider follows the saving the answer states; test `tests/test_widget_follows_answer.py`) | docs/REVIEW-BROWSER-TESTS-R2-1107.md |
 | B7 | Averages over months with data only (Jan-Dec 2024 was divided by 12) | **ON BRANCH** | same file; tests/test_period_coverage.py |
 | B8 | "Check a purchase": "a bicycle for 600 €" became shopping results; add "Check an amount" path | **OPEN** | docs/REVIEW-UX-0510.md |
 
@@ -47,7 +47,7 @@
 | D3 | README for judges | **ON BRANCH** | README.md |
 | D4 | Rename basket 1 "Regular essentials"; supermarket can include optional items; allow corrections | **OPEN** | docs/REVIEW-UX-0510.md |
 | D5 | ASSUMPTIONS.md "last month" = August | **ON BRANCH** | — |
-| D6 | Safe-to-spend backtest against `money.get_safe_to_spend` with a movable today (replica said savings dip 40.7 %) | **OPEN** (Rasmus's Claude can do it) | docs/REVIEW-RESPONSE.md §2 |
+| D6 | Safe-to-spend backtest against `money.get_safe_to_spend` with a movable today (replica said savings dip 40.7 %) | **ON BRANCH**: `scripts/analysis/backtest_app_safe_to_spend.py` runs the app's own function with a movable today (view cut at T). **Needs a run on the server** | docs/REVIEW-RESPONSE.md §2 |
 
 ## E. Research and pitch (reference, no code)
 docs/RESEARCH-CHAT-WITH-YOUR-DATA.md (what the booth's "chat with your own data" should mean: control, correction,
