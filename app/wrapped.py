@@ -69,10 +69,9 @@ def facts(cid: str) -> dict:
     hour = salary / 160 if salary else None
     cf = money.get_cashflow(cid, start=start.isoformat(), end=end.isoformat())
     eat = _q(f"SELECT count(*) n, -sum(amount) t FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND sub IN {EAT_OUT}", [cid, start, end])[0]
+    # The guess game: the four extras (basket 3) that cost the most, biggest first
     top = _q("""SELECT sub, count(*) n, -sum(amount) t FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND basket = 3
-                GROUP BY 1 ORDER BY n DESC LIMIT 1""", [cid, start, end])
-    big = _q("""SELECT tx_date d, -sum(amount) t, list(sub ORDER BY amount) what FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ?
-                AND kind = 'spend' AND NOT (category IN ('Housing', 'Utilities')) GROUP BY 1 ORDER BY t DESC LIMIT 1""", [cid, start, end])
+                GROUP BY 1 ORDER BY t DESC LIMIT 4""", [cid, start, end])
     # net = income + (negative spending amounts): what was left from the month's money
     months = _q("""SELECT strftime(tx_date, '%Y-%m') m, coalesce(sum(amount) FILTER (WHERE kind = 'income'), 0) + coalesce(sum(amount) FILTER (WHERE kind = 'spend'), 0) net,
                           min(balance) low FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? GROUP BY 1 ORDER BY 1""", [cid, start, end])
@@ -95,9 +94,8 @@ def facts(cid: str) -> dict:
                                    cf["moved_to_own_savings_or_investments_eur"]["salary_sweep_to_other_account"]),
         "baskets_eur": {str(k): cf["spending_eur"][BASKETS[k]["name"]] for k in (1, 2, 3)},
         "eat_out": {"visits": eat["n"], "total_eur": _r(eat["t"]), "hours_of_work": round(eat["t"] / hour) if hour and eat["t"] else None},
-        "top_extra": ({"merchant_type": top[0]["sub"], "times": top[0]["n"], "total_eur": _r(top[0]["t"]),
-                       "hours_of_work": round(top[0]["t"] / hour) if hour else None} if top else None),
-        "biggest_day": ({"date": str(big[0]["d"]), "total_eur": _r(big[0]["t"]), "what": big[0]["what"][:3]} if big else None),
+        "top_extras": [{"merchant_type": r["sub"], "times": r["n"], "total_eur": _r(r["t"])} for r in top],
+        "months": [{"month": r["m"], "left_over_eur": _r(r["net"])} for r in months],
         "best_month": {"month": best["m"], "left_over_eur": _r(best["net"])} if best else None,
         "toughest_month": {"month": tough["m"], "lowest_balance_eur": _r(tough["low"])} if tough else None,
         "no_spend_days": total_days - len(spend_days), "longest_no_spend_streak_days": streak,
@@ -106,15 +104,17 @@ def facts(cid: str) -> dict:
         "twins": _with_you(twins(cid, salary, c["age"], start, end) if salary else None, cf, eat),
         "rahakunto": {"score": health["score"], "tier": health["tier"]},
         "next_step": ({**health["steps"][0], "points": round(health["steps"][0]["points"])} if health["steps"] else None),
+        # one character per day from the period start: "1" = no spending that day (drawn as a calendar, not sent to the AI)
+        "_calendar": "".join("0" if (start + timedelta(days=i)) in spend_days else "1" for i in range(total_days)),
     }
     return out
 
 
 CAPTIONS_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["captions"],
                    "properties": {"captions": {"type": "object", "additionalProperties": False,
-                                               "required": ["year", "baskets", "habit", "big_day", "months", "no_spend", "payday", "twins", "next"],
+                                               "required": ["year", "guess", "baskets", "habit", "months", "no_spend", "payday", "twins", "next"],
                                                "properties": {k: {"type": "string"} for k in
-                                                              ["year", "baskets", "habit", "big_day", "months", "no_spend", "payday", "twins", "next"]}}}}
+                                                              ["year", "guess", "baskets", "habit", "months", "no_spend", "payday", "twins", "next"]}}}}
 
 
 def captions(cid: str, lang: str = "en") -> dict:
@@ -123,15 +123,15 @@ def captions(cid: str, lang: str = "en") -> dict:
         cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     if key in cache:
         return cache[key]
-    f = facts(cid)
+    f = {k: v for k, v in facts(cid).items() if not k.startswith("_")}
     lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
     system = (f"You write captions for a 'money year' story (like Spotify Wrapped) in a Finnish bank's app, in {lname}. One "
-              "caption per slide, max 70 characters, warm and a little playful, never shaming, never comparing the person "
-              "to anyone except the 'twins' group in the facts. Use only numbers that appear in the facts, rounded to whole "
-              "euros and written like 205 €. 'next' is one encouraging sentence about next_step. If a fact is null, write a "
-              "short neutral line without numbers.")
+              "caption per slide, max 50 characters, warm and a little playful, never shaming, never comparing the person "
+              "to anyone except the 'twins' group in the facts. Each slide already shows its numbers as a chart, so write "
+              "NO digits at all: say what it means or give a light nudge. 'guess' is about the first entry of top_extras "
+              "(shown after the person guesses; you don't know if they guessed right, so never say whether they did). 'next' is one encouraging line about next_step.")
     trace = [{"tool": "facts", "error": False, "result": f}]
-    ok = lambda v: isinstance(v, str) and len(v) <= 90 and all(n["status"] != "unverified" for n in verify.check(v, trace, [], lang))
+    ok = lambda v: isinstance(v, str) and len(v) <= 60 and not any(ch.isdigit() for ch in v) and all(n["status"] != "unverified" for n in verify.check(v, trace, [], lang))
     try:
         caps = {}
         for _ in range(2):  # a caption that fails the length or number check gets one more try
@@ -147,6 +147,8 @@ def captions(cid: str, lang: str = "en") -> dict:
         log.warning("wrapped captions fallback: %s", e)
         caps, source = {}, "none"
     out = {"captions": caps, "source": source}
+    if source != "ai":  # don't cache a failure: the next open tries again
+        return out
     with _lock:
         cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
         cache[key] = out
