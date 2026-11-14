@@ -359,6 +359,14 @@ def home_brief(cid: str, lang: str = "en", explored: str = ""):
     return brief.brief(_cid(cid), lang, [c for c in explored.split(",") if c][:20])
 
 
+@app.get("/api/history/{cid}/notes")
+def history_notes(cid: str, months: int = 12, lang: str = "en"):
+    """2-3 notes that explain the 3/12/24-month line (code finds the moments, the AI picks, labels from code)."""
+    if months not in insights.HISTORY_RANGES:
+        raise HTTPException(400, "months must be 3, 12 or 24")
+    return future.long_annotations(_cid(cid), months, lang)
+
+
 @app.get("/api/notes/{cid}")
 def notes(cid: str, lang: str = "en"):
     return future.annotations(_cid(cid), lang if lang in ("en", "fi", "sv") else "en")

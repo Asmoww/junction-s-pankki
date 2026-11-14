@@ -58,3 +58,15 @@ def test_ai_down_uses_code_picks(monkeypatch):
     monkeypatch.setattr(brief.future, "_json_call", boom)
     r = brief.brief(EMMA, "fi", ["forecast"])
     assert r["source"] == "rules" and r["cards_by"] == "rules" and len(r["questions"]) == 3
+
+
+def test_long_range_notes_are_code_numbers(tmp_path, monkeypatch):
+    from app import future
+    monkeypatch.setattr(future, "CACHE", tmp_path / "ann.json")
+    monkeypatch.setattr(future, "_json_call", lambda *a, **k: {"kinds": ["worst_month", "below_zero_spell", "made_up"]})
+    for months in (3, 12, 24):
+        f = future.long_facts(EMMA, months)
+        r = future.long_annotations(EMMA, months, "fi")
+        assert r["notes"] and len({n["date"][:7] for n in r["notes"]}) == len(r["notes"])  # never two on one month
+        for n in r["notes"]:
+            assert f["start"] <= n["date"] <= f["end"] and n["kind"] in future.LONG_KINDS

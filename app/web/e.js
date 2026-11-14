@@ -311,8 +311,8 @@ function graph() {
   return { html: `<div class="g" id="g">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nl.join("")}${bandLab}${credit}<div class="tip" hidden></div></div>`, X, Y, W, n, iT, px, past, base, sc };
 }
 
-function layoutNotes() {
-  const g = $("#g"); if (!g) return;
+function layoutNotes(g = $("#g")) {
+  if (!g) return;
   const W = g.clientWidth, lanes = [[], []], lead = g.querySelector(".leaders"), gap = 8;
   let lines = "";
   [...g.querySelectorAll(".note")].sort((a, b) => a.dataset.x - b.dataset.x).forEach((el) => {
@@ -327,7 +327,10 @@ function layoutNotes() {
         if (!best || cost < best.cost) best = { c, li, cost };
       }
     });
-    if (!best) best = { c: want, li: 1 };
+    if (!best) {  // no room in either lane: leave this note out rather than draw it over another
+      el.hidden = true; if (el.nextElementSibling && el.nextElementSibling.classList.contains("ndot")) el.nextElementSibling.hidden = true;
+      return;
+    }
     lanes[best.li].push([best.c, best.c + w]);
     const top = 26 + best.li * 44;
     el.style.left = `${best.c}px`; el.style.top = `${top}px`;
@@ -664,14 +667,19 @@ function redraw() {
 async function drawLong() {
   const want = `${cid}:${range}`, E_ = E();
   $("#hero").innerHTML = rangeBar() + `<div class="long"></div>`;
-  bindRange(); scene($("#hero .long"), "graph", ld().long(range));
+  bindRange();
   let h = histCache[want];
+  if (!h) scene($("#hero .long"), "graph", ld().long(range));
+  // AI notes for this range load alongside; when they arrive the line is drawn again with them
+  const nk = `${want}:${lang}:notes`, ln = histCache[nk];
+  if (!ln) api(`/api/history/${cid}/notes?months=${range}&lang=${lang}`).then((n) => { histCache[nk] = n; if (`${cid}:${range}` === want) drawLong(); }).catch(() => {});
   if (!h) {
     try { h = histCache[want] = await api(`/api/history/${cid}?months=${range}`); }
     catch { $("#hero .long").innerHTML = `<p class="hnote">${esc(E_.failed || "Couldn't load")}</p>`; return; }
   }
   if (`${cid}:${range}` !== want) return;            // the user switched again while this loaded
-  const pts = h.points, W = Math.min(window.innerWidth, 480) - 8, H = 220, pl = 8, pr = 8, pt = 26, pb = 26;
+  const lnotes = (ln && ln.notes) || [], pt = lnotes.length ? 112 : 26;   // room for two lanes of notes above the line
+  const pts = h.points, W = Math.min(window.innerWidth, 480) - 8, H = 194 + pt, pl = 8, pr = 8, pb = 26;
   const vals = pts.map((p) => p.balance_eur), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals) || 1;
   const X = (i) => pl + (i / Math.max(pts.length - 1, 1)) * (W - pl - pr), Y = (v) => pt + (hi - v) / (hi - lo || 1) * (H - pt - pb);
   const line = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.balance_eur).toFixed(1)}`).join("");
@@ -698,11 +706,16 @@ async function drawLong() {
     title="${esc(m.month)}: ${nets[i] < 0 ? "−" : "+"}${esc(eur0(Math.abs(nets[i])))}"><i style="--h:${(Math.abs(nets[i]) / span) * 100}%"></i>
     ${i % lblEvery === 0 ? `<em>${esc(new Date(m.month.slice(0, 7) + "-15T12:00:00").toLocaleDateString(T().locale, { month: "narrow" }))}</em>` : ""}</span>`).join("")}</div>`;
   const ch = h.change_eur;
-  $("#hero .long").innerHTML = `<div class="lg">${svg}<div class="tip" hidden></div></div>
+  const near = (iso) => { const t = +new Date(iso); let bi = 0; pts.forEach((p, i) => { if (Math.abs(+new Date(p.date) - t) < Math.abs(+new Date(pts[bi].date) - t)) bi = i; }); return bi; };
+  const nhtml = lnotes.map((nt) => { const i = near(nt.date), x = X(i), y = Y(pts[i].balance_eur);
+    return `<div class="note" data-why="${esc(whyNote(nt))}" data-x="${x.toFixed(1)}" data-y="${y.toFixed(1)}">${SPARK}<span>${esc(nt.text).replace(/ (€|%)/g, "\u00a0$1")}</span></div>
+      <span class="ndot" style="left:${x}px;top:${y}px"></span>`; }).join("");
+  $("#hero .long").innerHTML = `<div class="lg">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nhtml}<div class="tip" hidden></div></div>
     <div class="hsum"><span>${esc(E_.hChange)} <b class="${ch < 0 ? "neg" : ""}">${ch < 0 ? "−" : "+"}${esc(eur0(Math.abs(ch)))}</b></span>
       <span>${esc(E_.hLow)} <b>${esc(eur0(h.lowest.balance_eur))}</b> · ${esc(day(h.lowest.date))}</span>
       ${h.days_below_zero ? `<span class="neg">${esc(E_.hBelow(h.days_below_zero))}</span>` : ""}</div>
     <p class="hnet">${esc(E_.hNet)}</p>${bars}<p class="hnote">${esc(E_.hNote)}</p>`;
+  layoutNotes($("#hero .lg"));
   // Touch/drag readout: date and balance under the finger
   const g = $("#hero .lg"), sv = g.querySelector("svg"), tip = g.querySelector(".tip"), cur = sv.querySelector(".cur");
   const show = (ev) => { const r = sv.getBoundingClientRect(), x = ev.clientX - r.left;
@@ -1238,23 +1251,24 @@ const HB = {
   en: { title: "Questions about your money", next: "Ask next", cont: "Continue in Coach", byAi: "Picked and written by the AI from your numbers. Every number is checked.",
     byRules: "From your numbers", cardsBy: "In the order that matters for you now", why: "Why?", other: "Ask something else", moreQ: "More questions", fewerQ: "Fewer questions", moreC: "Show all cards", fewerC: "Show fewer cards",
     note: { biggest_day: (d) => `What did I spend on ${d}?`, big_day: (d) => `What did I spend on ${d}?`, below_zero: (d) => `Why does my balance go below zero around ${d}?`,
-      payday: () => "Where did my last pay go?", no_spend_days: () => "What helped me have days with no spending?", payday_week: () => "Why do I spend more right after payday?" },
+      payday: () => "Where did my last pay go?", no_spend_days: () => "What helped me have days with no spending?", payday_week: () => "Why do I spend more right after payday?", lowest: (d) => `Why was my balance so low around ${d}?`, below_zero_spell: (d) => `Why was I below zero from ${d}?`, top_month: (d, m) => `Why did I spend so much in ${m}?`, best_month: (d, m) => `What went well in ${m}?`, worst_month: (d, m) => `Why was ${m} so tight?` },
     bill: (n) => `Why does ${n} hit my balance before payday?`, end: "What decides how much I'll have on payday?" },
   fi: { title: "Kysymyksiä rahoistasi", next: "Kysy seuraavaksi", cont: "Jatka valmentajan kanssa", byAi: "Tekoäly valitsi ja kirjoitti lukujesi pohjalta. Jokainen luku on tarkistettu.",
     byRules: "Lukujesi pohjalta", cardsBy: "Järjestyksessä, joka on sinulle nyt tärkein", why: "Miksi?", other: "Kysy jotain muuta", moreQ: "Lisää kysymyksiä", fewerQ: "Vähemmän kysymyksiä", moreC: "Näytä kaikki kortit", fewerC: "Näytä vähemmän kortteja",
     note: { biggest_day: (d) => `Mihin käytin rahaa ${d}?`, big_day: (d) => `Mihin käytin rahaa ${d}?`, below_zero: (d) => `Miksi saldoni menee miinukselle noin ${d}?`,
-      payday: () => "Mihin viime palkkani meni?", no_spend_days: () => "Mikä auttoi minua pitämään ostottomia päiviä?", payday_week: () => "Miksi kulutan enemmän heti palkkapäivän jälkeen?" },
+      payday: () => "Mihin viime palkkani meni?", no_spend_days: () => "Mikä auttoi minua pitämään ostottomia päiviä?", payday_week: () => "Miksi kulutan enemmän heti palkkapäivän jälkeen?", lowest: (d) => `Miksi saldoni oli niin matala noin ${d}?`, below_zero_spell: (d) => `Miksi olin miinuksella ${d} alkaen?`, top_month: (d, m) => `Miksi kulutin niin paljon: ${m}?`, best_month: (d, m) => `Mikä meni hyvin: ${m}?`, worst_month: (d, m) => `Miksi raha oli niin tiukalla: ${m}?` },
     bill: (n) => `Miksi ${n} osuu saldooni ennen palkkapäivää?`, end: "Mikä ratkaisee, paljonko minulla on palkkapäivänä?" },
   sv: { title: "Frågor om dina pengar", next: "Fråga härnäst", cont: "Fortsätt med coachen", byAi: "AI:n valde och skrev utifrån dina siffror. Varje siffra är kontrollerad.",
     byRules: "Utifrån dina siffror", cardsBy: "I den ordning som spelar roll för dig nu", why: "Varför?", other: "Fråga något annat", moreQ: "Fler frågor", fewerQ: "Färre frågor", moreC: "Visa alla kort", fewerC: "Visa färre kort",
     note: { biggest_day: (d) => `Vad spenderade jag på ${d}?`, big_day: (d) => `Vad spenderade jag på ${d}?`, below_zero: (d) => `Varför går saldot på minus runt ${d}?`,
-      payday: () => "Vart tog min senaste lön vägen?", no_spend_days: () => "Vad hjälpte mig att ha köpfria dagar?", payday_week: () => "Varför spenderar jag mer direkt efter lönen?" },
+      payday: () => "Vart tog min senaste lön vägen?", no_spend_days: () => "Vad hjälpte mig att ha köpfria dagar?", payday_week: () => "Varför spenderar jag mer direkt efter lönen?", lowest: (d) => `Varför var saldot så lågt runt ${d}?`, below_zero_spell: (d) => `Varför var jag på minus från ${d}?`, top_month: (d, m) => `Varför spenderade jag så mycket i ${m}?`, best_month: (d, m) => `Vad gick bra i ${m}?`, worst_month: (d, m) => `Varför var ${m} så tight?` },
     bill: (n) => `Varför slår ${n} mot saldot före lönen?`, end: "Vad avgör hur mycket jag har på lönedagen?" },
 };
 const hbT = () => HB[lang] || HB.en;
 let hb = null, hbAsked = new Set(), hbBusy = false, hbLast = null, qsOpen = false, cardsOpen = false;
 const briefCache = {};
-const whyNote = (nt) => (hbT().note[nt.kind] ? hbT().note[nt.kind](day(nt.date)) : "");
+const whyNote = (nt) => (hbT().note[nt.kind] ? hbT().note[nt.kind](day(nt.date),
+  new Date(nt.date + "T12:00:00").toLocaleDateString(T().locale, { month: "long", year: "numeric" })) : "");
 window.whyQ = (id) => { const all = hb ? [...hb.questions, ...hb.more] : []; const q = all.find((x) => x.id === id); return q ? q.text : ""; };
 // Home's own questions answer on Home; anywhere else they go to the Coach tab as before
 window.askHere = (q) => (tab === "home" && $("#asks") ? askHome(q) : ask(q));

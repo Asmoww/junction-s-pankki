@@ -294,3 +294,111 @@ def annotations(cid: str, lang: str = "en") -> dict:
         CACHE.parent.mkdir(exist_ok=True)
         CACHE.write_text(json.dumps(cache, indent=1))
     return out
+
+
+# ---------------------------------------------------------------- Notes on the longer ranges (3, 12, 24 months)
+# Same split as the pay-month notes: code finds the moments, the AI picks which 2-3 explain the line best, and the
+# labels come from this table, so every number on the graph is a code number.
+LONG_PHRASES = {
+    "en": {"lowest": "Lowest {v} €", "below_zero_spell": "{n} days below zero", "top_month": "Most spent {v} €",
+           "best_month": "Best month +{v} €", "worst_month": "Toughest month −{v} €", "biggest_day": "Biggest day {v} €"},
+    "fi": {"lowest": "Alimmillaan {v} €", "below_zero_spell": "{n} päivää miinuksella", "top_month": "Eniten menoja {v} €",
+           "best_month": "Paras kuukausi +{v} €", "worst_month": "Tiukin kuukausi −{v} €", "biggest_day": "Suurin menopäivä {v} €"},
+    "sv": {"lowest": "Lägst {v} €", "below_zero_spell": "{n} dagar på minus", "top_month": "Mest utgifter {v} €",
+           "best_month": "Bästa månaden +{v} €", "worst_month": "Tuffaste månaden −{v} €", "biggest_day": "Största dagen {v} €"},
+}
+LONG_KINDS = list(LONG_PHRASES["en"])
+
+
+def long_facts(cid: str, months: int) -> dict:
+    """The moments worth explaining on a 3/12/24-month balance line, each with its date and value (all from code)."""
+    h = insights.balance_history(cid, months)
+    start = date.fromisoformat(h["period"]["start"])
+    eod = _q("SELECT tx_date d, arg_max(balance, seq) b FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? "
+             "GROUP BY 1 ORDER BY 1", [cid, start, TODAY])
+    have = {r["d"]: float(r["b"]) for r in eod}
+    bal, d, spell, best_spell = float(eod[0]["b"]), start, None, None
+    while d <= TODAY:                       # longest run of days below zero
+        bal = have.get(d, bal)
+        if bal < 0:
+            spell = (spell[0], spell[1] + 1) if spell else (d, 1)
+            if not best_spell or spell[1] > best_spell[1]:
+                best_spell = spell
+        else:
+            spell = None
+        d += timedelta(days=1)
+    day_ = _q("SELECT tx_date d, -sum(amount) t FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND kind = 'spend' "
+              "GROUP BY 1 ORDER BY t DESC LIMIT 1", [cid, start, TODAY])
+    pm = [m for m in h["per_month"] if m["out_eur"] or m["in_eur"]]
+    mid = lambda m: f"{m['month']}-15"  # noqa: E731  a month's note sits mid-month
+    m = {}
+    m["lowest"] = {"date": h["lowest"]["date"], "v": h["lowest"]["balance_eur"]}
+    if best_spell and best_spell[1] >= 2:
+        m["below_zero_spell"] = {"date": best_spell[0].isoformat(), "n": best_spell[1]}
+    if len(pm) >= 2:
+        top = max(pm, key=lambda x: x["out_eur"])
+        nets = [(x, x["in_eur"] - x["out_eur"]) for x in pm]
+        best, worst = max(nets, key=lambda t: t[1]), min(nets, key=lambda t: t[1])
+        m["top_month"] = {"date": mid(top), "v": top["out_eur"], "month": top["month"]}
+        if best[1] > 0:
+            m["best_month"] = {"date": mid(best[0]), "v": round(best[1], 2), "month": best[0]["month"]}
+        if worst[1] < 0:
+            m["worst_month"] = {"date": mid(worst[0]), "v": round(-worst[1], 2), "month": worst[0]["month"]}
+    if day_:
+        m["biggest_day"] = {"date": str(day_[0]["d"]), "v": float(day_[0]["t"])}
+    return {"months": months, "start": h["period"]["start"], "end": TODAY.isoformat(), "change_eur": h["change_eur"],
+            "days_below_zero": h["days_below_zero"], "moments": m}
+
+
+def _render_long(kind: str, f: dict, lang: str) -> dict | None:
+    x = f["moments"].get(kind)
+    if not x:
+        return None
+    ph = LONG_PHRASES.get(lang, LONG_PHRASES["en"])[kind]
+    text = ph.format(n=x.get("n"), v=_eur_whole(abs(x.get("v") or 0), lang))
+    if kind == "lowest" and x["v"] < 0:
+        text = text.replace(" " + _eur_whole(abs(x["v"]), lang), " −" + _eur_whole(abs(x["v"]), lang))
+    return {"date": x["date"], "kind": kind, "text": text, **({"month": x["month"]} if "month" in x else {})}
+
+
+LONG_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["kinds"],
+               "properties": {"kinds": {"type": "array", "items": {"type": "string", "enum": LONG_KINDS}}}}
+
+
+def long_annotations(cid: str, months: int, lang: str = "en") -> dict:
+    lang = lang if lang in LONG_PHRASES else "en"
+    key = f"long:{cid}:{months}:{lang}{eu.cache_tag()}"
+    with _lock:
+        cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+    if key in cache:
+        return cache[key]
+    f = long_facts(cid, months)
+    fallback = [k for k in ("below_zero_spell", "lowest", "top_month") if k in f["moments"]][:3]
+    system = ("You choose 2-3 annotations for a customer's balance line over the last months in a banking app: the "
+              "moments that best explain its shape to them. Kinds: lowest (the lowest balance), below_zero_spell (the "
+              "longest run of days below zero), top_month (the month with the most spending), best_month (most money "
+              "left over), worst_month (the biggest shortfall), biggest_day (the biggest spending day). Only kinds "
+              "present in moments. Prefer what explains the line (the low points and why), avoid two notes on the "
+              "same month, and return kinds only; the app writes the labels from the data.")
+    try:
+        kinds = _json_call(system, json.dumps(f, default=str), LONG_SCHEMA, max_tokens=200)["kinds"]
+        source = "ai"
+    except Exception as e:  # noqa: BLE001
+        log.warning("long annotations fallback: %s", e)
+        kinds, source = fallback, "rules"
+    out, months_used = [], set()
+    for k in list(dict.fromkeys(kinds)) or fallback:
+        n = _render_long(k, f, lang)
+        if n and n["date"][:7] not in months_used:
+            out.append(n); months_used.add(n["date"][:7])
+        if len(out) == 3:
+            break
+    if not out:
+        out, source = [n for n in (_render_long(k, f, lang) for k in fallback) if n], "rules"
+    res = {"notes": out, "source": source, "model": eu.label() if eu.active() else MODEL}
+    with _lock:
+        cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+        cache[key] = res
+        CACHE.parent.mkdir(exist_ok=True)
+        CACHE.write_text(json.dumps(cache, indent=1))
+    return res
