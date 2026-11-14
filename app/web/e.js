@@ -223,7 +223,7 @@ function strip() {
   cards.push(`<button class="mini ${shortE ? "neg" : ""}" data-ask="${esc(T().suggestions[0])}"><span class="t">${E().cards.safe}</span>
     <b>${shortE ? "−" + eur0(-s.safe_until_payday_eur) : eur0(s.safe_this_week_eur)}</b>
     <span class="s">${shortE ? E().shortBy(day(s.next_payday)) : eur0(s.safe_per_day_eur) + "/" + (lang === "en" ? "day" : lang === "fi" ? "pv" : "dag")}</span>
-    <div class="dots">${Array.from({ length: Math.min(days, 15) }, (_, i) => `<i class="${shortE ? "r" : i < 7 ? "g" : ""}"></i>`).join("")}</div></button>`);
+    <div class="dots">${Array.from({ length: Math.min(days, 15) }, (_, i) => `<i class="${shortE ? "short" : i < 7 ? "wk" : ""}"></i>`).join("")}</div></button>`);
   const tot = m.total_spending_eur || 1;
   cards.push(`<button class="mini" data-ask="${esc(T().suggestions[4])}"><span class="t">${E().cards.month(monthName(m.period.start))}</span><b>${eur0(m.total_spending_eur)}</b>
     <div class="seg">${m.baskets.map((b) => `<i style="flex:${b.total_eur / tot};background:${BASKET_COLORS[b.basket]}"></i>`).join("")}</div></button>`);

@@ -104,7 +104,7 @@ body.e .msg.user { background: var(--g700); }
 .mini .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .mini > div { margin-top: auto; }
 .mini .dots { display: flex; gap: 3px; } .mini .dots i { flex: 1; height: 16px; border-radius: 3px; background: var(--g100); }
-.mini .dots i.g { background: var(--g500); } .mini .dots i.r { background: #f3b7ac; }
+.mini .dots i.wk { background: var(--g500); } .mini .dots i.short { background: #f3b7ac; }
 .mini .seg { display: flex; height: 12px; border-radius: 999px; overflow: hidden; gap: 2px; }
 .mini .bars2 { display: flex; gap: 8px; align-items: flex-end; height: 56px; } .mini .bars2 i { flex: 1; background: var(--g300); border-radius: 6px 6px 2px 2px; } .mini .bars2 i.hi { background: var(--g700); }
 .mini .spark12 { position: relative; display: flex; gap: 2px; align-items: flex-end; height: 48px; } .mini .spark12 i { flex: 1; background: var(--g500); border-radius: 2px; }
@@ -172,3 +172,6 @@ body.e #view-learn { padding-top: 10px; }
 .hstep { display: flex; justify-content: space-between; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 12px 14px; margin-top: 6px;
   border-radius: 14px; background: var(--g50); color: var(--g900); font-size: 14px; }
 .hstep b { white-space: nowrap; color: var(--g700); font-weight: 600; }
+
+/* Learn tab: cards need their gap back (body.e main sets gap 0 for the home layout) */
+body.e #view-learn { gap: 12px; }
