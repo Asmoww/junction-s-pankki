@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, sorter, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -133,6 +133,30 @@ def home(cid: str):
             "health": insights.money_health(cid)}
 
 
+class SortIn(BaseModel):
+    answers: dict[str, int]
+    lang: str = "en"
+
+
+@app.get("/api/sort/{cid}")
+def sort_cards(cid: str, lang: str = "en"):
+    """Sort with the AI: the customer's unclear items, each with a question and three basket answers."""
+    return sorter.questions(_cid(cid), lang if lang in ("en", "fi", "sv") else "en")
+
+
+@app.post("/api/sort/{cid}")
+def sort_answer(cid: str, body: SortIn):
+    try:
+        return sorter.answer(_cid(cid), body.answers, body.lang if body.lang in ("en", "fi", "sv") else "en")
+    except money.ToolError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/sort/{cid}")
+def sort_reset(cid: str):
+    return sorter.reset(_cid(cid))
+
+
 @app.get("/api/wrapped/{cid}")
 def wrapped_year(cid: str, lang: str = "en"):
     return wrapped.wrapped(_cid(cid), lang if lang in ("en", "fi", "sv") else "en")
@@ -179,6 +203,7 @@ def _warm_notes():
             try:
                 future.annotations(p["id"], lg)
                 wrapped.captions(p["id"], lg)
+                sorter.questions(p["id"], lg)
             except Exception as e:  # noqa: BLE001 (warm-up only)
                 logging.getLogger("notes").warning("warm-up failed for %s %s: %s", p["id"], lg, e)
 
@@ -186,6 +211,7 @@ def _warm_notes():
 @app.on_event("startup")
 def warm():
     import threading
+    sorter.load_all()
     threading.Thread(target=_warm_notes, daemon=True).start()
 
 

@@ -244,3 +244,42 @@ body.e #view-learn { gap: 12px; }
 .wvs i { display: block; height: var(--h); border-radius: 10px; background: rgba(255,255,255,.35); animation: wrise .9s .15s ease both; } .wvs i.hi { background: #fff; }
 .wvs span { font-size: 13px; color: #cfe8da; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .wtrack i, .wdonut, .wdots, .wc i, .wcal-r i.on, .wvs i { animation: none; } .wopt i, .wopt b { transition: none; } }
+
+/* Sort with the AI: the three baskets on the customer's own spending */
+.mini.sortcard { grid-column: 1 / -1; height: auto; background: #fff; border: 1.5px solid var(--g300); display: flex; flex-direction: column; gap: 8px; }
+.mini.sortcard b { font-size: 19px; font-weight: 500; line-height: 1.2; }
+.sortcard .b3 { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.sortcard .b3 > span { display: inline-flex; align-items: center; gap: 5px; } .sortcard .b3 i { width: 9px; height: 9px; border-radius: 50%; }
+.sortcard .go { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--g700); }
+.sortcard .go .spark { width: 14px; height: 14px; fill: var(--g500); }
+.card.sortcard.learn { text-align: left; padding: 16px; }
+.sort h2 { font: 500 24px/1.2 Geologica; margin: 4px 0 8px; } .sort .lead { margin: 0 0 14px; }
+.swait { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 36px 0; }
+.b3l { list-style: none; padding: 0; margin: 0 0 18px; display: flex; flex-direction: column; gap: 12px; }
+.b3l li { display: grid; grid-template-columns: 14px 1fr; gap: 12px; align-items: start; } .b3l i { width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; }
+.b3l b { display: block; font-weight: 600; } .b3l span { font-size: 14px; color: var(--muted); }
+.sdots { display: flex; gap: 6px; margin-bottom: 16px; } .sdots i { flex: 1; height: 4px; border-radius: 2px; background: var(--g100); }
+.sdots i.done { background: var(--g500); } .sdots i.on { background: var(--g700); }
+.smeta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .smeta b { font-size: 20px; font-weight: 600; }
+.smeta span { font-size: 15px; color: var(--ink); white-space: nowrap; }
+.snow { font-size: 13px; color: var(--muted); margin: 4px 0 14px; }
+.sq { display: flex; gap: 10px; align-items: flex-start; font-size: 18px; line-height: 1.35; margin: 0 0 16px; }
+.sq .spark { flex: none; width: 16px; height: 16px; fill: var(--g500); margin-top: 4px; }
+.sq.les { font-size: 15px; color: var(--g900); background: var(--g50); border-radius: 14px; padding: 12px 14px; margin-top: 14px; animation: wup .35s ease both; }
+.sans { display: flex; flex-direction: column; gap: 8px; }
+.sans button { display: grid; grid-template-columns: 14px 1fr; gap: 12px; align-items: center; text-align: left; padding: 14px; border-radius: 16px;
+  border: 1.5px solid var(--line); background: #fff; font-size: 16px; transition: opacity .2s, border-color .2s, background .2s; }
+.sans button i { width: 14px; height: 14px; border-radius: 50%; } .sans small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.sans.picked button { opacity: .45; pointer-events: none; } .sans.picked button.on { opacity: 1; border-color: var(--g700); background: var(--g50); }
+.slesson .btn { width: 100%; margin-top: 4px; }
+.sres { list-style: none; padding: 0; margin: 8px 0 16px; display: flex; flex-direction: column; gap: 12px; }
+.sres .rh { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.sres .rh span { display: inline-flex; align-items: center; gap: 8px; } .sres .rh i { width: 10px; height: 10px; border-radius: 50%; }
+.sres .rh b { font-weight: 600; } .sres em { font-style: normal; font-size: 13px; color: var(--g700); margin-left: 4px; }
+.sres .rb { position: relative; height: 12px; margin-top: 6px; border-radius: 999px; background: var(--g50); }
+.sres .rb i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; } .sres .rb i.was { border: 1.5px dashed var(--g300); }
+.sres .rb i.now { animation: wgrow .9s .2s ease both; opacity: .9; }
+.sch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.sch div { background: var(--g50); border-radius: 14px; padding: 10px 12px; } .sch span { display: block; font-size: 12px; color: var(--muted); } .sch b { font-size: 16px; font-weight: 600; }
+.sundo { display: block; margin: 14px auto 0; font-size: 14px; color: var(--muted); text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .sq.les, .sres .rb i.now { animation: none; } }

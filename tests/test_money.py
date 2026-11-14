@@ -151,3 +151,21 @@ def test_wrapped_facts_add_up():
     assert t["twins_who_never_went_below_zero"] >= 20  # a group, never one person
     assert t["your_extras_per_month_eur"] == pytest.approx(f["baskets_eur"]["3"] / 12, abs=0.01)
     assert f["no_spend_days"] >= f["longest_no_spend_streak_days"] > 0
+
+
+def test_basket_answers_flow_everywhere_and_reset(monkeypatch, tmp_path):
+    # Sort with the AI: the customer's answer moves money between baskets in every tool; reset restores the data.
+    from app import sorter
+    monkeypatch.setattr(sorter, "ANSWERS", tmp_path / "a.json")
+    monkeypatch.setattr(sorter, "_forget_ai_caches", lambda cid: None)
+    monkeypatch.setattr(sorter.future, "_json_call", lambda *a, **k: {"takeaway": "x"})
+    before = money.get_three_baskets(EMMA, "last_12_months")["baskets"]
+    pool = {c["id"]: c for c in sorter.candidates(EMMA)}
+    assert "s:Parking" in pool and pool["s:Parking"]["data_basket"] == 3
+    r = sorter.answer(EMMA, {"s:Parking": 1})
+    moved = pool["s:Parking"]["total_eur"]
+    assert r["after"]["baskets_eur"]["1"] == pytest.approx(r["before"]["baskets_eur"]["1"] + moved, abs=0.02)
+    assert r["after"]["baskets_eur"]["3"] == pytest.approx(r["before"]["baskets_eur"]["3"] - moved, abs=0.02)
+    assert r["after"]["safe_until_payday_eur"] < r["before"]["safe_until_payday_eur"]  # a must-pay leaves less room
+    sorter.reset(EMMA)
+    assert money.get_three_baskets(EMMA, "last_12_months")["baskets"] == before

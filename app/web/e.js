@@ -1,7 +1,13 @@
 // Design E v2: the future as a graph. Code draws every number; the AI annotates the line and turns
 // "what if…" sentences into scenarios that redraw the future. Loaded after app.js on /e.
 const ES = {
-  en: { wr: { card: "Your money year", open: "Watch", title: (n) => `${n}, your money year`, inOut: (i, o) => `Money in ${i} · out ${o}`,
+  en: { so: { card: "Your three baskets", cardB: "Where does your money really go?", go: "Sort yours with the AI", loading: "Finding the spending only you can sort…",
+      none: "Nothing unclear to sort right now.", title: "Sort your money", intro: "Everything you spend lands in one of three baskets. We sorted most of it; a few things only you can sort.",
+      start: (n) => `Start · ${n} questions`, habit: (n, t) => `${n} times · ${t} in 12 months`, now: (b) => `Counted now as: ${b}`, next: "Next",
+      see: "See what changed", working: "Re-sorting your money…", resultT: "Your money, re-sorted", year: "Last 12 months", week: "Safe this week",
+      payday: "Safe until payday", everywhere: "Your answers now count everywhere: the graph, safe-to-spend and the coach.", done: "Done", ask: "Ask the coach",
+      askQ: "What do my three baskets say about my money now?", undo: "Undo my answers" },
+    wr: { card: "Your money year", open: "Watch", title: (n) => `${n}, your money year`, inOut: (i, o) => `Money in ${i} · out ${o}`,
       baskets: "Where it went", habit: "Your number-one habit", meals: "meals out", hours: (h) => `= ${h} hours of your work`,
       bigDay: "Your biggest day", best: "Best month", tough: "Toughest month", leftOver: (a) => `${a} left over`, lowest: (a) => `lowest ${a}`,
       noSpend: "no-spend days", streak: (d) => `longest streak ${d} days`, payday: "more on extras the week after payday",
@@ -37,7 +43,13 @@ const ES = {
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
     cards: { safe: "Safe this week", month: (m) => m, payday: "After payday", pot: "Surprises", fin: "vs Finland", psd2: "Other bank" },
     perMonth: "a month", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
-  fi: { wr: { card: "Rahavuotesi", open: "Katso", title: (n) => `${n}, rahavuotesi`, inOut: (i, o) => `Rahaa tuli ${i} · meni ${o}`,
+  fi: { so: { card: "Kolme koriasi", cardB: "Mihin rahasi oikeasti menevät?", go: "Lajittele omasi tekoälyn kanssa", loading: "Etsitään menoja, jotka vain sinä voit lajitella…",
+      none: "Ei nyt mitään epäselvää lajiteltavaa.", title: "Lajittele rahasi", intro: "Jokainen menosi päätyy yhteen kolmesta korista. Lajittelimme suurimman osan; muutaman asian voit lajitella vain sinä.",
+      start: (n) => `Aloita · ${n} kysymystä`, habit: (n, t) => `${n} kertaa · ${t} 12 kuukaudessa`, now: (b) => `Nyt laskettu: ${b}`, next: "Seuraava",
+      see: "Katso mikä muuttui", working: "Lajitellaan rahojasi uudelleen…", resultT: "Rahasi uudelleen lajiteltuna", year: "Viimeiset 12 kuukautta", week: "Turvallista tällä viikolla",
+      payday: "Turvallista palkkapäivään", everywhere: "Vastauksesi näkyvät nyt kaikkialla: kuvaajassa, turvallisessa summassa ja valmentajassa.", done: "Valmis", ask: "Kysy valmentajalta",
+      askQ: "Mitä kolme koriani kertovat rahoistani nyt?", undo: "Peru vastaukseni" },
+    wr: { card: "Rahavuotesi", open: "Katso", title: (n) => `${n}, rahavuotesi`, inOut: (i, o) => `Rahaa tuli ${i} · meni ${o}`,
       baskets: "Mihin se meni", habit: "Ykköstapasi", meals: "kertaa ulkona syömässä", hours: (h) => `= ${h} tuntia työtäsi`,
       bigDay: "Suurin päiväsi", best: "Paras kuukausi", tough: "Tiukin kuukausi", leftOver: (a) => `${a} jäi yli`, lowest: (a) => `alimmillaan ${a}`,
       noSpend: "päivää ilman ostoja", streak: (d) => `pisin putki ${d} päivää`, payday: "enemmän extroihin palkkaviikolla",
@@ -73,7 +85,13 @@ const ES = {
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
     cards: { safe: "Turvallisesti", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätykset", fin: "vs Suomi", psd2: "Toinen pankki" },
     perMonth: "kuussa", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
-  sv: { wr: { card: "Ditt pengaår", open: "Titta", title: (n) => `${n}, ditt pengaår`, inOut: (i, o) => `In ${i} · ut ${o}`,
+  sv: { so: { card: "Dina tre korgar", cardB: "Vart går dina pengar egentligen?", go: "Sortera dina med AI:n", loading: "Letar efter utgifter som bara du kan sortera…",
+      none: "Inget oklart att sortera just nu.", title: "Sortera dina pengar", intro: "Allt du spenderar hamnar i en av tre korgar. Vi sorterade det mesta; några saker kan bara du sortera.",
+      start: (n) => `Börja · ${n} frågor`, habit: (n, t) => `${n} gånger · ${t} på 12 månader`, now: (b) => `Räknas nu som: ${b}`, next: "Nästa",
+      see: "Se vad som ändrades", working: "Sorterar om dina pengar…", resultT: "Dina pengar, omsorterade", year: "Senaste 12 månaderna", week: "Säkert denna vecka",
+      payday: "Säkert till lönen", everywhere: "Dina svar räknas nu överallt: grafen, säkert att spendera och coachen.", done: "Klar", ask: "Fråga coachen",
+      askQ: "Vad säger mina tre korgar om mina pengar nu?", undo: "Ångra mina svar" },
+    wr: { card: "Ditt pengaår", open: "Titta", title: (n) => `${n}, ditt pengaår`, inOut: (i, o) => `In ${i} · ut ${o}`,
       baskets: "Vart det tog vägen", habit: "Din största vana", meals: "gånger äta ute", hours: (h) => `= ${h} timmar av ditt arbete`,
       bigDay: "Din största dag", best: "Bästa månaden", tough: "Tuffaste månaden", leftOver: (a) => `${a} över`, lowest: (a) => `lägst ${a}`,
       noSpend: "dagar utan köp", streak: (d) => `längsta svit ${d} dagar`, payday: "mer på extra veckan efter lönen",
@@ -276,6 +294,7 @@ function strip() {
       <div class="pair"><i style="width:${(big.you_per_month_eur / mx) * 100}%"></i><i class="fi" style="width:${(big.finland_same_age_per_month_eur / mx) * 100}%"></i></div></button>`);
   }
   cards.unshift(`<button class="mini wrapcard" data-wrapped><span class="t">${E().wr.card}</span><b>${esc(day("2025-10-01"))} – ${esc(day(home.overview.customer.as_of))}</b><span class="go">${E().wr.open} ›</span></button>`);
+  cards.splice(1, 0, sortCard());
   const hk = home.health;
   if (hk) {
     const ring = `conic-gradient(var(--g700) ${hk.score * 3.6}deg, var(--g100) 0)`;
@@ -551,8 +570,78 @@ window.renderHomeE = async function () {
   $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
   $("#view-home").querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
   $("#view-home").querySelectorAll("[data-wrapped]").forEach((b) => b.addEventListener("click", openWrapped));
+  $("#view-home").querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", openSort));
   const fc = home.cards.find((c) => c.id === "forecast");
   if (fc && !notifShown[cid]) { notifShown[cid] = true; showNotif(fc); }
   const want = `${cid}:${lang}`;
   api(`/api/notes/${cid}?lang=${lang}`).then((n) => { if (`${cid}:${lang}` === want) { notes = n; redraw(); } }).catch(() => {});
 };
+
+// ---------------------------------------------------------------- Sort with the AI (the three baskets, your own spending)
+function sortCard() {
+  const S = E().so;
+  return `<button class="mini sortcard" data-sort><span class="t">${S.card}</span><b>${S.cardB}</b>
+    <span class="b3">${[1, 2, 3].map((b) => `<span><i style="background:${BASKET_COLORS[b]}"></i>${esc(T().baskets[b][0])}</span>`).join("")}</span>
+    <span class="go">${SPARK}${S.go} ›</span></button>`;
+}
+
+async function openSort() {
+  const S = E().so, wait = (t) => `<div class="swait"><span class="typing"><i></i><i></i><i></i></span><p class="sub">${t}</p></div>`;
+  const s = sheet(`<div class="sort">${wait(S.loading)}</div>`), box = s.querySelector(".sort");
+  let d; try { d = await api(`/api/sort/${cid}?lang=${lang}`); } catch { d = { cards: [] }; }
+  if (!d.cards.length) { box.innerHTML = `<p class="lead">${S.none}</p>`; return; }
+  const ans = {}, cards = d.cards;
+  let i = 0;
+  const meta = (c) => (c.kind === "habit" ? S.habit(c.times, eur0(c.total_eur)) : `${eur0(c.amount_eur)} · ${esc(day(c.date))}`);
+  const intro = () => {
+    box.innerHTML = `<h2>${S.title}</h2><p class="lead">${S.intro}</p>
+      <ul class="b3l">${[1, 2, 3].map((b) => `<li><i style="background:${BASKET_COLORS[b]}"></i><div><b>${esc(T().baskets[b][0])}</b><span>${esc(T().baskets[b][1])}</span></div></li>`).join("")}</ul>
+      <button class="btn" data-go>${S.start(cards.length)}</button>`;
+    box.querySelector("[data-go]").onclick = card;
+  };
+  const card = () => {
+    const c = cards[i], last = i === cards.length - 1;
+    box.innerHTML = `<div class="sdots">${cards.map((_, k) => `<i class="${k < i ? "done" : k === i ? "on" : ""}"></i>`).join("")}</div>
+      <div class="smeta"><b>${esc(label(c.merchant_type))}</b><span>${meta(c)}</span></div>
+      <p class="snow">${esc(S.now(T().baskets[c.data_basket][0]))}</p>
+      <p class="sq">${SPARK}<span>${esc(c.question)}</span></p>
+      <div class="sans">${[1, 2, 3].map((b) => `<button data-b="${b}"><i style="background:${BASKET_COLORS[b]}"></i><span>${esc(c.answers[b])}<small>${esc(T().baskets[b][0])}</small></span></button>`).join("")}</div>
+      <div class="slesson"></div>`;
+    box.querySelectorAll("[data-b]").forEach((btn) => btn.addEventListener("click", () => {
+      if (ans[c.id]) return;
+      ans[c.id] = +btn.dataset.b;
+      box.querySelector(".sans").classList.add("picked"); btn.classList.add("on");
+      box.querySelector(".slesson").innerHTML = `<p class="sq les">${SPARK}<span>${esc(c.lesson)}</span></p><button class="btn" data-next>${last ? S.see : S.next}</button>`;
+      box.querySelector("[data-next]").onclick = () => { if (last) submit(); else { i++; card(); } };
+    }));
+  };
+  const submit = async () => {
+    box.innerHTML = wait(S.working);
+    let r;
+    try { r = await api(`/api/sort/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: ans, lang }) }); }
+    catch { box.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
+    result(r);
+  };
+  const refresh = async () => { closeSheet(); fut = null; await load(); };
+  const result = (r) => {
+    const mx = Math.max(...[1, 2, 3].flatMap((b) => [r.before.baskets_eur[b], r.after.baskets_eur[b]]), 1);
+    const rows = [1, 2, 3].map((b) => {
+      const a = r.before.baskets_eur[b], z = r.after.baskets_eur[b], dl = z - a;
+      return `<li><div class="rh"><span><i style="background:${BASKET_COLORS[b]}"></i>${esc(T().baskets[b][0])}</span>
+        <b>${eur0(z)}${Math.abs(dl) >= 1 ? ` <em>${dl > 0 ? "+" : "−"}${eur0(Math.abs(dl))}</em>` : ""}</b></div>
+        <div class="rb"><i class="was" style="width:${(a / mx) * 100}%"></i><i class="now" style="width:${(z / mx) * 100}%;background:${BASKET_COLORS[b]}"></i></div></li>`;
+    }).join("");
+    const chg = (k, l) => `<div><span>${l}</span><b>${r.before[k] === r.after[k] ? eur0(r.after[k]) : `${eur0(r.before[k])} → ${eur0(r.after[k])}`}</b></div>`;
+    box.innerHTML = `<h2>${S.resultT}</h2>${r.takeaway ? `<p class="sq">${SPARK}<span>${esc(r.takeaway)}</span></p>` : ""}
+      <div class="label">${S.year}</div><ul class="sres">${rows}</ul>
+      <div class="sch">${chg("safe_this_week_eur", S.week)}${chg("safe_until_payday_eur", S.payday)}</div>
+      <p class="note left">${S.everywhere}</p>
+      <div class="actions"><button class="btn" data-done>${S.done}</button><button class="btn ghost" data-ask>${S.ask}</button></div>
+      <button class="sundo" data-undo>${S.undo}</button>`;
+    box.querySelector("[data-done]").onclick = refresh;
+    box.querySelector("[data-ask]").onclick = async () => { await refresh(); ask(S.askQ); };
+    box.querySelector("[data-undo]").onclick = async () => { await fetch(`/api/sort/${cid}`, { method: "DELETE" }); await refresh(); };
+  };
+  intro();
+}
+window.openSort = openSort;

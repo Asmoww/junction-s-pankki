@@ -27,19 +27,43 @@ PERIODS = ["this_month", "last_month", "last_3_months", "last_6_months", "last_1
 _lock = threading.Lock()
 _con = duckdb.connect()
 _con.execute("SET memory_limit='300MB'; SET threads=2")
-_con.execute(f"CREATE VIEW tx AS SELECT * FROM '{DATA / 'tx.parquet'}'")
+# The customer's own basket answers ("this was a broken washing machine, not a want") override the data's basket,
+# either for one transaction (seq) or for every transaction of a merchant type (sub). Every tool reads tx, so the
+# answers flow into baskets, safe-to-spend, forecasts and the coach.
+_con.execute("CREATE TABLE ov_tx (customer_id VARCHAR, seq BIGINT, basket INTEGER, PRIMARY KEY (customer_id, seq))")
+_con.execute("CREATE TABLE ov_sub (customer_id VARCHAR, sub VARCHAR, basket INTEGER, PRIMARY KEY (customer_id, sub))")
+_con.execute(f"""CREATE VIEW tx AS SELECT p.* REPLACE (CASE WHEN p.basket IS NULL THEN NULL
+                                                    ELSE coalesce(o1.basket, o2.basket, p.basket) END AS basket),
+                    p.basket AS data_basket
+             FROM '{DATA / 'tx.parquet'}' p
+             LEFT JOIN ov_tx o1 ON o1.customer_id = p.customer_id AND o1.seq = p.seq
+             LEFT JOIN ov_sub o2 ON o2.customer_id = p.customer_id AND o2.sub = p.sub""")
 _con.execute(f"CREATE TABLE cust AS SELECT * FROM '{DATA / 'customers.parquet'}'")
 # Per customer and month: spending per basket (one-offs kept separate) and income. Used for peers and baselines.
-_con.execute("""
-CREATE TABLE cm AS
+CM_SQL = """
 SELECT customer_id, date_trunc('month', tx_date)::DATE AS month,
        -sum(amount) FILTER (WHERE basket = 1) AS b1,
        -sum(amount) FILTER (WHERE basket = 2 AND NOT one_off) AS b2,
        -sum(amount) FILTER (WHERE basket = 3) AS b3,
        -sum(amount) FILTER (WHERE one_off) AS oneoff,
        sum(amount) FILTER (WHERE kind = 'income') AS income
-FROM tx GROUP BY ALL
-""")
+FROM tx {where} GROUP BY ALL
+"""
+_con.execute("CREATE TABLE cm AS " + CM_SQL.format(where=""))
+
+
+def set_basket_answers(cid: str, tx: dict[int, int], subs: dict[str, int]) -> None:
+    """Replace one customer's basket answers and refresh their monthly rows. Empty dicts = back to the data's baskets."""
+    with _lock:
+        c = _con.cursor()
+        c.execute("DELETE FROM ov_tx WHERE customer_id = ?", [cid])
+        c.execute("DELETE FROM ov_sub WHERE customer_id = ?", [cid])
+        for seq, b in tx.items():
+            c.execute("INSERT INTO ov_tx VALUES (?, ?, ?)", [cid, int(seq), int(b)])
+        for sub, b in subs.items():
+            c.execute("INSERT INTO ov_sub VALUES (?, ?, ?)", [cid, sub, int(b)])
+        c.execute("DELETE FROM cm WHERE customer_id = ?", [cid])
+        c.execute("INSERT INTO cm " + CM_SQL.format(where="WHERE customer_id = ?"), [cid])
 
 
 class ToolError(ValueError):
