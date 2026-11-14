@@ -55,6 +55,7 @@
 | F1 | **Safe to save** (brief names it; app had none): `app/saving.py`, tool `get_safe_to_save`, `/api/safe-to-save/{cid}` | **ON BRANCH** (UI line OPEN) | docs/BRIEF-FIT.md §3 |
 | F2 | Home decision line "spend up to X, save Z on payday" + real steps in "How I worked this out" | **OPEN** | §5.2 |
 | F3 | One learning check after a what-if / why answer | **OPEN** | §5.4 |
+| F5 | **Scenario planner** (Plan): months ahead as a range, suggested scenarios from the person's own habits/income, every assumption sourced and editable; `app/scenarios.py`, `/api/plan`, coach tool `plan_scenario` | **ON BRANCH** (UI OPEN) | docs/PLAN-SCENARIOS.md |
 | F4 | S-mobiili integration story (identity, consent, data boundary, AI notice, fallback) | **OPEN** (Rasmus: slide) | §2, §5.5 |
 
 ## E. Research and pitch (reference, no code)

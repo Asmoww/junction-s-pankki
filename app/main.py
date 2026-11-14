@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money, readiness, saving, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, readiness, saving, scenarios, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -244,6 +244,23 @@ def live_home(cid: str, price: float, property_type: str = "apartment"):
         return homeplan.plan_home(_cid(cid), price, property_type)
     except money.ToolError as e:
         raise HTTPException(400, str(e))
+
+
+class PlanIn(BaseModel):
+    customer_id: str
+    levers: dict = Field(default_factory=dict)
+
+
+@app.get("/api/plan/{cid}")
+def plan_start(cid: str):
+    """Plan tab: starting point, every assumption with its source and bounds, suggested scenarios for this person."""
+    return scenarios.plan(_cid(cid))
+
+
+@app.post("/api/plan")
+def plan_run(body: PlanIn):
+    """Re-run with the user's levers (sliders, category cuts, one-offs). Same random draws, so changes are the lever."""
+    return scenarios.plan(_cid(body.customer_id), body.levers)
 
 
 @app.get("/api/safe-to-save/{cid}")

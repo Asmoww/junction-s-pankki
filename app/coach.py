@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import charts, homeplan, insights, live, money, readiness, saving, verify
+from . import charts, homeplan, insights, live, money, readiness, saving, scenarios, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -130,6 +130,23 @@ TOOLS = [
                     "about half), after a buffer for surprise must-pays. Also says if they already move money to savings. "
                     "Use for 'how much can I save', 'how much should I put aside', 'safe to save'.",
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "plan_scenario",
+     "description": "Months-ahead plan (3-36 months) from the customer's own last 12 months, as a range (bad / typical / "
+                    "good) with the chance of the account going below zero, baseline vs scenario on the same draws. Also "
+                    "returns every assumption with its source and suggested scenarios for this person. Use for 'what if' "
+                    "questions about the coming months or a year (raise, rent rises, income stops, cut a category, save on "
+                    "payday, a big cost in March). Set only the levers the user mentioned; say which assumptions you used.",
+     "input_schema": {"type": "object", "properties": {"levers": {"type": "object", "properties": {
+         "horizon_months": {"type": "integer", "minimum": 3, "maximum": 36},
+         "salary_change_pct": {"type": "number"}, "other_income_kept_pct": {"type": "number"},
+         "fixed_change_eur": {"type": "number"}, "surprise_scale_pct": {"type": "number"},
+         "extras_cut_pct": {"type": "number"},
+         "category_cuts_pct": {"type": "object", "additionalProperties": {"type": "number"}},
+         "save_on_payday_eur": {"type": "number"},
+         "one_offs": {"type": "array", "items": {"type": "object", "properties": {
+             "month": {"type": "integer", "minimum": 1}, "amount_eur": {"type": "number", "description": "negative = cost"},
+             "label": {"type": "string"}}, "required": ["month", "amount_eur"]}}},
+         "additionalProperties": False}}, "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
                     "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
@@ -183,6 +200,7 @@ _FUNCS["check_purchase"] = lambda cid, item: live.check_purchase(item)
 _FUNCS["plan_home"] = homeplan.plan_home
 _FUNCS["home_readiness"] = readiness.home_readiness
 _FUNCS["get_safe_to_save"] = saving.get_safe_to_save
+_FUNCS["plan_scenario"] = lambda cid, levers=None: scenarios.plan(cid, levers)
 
 
 LANGS = {"en": "English. Format amounts like 1,234.50 €.",
