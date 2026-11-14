@@ -20,12 +20,12 @@ Phone (or laptop in Chrome device mode), Emma, Finnish or English to match the r
 | 1:50 | Result **+13 € / +87 €** → **Show on my graph** | "She makes it to payday, and the plan lands on her real forecast." |
 | 2:10 | **Your three baskets → Sort with the AI**: answer the parking card | "Some spending only she can sort. The AI asks; her answer re-sorts her money everywhere." |
 | 2:45 | **Coach**: "Why am I always short before payday?" → open **How I worked this out** | "Claude picks the tools, code computes every number, and every number is matched to her data." |
-| 3:20 | Tap **AI: Claude → AI in Finland**, ask again | "Same coach on Gemma 4 that we host on a Verda GPU in Finland: 21 of 22 trick questions, every number matched. A bank can keep the AI in Europe." |
+| 3:20 | Point at the **AI in Finland** badge | "Every answer you've seen ran on Gemma 4 that we host on a Verda GPU in Finland: 21 of 22 trick questions, every number matched. A bank can keep the AI in Europe." |
 | 3:50 | **Your money year** → guess slide → poster | "And once a year, her money year: shareable, without amounts." |
 | 4:30 | Close | "Built to drop into S-mobiili as a web view: about 2 cents an answer, nothing identifying leaves the bank. See your money's future, and change it." Then: "Questions?" |
 
 **Before each round (2 minutes):** Emma selected, Home tab, no scenario chip active, Sort answers cleared (Sort →
-"Undo my answers"), language matched to the reviewer, "AI in Finland" off. The presets, the coach plan and Wrapped are
+"Undo my answers"), language matched to the reviewer, the "AI in Finland" badge visible. The presets, the coach plan and Wrapped are
 cached; the coach and EU answers take 1-3 s. **Fallback:** if the network dies, use the screenshots folder and tell the
 story from the graph.
 

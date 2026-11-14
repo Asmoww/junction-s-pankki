@@ -31,15 +31,16 @@ not only where it went. Every number is computed from the data by code; the AI p
 - **Trap suite** (`tests/traps/`, `scripts/run_traps.py`): 23 questions where money coaches typically fail (wrong
   "last month", invented merchants, prompt injection for another customer's data, quick loans, made-up projections,
   compound growth beyond income), run against the live coach; results on the Learn tab.
-- **EU mode:** the same AI jobs on Gemma 4 31B that we host on a Verda GPU in Finland (`app/eu.py`): 21/22 traps,
-  every number matched. See `docs/VERDA.md`.
+- **AI in Finland:** every AI job runs on Gemma 4 31B that we host on a Verda GPU in Finland (`app/eu.py`,
+  `AI_PROVIDER=eu`): 21/22 traps, every number matched. The Claude path is still in the code for comparison but
+  switched off. See `docs/VERDA.md`.
 - **Live web data** with sources (`app/live.py`, Context.dev): prices confirmed on shop pages, official rules
   (loan cap, transfer tax, Euribor, HSL fares). See `docs/CONTEXT_DEV.md`.
 - Offline tests: `pytest tests` (about 70).
 
 ## Privacy
 The model sees computed totals and the question; never names, customer ids or account numbers. Live web lookups send
-only an item name or a rule query. In EU mode no customer data leaves Finland.
+only an item name or a rule query. With the AI in Finland, no customer data leaves the country.
 
 ## Run locally
 See "Stack and how to run" in `CLAUDE.md` (Python 3.12+, DuckDB, FastAPI, Anthropic SDK; the challenge data is not in
