@@ -328,7 +328,7 @@ async function ask(text) {
     const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customer_id: cid, history, lang }) });
     pending.innerHTML = answerHtml(r);
-    if (r.error) { pending.classList.add("err"); history.pop(); } else history.push({ role: "assistant", text: r.answer });
+    if (r.error) { pending.classList.add("err"); history.pop(); } else if (r.refused) { history.pop(); } else history.push({ role: "assistant", text: r.answer });
   } catch (e) {
     pending.classList.add("err"); pending.textContent = T().wentWrong; history.pop();
   }

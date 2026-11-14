@@ -261,12 +261,30 @@ def _privacy(trace: list[dict]) -> dict:
             "never_sent": "Name, customer id, account number, merchant names (not in the data)."}
 
 
+REFUSAL_TEXT = "I can't help with that one. Try asking about your spending, saving or bills."
+
+
+def _drop_refused(history: list[dict]) -> list[dict]:
+    """Remove refused exchanges (user turn + the refusal reply) so they are never resent to the model.
+    The newest user message is always kept."""
+    out, i = [], 0
+    while i < len(history):
+        h = history[i]
+        nxt = history[i + 1] if i + 1 < len(history) else None
+        if h.get("role") == "user" and nxt and nxt.get("role") == "assistant" and nxt.get("text") == REFUSAL_TEXT:
+            i += 2
+            continue
+        out.append(h)
+        i += 1
+    return out
+
+
 def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
     """history: [{"role": "user"|"assistant", "text": str}, ...] ending with the user's new message."""
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return {"answer": "The coach is not connected yet (no API key on the server).", "trace": [], "error": True}
     c = money.customer(cid)
-    messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in history[-12:] if h.get("text")]
+    messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in _drop_refused(history)[-12:] if h.get("text")]
     lang = lang if lang in LANGS else "en"
     system = [{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}},
               {"type": "text", "text": f"Reply in {LANGS[lang]}\nCustomer: age {c['age']}, postal code "
@@ -288,8 +306,9 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
         except anthropic.APIConnectionError:
             return {"answer": "No connection to the coach right now. Please try again.", "trace": trace, "error": True}
         if resp.stop_reason == "refusal":
-            return {"answer": "I can't help with that one. Try asking about your spending, saving or bills.",
-                    "trace": trace, "error": False}
+            # refused=True: the client drops this turn from its history, so one refused message can't make every
+            # later question fail too (outside test 14 Nov: attack -> refusal -> "groceries last month?" refused).
+            return {"answer": REFUSAL_TEXT, "trace": trace, "error": False, "refused": True}
         u = resp.usage
         usage["input_tokens"] += u.input_tokens
         usage["output_tokens"] += u.output_tokens
