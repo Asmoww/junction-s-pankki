@@ -311,6 +311,8 @@ const NUM_KIND = { verified: "data", rounded: "data", derived: "data", yours: "y
   calculated: "calculated", rule: "rule", earlier: "earlier", unverified: "unverified" };
 const NUM_SPARK = `<svg class="nspark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
 const ANSWERS = [];  // rendered answers, so a tapped number can read its tool result from the answer's trace
+// Developer mode (open the app with ?dev once): number popups also show the tool call behind a number.
+const DEV = (() => { try { if (new URLSearchParams(location.search).has("dev")) localStorage.setItem("dev", "1"); return localStorage.getItem("dev") === "1"; } catch { return false; } })();
 function markNumbers(html, numbers, aid = -1) {
   let pos = 0;
   for (const [k, n] of (numbers || []).entries()) {
@@ -364,7 +366,8 @@ function describeSource(n, trace) {
   const list = (extra = {}, p = per) => (p ? { ...filt, ...extra, start: p.start, end: p.end } : null);
   if (t.tool === "get_spending") {
     if (path === "total_eur") return { what: flabel, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions };
-    if (path === "average_per_month_eur") return { what: `${D.avg}: ${flabel}`, meta: [periodText(per), D.months(per.months)], list: list(), count: res.transactions };
+    if (path === "average_per_month_eur") return { what: `${D.avg}: ${flabel}`, meta: [periodText(per), D.pays(res.transactions)], list: list(), count: res.transactions,
+      avg: { total: res.total_eur, months: per.months_with_data || per.months } };
     if (path.startsWith("one_off_large_purchases")) return { what: D.oneoff, meta: [periodText(per), D.pays(res.one_off_large_purchases.count)] };
     if (path.startsWith("not_classifiable")) return { what: D.nomcc, meta: [periodText(per), D.pays(res.not_classifiable.count)] };
     const m = path.match(/^breakdown\[(\d+)\]/);
@@ -391,7 +394,8 @@ function describeSource(n, trace) {
     const m = path.match(/^baskets\[(\d+)\](?:\.top\[(\d+)\])?/), bk = m && res.baskets && res.baskets[+m[1]];
     if (bk) {
       if (m[2] !== undefined && bk.top[+m[2]]) return { what: label(bk.top[+m[2]].merchant_type), meta: [periodText(per), D.pays(bk.top[+m[2]].transactions)] };
-      return { what: (path.includes("per_month") ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)] };
+      const avg = path.includes("per_month") ? { total: bk.total_eur, months: per.months_with_data || per.months } : null;
+      return { what: (avg ? `${D.avg}: ` : "") + T().baskets[bk.basket][0], meta: [periodText(per), D.pays(bk.transactions)], avg };
     }
   }
   if (t.tool === "get_safe_to_spend") {
@@ -415,6 +419,8 @@ function dataSheet(n, trace) {
   const D = T().ds, d = describeSource(n, trace);
   const partRows = [];
   if (n.rounded_from !== undefined) partRows.push(`<div><span>${D.rounded}</span><span>${eur(n.rounded_from)}</span></div>`);
+  if (d.avg && d.avg.months) partRows.push(`<div><span>${D.avgTotal}</span><span>${eur(d.avg.total)}</span></div>`,
+    `<div><span></span><span>${esc(D.div(d.avg.months))}</span></div>`, `<div class="sum"><span>${D.perMonth}</span><span>${eur(n.rounded_from ?? n.value)}</span></div>`);
   if (n.parts && n.parts.length) {
     for (const p of n.parts) {
       const pd = describeSource({ ...p, source: "" }, trace);
@@ -426,7 +432,7 @@ function dataSheet(n, trace) {
   return { html: `<span class="nkind data">${SHIELD}${D.acct}</span><div class="nval">${esc(n.text)}</div><p class="nwhat">${esc(d.what)}</p>
     ${d.meta.filter(Boolean).length ? `<p class="nfact">${esc(d.meta.filter(Boolean).join(" · "))}</p>` : ""}
     ${partRows.length ? `<div class="nparts">${partRows.join("")}</div>` : ""}${see}
-    <details class="ntech"><summary>${D.details}</summary><code>${esc(techLine(n, trace))}</code></details>`, list: d.list };
+    ${DEV ? `<details class="ntech"><summary>${D.details}</summary><code>${esc(techLine(n, trace))}</code></details>` : ""}`, list: d.list };
 }
 async function paymentsSheet(n, trace, el) {
   const D = T().ds, d = describeSource(n, trace), q = new URLSearchParams();
