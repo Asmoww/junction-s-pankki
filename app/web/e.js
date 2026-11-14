@@ -43,7 +43,7 @@ const ES = {
     rules: "Live rules", rulesTitle: "Rules from official sources", unknown: "unknown", asOf: (d) => `as of ${d}`, fetchedAt: (d) => `checked ${d}`,
     effUnknown: "effective date not confirmed", recheck: "Re-check rules now", demo: "Demo controls", runMon: (n) => `Run monitor now: ${n}`,
     setupMon: "Set up monitors", ruleChanged: "A rule changed", sourceOnly: "Only the item name or rule is sent, never your data.",
-    capShort: "Loan cap", euriborShort: "Euribor 12 m",
+    rng: { pay: "Pay month", m3: "3 months", m12: "12 months", m24: "2 years", label: "Show balance for" }, hChange: "Change", hLow: "Lowest", hBelow: (n) => `${n} days below zero`, hNet: "In minus out, per month", hNote: "Real balances only; the forecast is in the pay-month view.", capShort: "Loan cap", euriborShort: "Euribor 12 m",
     since: (a) => `${a} since payday`, today: "Today", pay: "Payday", forecast: "forecast", extras: "your extras",
     payResult: (d) => `On payday, ${d}`, whatIf: "What if…", whatIfPh: "e.g. concert tickets 150 € on Friday",
     pause: "Pause extras", eatLess: "Eat out −50 %", rentLater: "Rent after payday", ask: (d) => `Ask about ${d}`,
@@ -109,7 +109,7 @@ const ES = {
     rules: "Säännöt nyt", rulesTitle: "Säännöt virallisista lähteistä", unknown: "tuntematon", asOf: (d) => `tilanne ${d}`, fetchedAt: (d) => `tarkistettu ${d}`,
     effUnknown: "voimaantulopäivä vahvistamatta", recheck: "Tarkista säännöt nyt", demo: "Demo-ohjaimet", runMon: (n) => `Aja seuranta nyt: ${n}`,
     setupMon: "Ota seuranta käyttöön", ruleChanged: "Sääntö muuttui", sourceOnly: "Vain tuotteen nimi tai sääntö lähtee, ei koskaan tietojasi.",
-    capShort: "Lainakatto", euriborShort: "Euribor 12 kk",
+    rng: { pay: "Palkkakuukausi", m3: "3 kk", m12: "12 kk", m24: "2 vuotta", label: "Näytä saldo ajalta" }, hChange: "Muutos", hLow: "Alin", hBelow: (n) => `${n} päivää miinuksella`, hNet: "Tulot miinus menot kuukausittain", hNote: "Vain toteutuneet saldot; ennuste on palkkakuukauden näkymässä.", capShort: "Lainakatto", euriborShort: "Euribor 12 kk",
     since: (a) => `${a} palkkapäivästä`, today: "Tänään", pay: "Palkka", forecast: "ennuste", extras: "extrasi",
     payResult: (d) => `Palkkapäivänä ${d}`, whatIf: "Entä jos…", whatIfPh: "esim. konserttiliput 150 € perjantaina",
     pause: "Tauko extroille", eatLess: "Ulkona syöminen −50 %", rentLater: "Vuokra palkan jälkeen", ask: (d) => `Kysy päivästä ${d}`,
@@ -175,7 +175,7 @@ const ES = {
     rules: "Regler nu", rulesTitle: "Regler från officiella källor", unknown: "okänt", asOf: (d) => `per ${d}`, fetchedAt: (d) => `kollat ${d}`,
     effUnknown: "ikraftträdande inte bekräftat", recheck: "Kolla reglerna nu", demo: "Demokontroller", runMon: (n) => `Kör bevakning nu: ${n}`,
     setupMon: "Sätt upp bevakning", ruleChanged: "En regel ändrades", sourceOnly: "Bara varans namn eller regeln skickas, aldrig dina data.",
-    capShort: "Lånetak", euriborShort: "Euribor 12 m",
+    rng: { pay: "Lönemånad", m3: "3 mån", m12: "12 mån", m24: "2 år", label: "Visa saldo för" }, hChange: "Förändring", hLow: "Lägst", hBelow: (n) => `${n} dagar under noll`, hNet: "In minus ut per månad", hNote: "Endast verkliga saldon; prognosen finns i lönemånadsvyn.", capShort: "Lånetak", euriborShort: "Euribor 12 m",
     since: (a) => `${a} sedan lönedagen`, today: "I dag", pay: "Lön", forecast: "prognos", extras: "dina extra",
     payResult: (d) => `På lönedagen ${d}`, whatIf: "Tänk om…", whatIfPh: "t.ex. konsertbiljetter 150 € på fredag",
     pause: "Pausa extra", eatLess: "Äta ute −50 %", rentLater: "Hyran efter lön", ask: (d) => `Fråga om ${d}`,
@@ -203,6 +203,8 @@ const ES = {
 const E = () => ES[lang] || ES.en;
 const SPARK = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
 let fut = null, notes = null, active = null, scen = null, picked = null, liveSt = null, buyRes = null;
+let range = "pay";            // Home trend line: "pay" (pay month + forecast, the original graph) or 3 / 12 / 24 months
+const histCache = {};
 const CART = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h2l1.6 7.2a1 1 0 0 0 1 .8h6.2a1 1 0 0 0 1-.8L14 5H4.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="13" r="1.2"/><circle cx="12" cy="13" r="1.2"/></svg>`;
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const when = (iso) => iso ? new Date(iso).toLocaleString(T().locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
@@ -612,10 +614,76 @@ async function runPreset(k) {
   redraw();
 }
 
+function rangeBar() {
+  const R = E().rng;
+  return `<div class="rng" role="tablist" aria-label="${esc(R.label)}">${[["pay", R.pay], ["3", R.m3], ["12", R.m12], ["24", R.m24]]
+    .map(([k, l]) => `<button role="tab" data-rng="${k}" aria-selected="${range === k}" class="${range === k ? "on" : ""}">${esc(l)}</button>`).join("")}</div>`;
+}
+function bindRange() {
+  $("#hero").querySelectorAll("[data-rng]").forEach((b) => b.addEventListener("click", () => {
+    if (range === b.dataset.rng) return;
+    range = b.dataset.rng; redraw();
+  }));
+}
+
 function redraw() {
+  if (range !== "pay" && !scen) return drawLong();
+  range = "pay";                                       // a scenario (play, what-if, buy) always shows on the pay-month graph
   const G = graph();
-  $("#hero").innerHTML = G.html + resultRow() + dock();
-  layoutNotes(); bindGraph(G); bindDock();
+  $("#hero").innerHTML = rangeBar() + G.html + resultRow() + dock();
+  layoutNotes(); bindGraph(G); bindDock(); bindRange();
+}
+
+// Longer view of the same balance line: real balances over 3 / 12 / 24 months, no forecast. The pay-month graph
+// above stays exactly as it was; this only replaces it while a longer range is chosen.
+async function drawLong() {
+  const want = `${cid}:${range}`, E_ = E();
+  $("#hero").innerHTML = rangeBar() + `<div class="long"><span class="typing"><i></i><i></i><i></i></span></div>`;
+  bindRange();
+  let h = histCache[want];
+  if (!h) {
+    try { h = histCache[want] = await api(`/api/history/${cid}?months=${range}`); }
+    catch { $("#hero .long").innerHTML = `<p class="hnote">${esc(E_.failed || "Couldn't load")}</p>`; return; }
+  }
+  if (`${cid}:${range}` !== want) return;            // the user switched again while this loaded
+  const pts = h.points, W = Math.min(window.innerWidth, 480) - 8, H = 220, pl = 8, pr = 8, pt = 26, pb = 26;
+  const vals = pts.map((p) => p.balance_eur), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals) || 1;
+  const X = (i) => pl + (i / Math.max(pts.length - 1, 1)) * (W - pl - pr), Y = (v) => pt + (hi - v) / (hi - lo || 1) * (H - pt - pb);
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.balance_eur).toFixed(1)}`).join("");
+  const area = `${line}L${X(pts.length - 1).toFixed(1)},${Y(lo).toFixed(1)}L${X(0).toFixed(1)},${Y(lo).toFixed(1)}Z`;
+  const li = vals.indexOf(Math.min(...vals));
+  // One label per month (every 2nd or 4th month on longer ranges so they never pile up)
+  const every = h.months <= 3 ? 1 : h.months <= 12 ? 2 : 4;
+  let lastM = "", lastY = "", k = 0;
+  const ticks = pts.map((p, i) => { const m = p.date.slice(0, 7); if (m === lastM) return ""; lastM = m; if (k++ % every) return "";
+    let lab = new Date(p.date + "T12:00:00").toLocaleDateString(T().locale, { month: "short" }).replace(/\.$/, "");
+    if (h.months > 12 && p.date.slice(0, 4) !== lastY) { lab += ` ’${p.date.slice(2, 4)}`; lastY = p.date.slice(0, 4); }  // show the year when it changes
+    return `<text x="${X(i).toFixed(1)}" y="${H - 6}" class="tk">${esc(lab)}</text>`; }).join("");
+  const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(E_.rng.label)}">
+    <path d="${area}" class="ar"/>${lo < 0 ? `<line x1="${pl}" x2="${W - pr}" y1="${Y(0)}" y2="${Y(0)}" class="z"/>` : ""}
+    <path d="${line}" class="ln"/>
+    <circle cx="${X(li)}" cy="${Y(vals[li])}" r="4" class="lowp"/>
+    <text x="${pl}" y="14" class="ed">${esc(eur0(h.start_eur))}</text>
+    <text x="${W - pr}" y="14" class="ed end">${esc(eur0(h.end_eur))}</text>${ticks}
+    <line x1="0" x2="0" y1="${pt}" y2="${H - pb}" class="cur" hidden/></svg>`;
+  const nets = h.per_month.map((m) => m.in_eur - m.out_eur), big = Math.max(1, ...nets.map(Math.abs));
+  const bars = `<div class="nets" aria-label="${esc(E_.hNet)}">${h.per_month.map((m, i) => `<i title="${esc(m.month)}: ${esc(eur0(nets[i]))}"
+    class="${nets[i] < 0 ? "neg" : ""}" style="--h:${Math.round(Math.abs(nets[i]) / big * 100)}%"></i>`).join("")}</div>`;
+  const ch = h.change_eur;
+  $("#hero .long").innerHTML = `<div class="lg">${svg}<div class="tip" hidden></div></div>
+    <div class="hsum"><span>${esc(E_.hChange)} <b class="${ch < 0 ? "neg" : ""}">${ch < 0 ? "−" : "+"}${esc(eur0(Math.abs(ch)))}</b></span>
+      <span>${esc(E_.hLow)} <b>${esc(eur0(h.lowest.balance_eur))}</b> · ${esc(day(h.lowest.date))}</span>
+      ${h.days_below_zero ? `<span class="neg">${esc(E_.hBelow(h.days_below_zero))}</span>` : ""}</div>
+    <p class="hnet">${esc(E_.hNet)}</p>${bars}<p class="hnote">${esc(E_.hNote)}</p>`;
+  // Touch/drag readout: date and balance under the finger
+  const g = $("#hero .lg"), sv = g.querySelector("svg"), tip = g.querySelector(".tip"), cur = sv.querySelector(".cur");
+  const show = (ev) => { const r = sv.getBoundingClientRect(), x = ev.clientX - r.left;
+    const i = Math.max(0, Math.min(pts.length - 1, Math.round((x - pl) / (W - pl - pr) * (pts.length - 1))));
+    cur.setAttribute("x1", X(i)); cur.setAttribute("x2", X(i)); cur.hidden = false;
+    tip.hidden = false; tip.style.left = `${Math.min(Math.max(X(i) - 50, 0), W - 110)}px`;
+    tip.innerHTML = `<b>${esc(eur0(pts[i].balance_eur))}</b><br>${esc(day(pts[i].date))}`; };
+  sv.addEventListener("pointermove", show); sv.addEventListener("pointerdown", show);
+  sv.addEventListener("pointerleave", () => { tip.hidden = true; cur.hidden = true; });
 }
 
 // ---------------------------------------------------------------- Money Wrapped (story slides)
