@@ -282,7 +282,11 @@ function bindGraph(G) {
   let last = null;
   el.addEventListener("pointerdown", (e) => { el.setPointerCapture(e.pointerId); last = show(e.clientX); });
   el.addEventListener("pointermove", (e) => { if (e.buttons || e.pointerType === "mouse") last = show(e.clientX); });
-  el.addEventListener("pointerup", () => {
+  const hide = () => { tip.hidden = true; cur.classList.remove("on"); guide.classList.remove("on"); };
+  el.addEventListener("pointerleave", hide);
+  el.addEventListener("pointercancel", hide);
+  el.addEventListener("pointerup", (e) => {
+    if (e.pointerType !== "mouse") hide();  // touch: the card goes away when the finger lifts
     if (last && last.i <= G.iT && last.i > 0) { picked = last.p.date; $(".dock").outerHTML = dock(); bindDock(); }
   });
 }
