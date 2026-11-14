@@ -233,11 +233,12 @@ function washBlock() {
 }
 
 function potSheet() {
-  const pot = home.pot, payday = home.overview.safe_to_spend.next_payday;
+  const pot = home.pot, payday = home.overview.safe_to_spend.next_payday, wq = window.whyQ ? window.whyQ("surprises") : "";
   const s = sheet(`<h2>${T().potTitle}</h2><p class="sub">${T().potSheet(eur0(pot.suggested_monthly_pot_eur), day(payday))}</p>
     ${potChart(pot.months.slice(-12), pot.average_per_month_last_12_eur)}${washBlock()}<p class="note">${T().demoNote}</p>
-    <button class="btn wide" data-close>${T().ok}</button>`);
+    ${wq ? `<button class="btn ghost wide" data-why>${esc(wq)}</button>` : ""}<button class="btn wide" data-close>${T().ok}</button>`);
   s.querySelector("[data-close]").addEventListener("click", closeSheet);
+  const w = s.querySelector("[data-why]"); if (w) w.onclick = () => { closeSheet(); window.askHere(wq); };
 }
 
 function psd2Sheet() {
@@ -503,8 +504,8 @@ $("#lang").addEventListener("click", () => {
   renderStatic(); renderHome(); renderLearn();
 });
 document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
-$("#thread").addEventListener("click", (e) => {
-  const n = e.target.closest(".num"); if (!n) return;
+document.addEventListener("click", (e) => {
+  const n = e.target.closest("#thread .num, #asks .num"); if (!n) return;
   const st = n.dataset.status;
   toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : st === "yours" ? `<b>${T().numYours}</b>` : st === "earlier" ? `<b>${T().numEarlier}</b>`
     : `<b>${st === "verified" ? T().numVerified : st === "derived" ? T().numDerived : T().numRounded}</b><br><code>${esc(n.dataset.src)}</code>`);

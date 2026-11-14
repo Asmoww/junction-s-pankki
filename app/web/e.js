@@ -273,7 +273,7 @@ function graph() {
     const txt = `${g.names.join(" + ")} −${eur0(g.eur)}`, tw = txt.length * 6.7 + 34, ph = 24;
     const my = y1 - y0 >= 30 ? (y0 + y1) / 2 : y0 - 22;
     let lx = xb + 10; if (lx + tw > W - px) lx = xb - 10 - tw;
-    marks.push(`<g class="billpill ${neg ? "neg" : ""}" transform="translate(${lx.toFixed(1)},${(my - ph / 2).toFixed(1)})">
+    marks.push(`<g class="billpill ${neg ? "neg" : ""}" data-why="${esc(hbT().bill(g.names.join(" + ").toLowerCase()))}" transform="translate(${lx.toFixed(1)},${(my - ph / 2).toFixed(1)})">
       <rect width="${tw.toFixed(1)}" height="${ph}" rx="12"/>${g.housing
         ? `<g class="hic" transform="translate(15,12.5)"><path d="M-6 -0.2 L0 -5.6 L6 -0.2"/><path d="M-4.4 -1.4 V5 H4.4 V-1.4"/><path d="M-1.3 5 V1.7 H1.3 V5"/></g>`
         : `<path class="bolt" transform="translate(15,12.5)" d="M1.2 -6 L-3.6 0.8 H-0.2 L-1.2 6 L3.6 -0.8 H0.2 Z"/>`}
@@ -288,7 +288,7 @@ function graph() {
   (notes ? notes.notes : []).forEach((nt) => {
     let i = past.findIndex((q) => q.date === nt.date), pt;
     if (i >= 0) pt = pPast[i]; else { i = base.findIndex((q) => q.date === nt.date); if (i < 0) return; pt = pBase[i + 1]; }
-    nl.push(`<div class="note" data-x="${pt[0].toFixed(1)}" data-y="${pt[1].toFixed(1)}">${SPARK}<span>${esc(nt.text).replace(/ (€|%)/g, "\u00a0$1")}</span></div>
+    nl.push(`<div class="note" data-why="${esc(whyNote(nt))}" data-x="${pt[0].toFixed(1)}" data-y="${pt[1].toFixed(1)}">${SPARK}<span>${esc(nt.text).replace(/ (€|%)/g, "\u00a0$1")}</span></div>
       <span class="ndot" style="left:${pt[0]}px;top:${pt[1]}px"></span>`);
   });
   const scLine = sc ? `<path class="scen" d="${straight(stepped([todayPt, ...P(sc, iT + 1)], [now, ...sc.map((q) => q.balance_eur)]))}"/>` : "";
@@ -340,7 +340,7 @@ function layoutNotes() {
 function resultRow() {
   const b = fut.base.end_eur, s = scen && scen.scenario;
   const cls = (v) => (v < 0 ? "neg" : "pos");
-  return `<div class="result"><span>${s ? E().payResultPlan(day(fut.next_payday)) : E().payResult(day(fut.next_payday))}</span>
+  return `<div class="result"><span>${s ? E().payResultPlan(day(fut.next_payday)) : `${E().payResult(day(fut.next_payday))} <button class="whyb" data-why="${esc(hbT().end)}">${hbT().why}</button>`}</span>
     <span class="vals">${s ? `<s class="${cls(b)}">${eur0(b)}</s><b class="${cls(s.end_eur)}">${eur0(s.end_eur)}</b>
       <i class="${s.delta_at_payday_eur >= 0 ? "up" : "down"}">${s.delta_at_payday_eur >= 0 ? "+" : "−"}${eur0(Math.abs(s.delta_at_payday_eur))}</i>`
       : `<b class="${cls(b)}">${eur0(b)}</b>`}</span></div>`;
@@ -411,7 +411,7 @@ function saveSheet() {
     ${amt > 0 ? `<button class="btn wide" data-setup>${esc(S.saveSetup(eur0(amt), day(home.overview.safe_to_spend.next_payday)))}</button>` : `<button class="btn wide" data-askgap>${S.askGap}</button>`}
     <p class="note">${T().demoNote}</p>`);
   const su = s.querySelector("[data-setup]"); if (su) su.onclick = () => { closeSheet(); toast(esc(S.saveDone(eur0(amt))), 4500); };
-  const ag = s.querySelector("[data-askgap]"); if (ag) ag.onclick = () => { closeSheet(); ask(S.askGapQ); };
+  const ag = s.querySelector("[data-askgap]"); if (ag) ag.onclick = () => { closeSheet(); askHere(S.askGapQ); };
 }
 
 // Monthly drains: habits that work like a subscription, real subscriptions, and bills
@@ -440,7 +440,7 @@ function drainsSheet() {
     <div class="label">${S.subsT}</div><ul class="drains">${subs}</ul>
     <div class="label">${S.billsT}</div><ul class="drains">${bills}</ul>
     <p class="note left">${esc(S.drainsNote)}</p>`);
-  s.querySelectorAll("[data-ask]").forEach((b) => b.addEventListener("click", () => { closeSheet(); ask(b.dataset.ask); }));
+  s.querySelectorAll("[data-ask]").forEach((b) => b.addEventListener("click", () => { closeSheet(); askHere(b.dataset.ask); }));
 }
 
 // Full picture after PSD2 consent: both banks, the other balance labelled as demo data, consent and revoke
@@ -453,7 +453,7 @@ function fullPicSheet() {
     <p class="note left">${esc(S.fullRule)}</p>
     <div class="actions"><button class="btn" data-ask>${S.fullAsk}</button><button class="btn ghost" data-revoke>${S.revoke}</button></div>
     <p class="note">${esc(S.consentLeft(ps.days_left))}</p>`);
-  s.querySelector("[data-ask]").onclick = () => { closeSheet(); ask(S.fullAskQ); };
+  s.querySelector("[data-ask]").onclick = () => { closeSheet(); askHere(S.fullAskQ); };
   s.querySelector("[data-revoke]").onclick = async () => { await fetch(`/api/psd2/${cid}`, { method: "DELETE" }); closeSheet(); fut = null; load(); };
 }
 
@@ -481,6 +481,10 @@ function strip() {
   cards.push(drainsCard());
   cards.push(sortCard());
   cards.push(wrapCard());
+  // The AI's order for this person (brief.py), when it has arrived; the code order otherwise
+  const keys = ["play", "safe", "save", "pot", "drains", "sort", "wrap"];
+  if (hb && hb.cards) { const rank = (k) => { const i = hb.cards.indexOf(k); return i < 0 ? 99 : i; };
+    const sorted = keys.map((k, i) => [k, cards[i]]).sort((a, b) => rank(a[0]) - rank(b[0])); cards.splice(0, cards.length, ...sorted.map((x) => x[1])); }
   // PSD2: before consent, how much moves to the other bank; after it, the full picture across both banks
   const ps = home.psd2;
   if (ps && ps.connected) {
@@ -503,7 +507,8 @@ function strip() {
   }
   const lc = homeBuyer && liveSt && liveSt.cards && liveSt.cards[0];
   const top = lc ? `<button class="rulecard" data-rules>${SPARK}<span><b>${E().ruleChanged}</b> ${esc(lc.rule.replace(/_/g, " "))}: ${lc.before ?? "?"} → ${lc.after ?? "?"} · ${esc(host(lc.source_url))}</span></button>` : "";
-  return top + `<div class="strip">${cards.join("")}</div>`;
+  const by = hb && hb.cards_by === "ai" ? `<p class="cardsby">${SPARK}${esc(hbT().cardsBy)}</p>` : "";
+  return top + by + `<div class="strip">${cards.join("")}</div>`;
 }
 
 function bindGraph(G) {
@@ -523,12 +528,15 @@ function bindGraph(G) {
     return { i, p };
   };
   let last = null;
-  el.addEventListener("pointerdown", (e) => { el.setPointerCapture(e.pointerId); last = show(e.clientX); });
+  // A tap on a note or a bill asks "why" about it (delegated click on Home), so it doesn't start scrubbing
+  const onWhy = (e) => e.target.closest && e.target.closest("[data-why]");
+  el.addEventListener("pointerdown", (e) => { if (onWhy(e)) { last = null; return; } el.setPointerCapture(e.pointerId); last = show(e.clientX); });
   el.addEventListener("pointermove", (e) => { if (e.buttons || e.pointerType === "mouse") last = show(e.clientX); });
   const hide = () => { tip.hidden = true; cur.classList.remove("on"); guide.classList.remove("on"); };
   el.addEventListener("pointerleave", hide);
   el.addEventListener("pointercancel", hide);
   el.addEventListener("pointerup", (e) => {
+    if (onWhy(e)) return;
     if (e.pointerType !== "mouse") hide();  // touch: the card goes away when the finger lifts
     if (last && last.i <= G.iT && last.i > 0) { picked = last.p.date; $(".dock").outerHTML = dock(); bindDock(); }
   });
@@ -537,7 +545,7 @@ function bindGraph(G) {
 function bindDock() {
   const d = $(".dock"); if (!d) return;
   d.querySelectorAll("[data-sc]").forEach((b) => b.addEventListener("click", () => runPreset(b.dataset.sc)));
-  const pk = d.querySelector("[data-pick]"); if (pk) pk.addEventListener("click", () => ask(E().askQ(day(picked))));
+  const pk = d.querySelector("[data-pick]"); if (pk) pk.addEventListener("click", () => askHere(E().askQ(day(picked))));
   const form = d.querySelector(".wi:not(.buyf)"), msg = d.querySelector(".wimsg");
   const bf = d.querySelector(".buyf"), offers = d.querySelector(".offers");
   d.querySelector("[data-buy]").addEventListener("click", (e) => {
@@ -1003,25 +1011,33 @@ window.renderHomeE = async function () {
   if (!fut || fut.cid !== cid) { fut = await api(`/api/future/${cid}`); fut.cid = cid; active = null; scen = null; picked = null; buyRes = null; }
   if (!liveSt) { try { liveSt = await api("/api/live/status"); } catch { liveSt = null; } }
   notes = null;
-  $("#view-home").innerHTML = `<section id="hero"></section>` + strip();
+  if (hb && hb.key !== `${cid}:${lang}`) hb = null;
+  if (!hb) { hbAsked = new Set(); hbLast = null; }
+  $("#view-home").innerHTML = `<section id="brief">${briefHtml()}</section><section id="hero"></section><section id="asks">${asksHtml()}</section><div id="cards">${strip()}</div>`;
   redraw();
   setTimeout(preloadPresets, 300);
-  bindAsks($("#view-home"));
-  $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
-  $("#view-home").querySelectorAll("[data-act=save]").forEach((b) => b.addEventListener("click", saveSheet));
-  $("#view-home").querySelectorAll("[data-act=drains]").forEach((b) => b.addEventListener("click", drainsSheet));
-  $("#view-home").querySelectorAll("[data-act=fullpic]").forEach((b) => b.addEventListener("click", fullPicSheet));
-  $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
-  $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
-  $("#view-home").querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
-  $("#view-home").querySelectorAll("[data-wrapped]").forEach((b) => b.addEventListener("click", openWrapped));
-  $("#view-home").querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", openSort));
-  $("#view-home").querySelectorAll("[data-play]").forEach((b) => b.addEventListener("click", openPlay));
+  bindStrip();
+  loadBrief();
   const fc = home.cards.find((c) => c.id === "forecast");
   if (fc && !notifShown[cid]) { notifShown[cid] = true; showNotif(fc); }
   const want = `${cid}:${lang}`;
   api(`/api/notes/${cid}?lang=${lang}`).then((n) => { if (`${cid}:${lang}` === want) { notes = n; redraw(); } }).catch(() => {});
 };
+
+function bindStrip() {
+  const v = $("#cards"); if (!v) return;
+  v.querySelectorAll("[data-ask]").forEach((b) => b.addEventListener("click", () => askHere(b.dataset.ask)));
+  v.querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
+  v.querySelectorAll("[data-act=save]").forEach((b) => b.addEventListener("click", saveSheet));
+  v.querySelectorAll("[data-act=drains]").forEach((b) => b.addEventListener("click", drainsSheet));
+  v.querySelectorAll("[data-act=fullpic]").forEach((b) => b.addEventListener("click", fullPicSheet));
+  v.querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
+  v.querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
+  v.querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
+  v.querySelectorAll("[data-wrapped]").forEach((b) => b.addEventListener("click", openWrapped));
+  v.querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", openSort));
+  v.querySelectorAll("[data-play]").forEach((b) => b.addEventListener("click", openPlay));
+}
 
 // ---------------------------------------------------------------- Sort with the AI (the three baskets, your own spending)
 function sortCard() {
@@ -1089,7 +1105,7 @@ async function openSort() {
       <div class="actions"><button class="btn" data-done>${S.done}</button><button class="btn ghost" data-ask>${S.ask}</button></div>
       <button class="sundo" data-undo>${S.undo}</button>`;
     box.querySelector("[data-done]").onclick = refresh;
-    box.querySelector("[data-ask]").onclick = async () => { await refresh(); ask(S.askQ); };
+    box.querySelector("[data-ask]").onclick = async () => { await refresh(); askHere(S.askQ); };
     box.querySelector("[data-undo]").onclick = async () => { await fetch(`/api/sort/${cid}`, { method: "DELETE" }); await refresh(); };
   };
   intro();
@@ -1197,7 +1213,7 @@ async function openPlay() {
       ${r.swapped_to_ticket ? `<div class="wide"><span>🚌 ${S.swappedT}</span><b>${eur(r.swapped_to_ticket.ticket_eur)} · ${esc(r.swapped_to_ticket.source)}</b></div>` : ""}</div>
       ${r.months_still_short_by_eur ? `<div class="pgap"><p>${esc(S.gapLine(eur0(r.months_still_short_by_eur)))}</p><button class="link" data-gap>${S.gapAsk} ›</button></div>` : ""}
       <div class="actions"><button class="btn" data-graph>${S.showGraph}</button><button class="btn ghost" data-again>${S.again}</button></div>`;
-    const gb = body.querySelector("[data-gap]"); if (gb) gb.onclick = () => { root.remove(); ask(S.gapQ); };
+    const gb = body.querySelector("[data-gap]"); if (gb) gb.onclick = () => { root.remove(); askHere(S.gapQ); };
     body.querySelector("[data-again]").onclick = () => { skip.clear(); moveRent = false; swapped = false; chart(); intro(); };
     body.querySelector("[data-graph]").onclick = async () => {
       const f = await api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_id: cid, scenario: r.scenario }) });
@@ -1207,3 +1223,108 @@ async function openPlay() {
   chart(); intro();
 }
 window.openPlay = openPlay;
+
+// ---------------------------------------------------------------- Home, led by the AI (app/brief.py)
+// A one-line briefing, three questions the AI picked for this person, answered right here on Home with the real
+// coach (same tools, live steps, checked numbers). Tapping a note, a bill on the graph or the payday result asks
+// "why" about exactly that. The AI also orders the cards below.
+const HB = {
+  en: { title: "Questions about your money", next: "Ask next", cont: "Continue in Coach", byAi: "Picked and written by the AI from your numbers. Every number is checked.",
+    byRules: "From your numbers", cardsBy: "In the order that matters for you now", why: "Why?", other: "Ask something else",
+    note: { biggest_day: (d) => `What did I spend on ${d}?`, big_day: (d) => `What did I spend on ${d}?`, below_zero: (d) => `Why does my balance go below zero around ${d}?`,
+      payday: () => "Where did my last pay go?", no_spend_days: () => "What helped me have days with no spending?", payday_week: () => "Why do I spend more right after payday?" },
+    bill: (n) => `Why does ${n} hit my balance before payday?`, end: "What decides how much I'll have on payday?" },
+  fi: { title: "Kysymyksiä rahoistasi", next: "Kysy seuraavaksi", cont: "Jatka valmentajan kanssa", byAi: "Tekoäly valitsi ja kirjoitti lukujesi pohjalta. Jokainen luku on tarkistettu.",
+    byRules: "Lukujesi pohjalta", cardsBy: "Järjestyksessä, joka on sinulle nyt tärkein", why: "Miksi?", other: "Kysy jotain muuta",
+    note: { biggest_day: (d) => `Mihin käytin rahaa ${d}?`, big_day: (d) => `Mihin käytin rahaa ${d}?`, below_zero: (d) => `Miksi saldoni menee miinukselle noin ${d}?`,
+      payday: () => "Mihin viime palkkani meni?", no_spend_days: () => "Mikä auttoi minua pitämään ostottomia päiviä?", payday_week: () => "Miksi kulutan enemmän heti palkkapäivän jälkeen?" },
+    bill: (n) => `Miksi ${n} osuu saldooni ennen palkkapäivää?`, end: "Mikä ratkaisee, paljonko minulla on palkkapäivänä?" },
+  sv: { title: "Frågor om dina pengar", next: "Fråga härnäst", cont: "Fortsätt med coachen", byAi: "AI:n valde och skrev utifrån dina siffror. Varje siffra är kontrollerad.",
+    byRules: "Utifrån dina siffror", cardsBy: "I den ordning som spelar roll för dig nu", why: "Varför?", other: "Fråga något annat",
+    note: { biggest_day: (d) => `Vad spenderade jag på ${d}?`, big_day: (d) => `Vad spenderade jag på ${d}?`, below_zero: (d) => `Varför går saldot på minus runt ${d}?`,
+      payday: () => "Vart tog min senaste lön vägen?", no_spend_days: () => "Vad hjälpte mig att ha köpfria dagar?", payday_week: () => "Varför spenderar jag mer direkt efter lönen?" },
+    bill: (n) => `Varför slår ${n} mot saldot före lönen?`, end: "Vad avgör hur mycket jag har på lönedagen?" },
+};
+const hbT = () => HB[lang] || HB.en;
+let hb = null, hbAsked = new Set(), hbBusy = false, hbLast = null;
+const briefCache = {};
+const whyNote = (nt) => (hbT().note[nt.kind] ? hbT().note[nt.kind](day(nt.date)) : "");
+window.whyQ = (id) => { const all = hb ? [...hb.questions, ...hb.more] : []; const q = all.find((x) => x.id === id); return q ? q.text : ""; };
+// Home's own questions answer on Home; anywhere else they go to the Coach tab as before
+window.askHere = (q) => (tab === "home" && $("#asks") ? askHome(q) : ask(q));
+
+function briefHtml() {
+  if (!hb) return `<div class="brief"><div class="skeleton" style="width:92%"></div><div class="skeleton" style="width:64%"></div></div>`;
+  return `<button class="brief" data-why="${esc(hb.questions[0] ? hb.questions[0].text : "")}">${SPARK}<span>${esc(hb.headline)}</span></button>
+    <p class="bysrc">${esc(hb.source === "ai" ? hbT().byAi : hbT().byRules)}</p>`;
+}
+function asksHtml() {
+  const H = hbT();
+  const qs = hb ? hb.questions.map((q) => `<button class="askq${hbAsked.has(q.text) ? " done" : ""}" data-q="${esc(q.text)}">${SPARK}<span>${esc(q.text)}</span><em>›</em></button>`).join("")
+    : [1, 2, 3].map(() => `<div class="askq sk"><div class="skeleton"></div></div>`).join("");
+  return `<h3 class="asksT">${H.title}</h3><div class="askqs">${qs}</div><div class="hans" hidden></div>`;
+}
+function nextQs(n = 2) {
+  if (!hb) return [];
+  return [...hb.questions, ...hb.more].filter((q) => !hbAsked.has(q.text)).slice(0, n);
+}
+
+async function askHome(q) {
+  q = (q || "").trim(); if (!q || hbBusy || !cid) return;
+  const box = $("#asks .hans"); if (!box) return ask(q);
+  hbBusy = true; hbAsked.add(q);
+  $("#asks").querySelectorAll(".askq").forEach((b) => b.classList.toggle("on", b.dataset.q === q));
+  box.hidden = false;
+  box.innerHTML = `<p class="hq">${esc(q)}</p><div class="msg bot hbot working"><div class="csteps" role="status" aria-label="${esc(T().thinking)}"><ol></ol></div></div>`;
+  const msg = box.querySelector(".hbot");
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+  addStep(msg, { tool: "read" });
+  let r;
+  try { r = await chatStream(JSON.stringify({ customer_id: cid, history: [{ role: "user", text: q }], lang }), (st) => addStep(msg, st)); }
+  catch { r = { answer: T().wentWrong, error: true }; }
+  msg.classList.remove("working");
+  msg.innerHTML = answerHtml(r);
+  if (r.error) msg.classList.add("err");
+  else if (window.learnAfterAnswer) window.learnAfterAnswer(r, msg);
+  const H = hbT(), nx = nextQs();
+  box.insertAdjacentHTML("beforeend", `<div class="hnext">${nx.length ? `<span>${H.next}</span>${nx.map((x) => `<button class="chip ask" data-q="${esc(x.text)}">${SPARK}${esc(x.text)}</button>`).join("")}` : ""}
+    ${r.error ? "" : `<button class="btn ghost wide" data-cont>${H.cont} ›</button>`}</div>`);
+  hbLast = { q, r };
+  $("#asks").querySelectorAll(".askq").forEach((b) => b.classList.toggle("done", hbAsked.has(b.dataset.q)));
+  hbBusy = false;
+}
+
+async function loadBrief() {
+  const want = `${cid}:${lang}`;
+  if (briefCache[want]) { if (hb !== briefCache[want]) { hb = briefCache[want]; paintBrief(); } return; }
+  let explored = [];
+  try {
+    const st = await api(`/api/learn/${cid}?device=${encodeURIComponent(localStorage.getItem("device") || "")}&lang=${lang}`);
+    explored = st.curiosity.map.filter((m) => m.lit).map((m) => m.concept);
+  } catch {}
+  let b; try { b = await api(`/api/brief/${cid}?lang=${lang}&explored=${explored.join(",")}`); } catch { b = null; }
+  if (`${cid}:${lang}` !== want || !b) { if (!b && `${cid}:${lang}` === want) { $("#brief").innerHTML = ""; } return; }
+  b.key = want; hb = briefCache[want] = b;
+  paintBrief();
+}
+function paintBrief() {
+  if (!$("#brief")) return;
+  $("#brief").innerHTML = briefHtml();
+  const ans = $("#asks .hans"), keep = ans && !ans.hidden ? ans.innerHTML : null;
+  $("#asks").innerHTML = asksHtml();
+  if (keep) { const a = $("#asks .hans"); a.hidden = false; a.innerHTML = keep; }
+  $("#cards").innerHTML = strip(); bindStrip();
+}
+
+// One delegated handler for Home (it survives every repaint): questions, "why" taps, and "Continue in Coach"
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#view-home")) return;
+  const w = e.target.closest("[data-why],[data-q]");
+  if (w && (w.dataset.why || w.dataset.q)) { e.stopPropagation(); askHome(w.dataset.why || w.dataset.q); return; }
+  if (e.target.closest("[data-cont]") && hbLast) {
+    // Carry the question and answer into the Coach thread, so a follow-up there has the context
+    const { q, r } = hbLast;
+    if (!r.refused) history.push({ role: "user", text: q }, { role: "assistant", text: r.answer });
+    addMsg("user", esc(q)); addMsg("bot", answerHtml(r)); setTab("coach"); $("#q").focus();
+  }
+});

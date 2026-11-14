@@ -26,7 +26,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, drains, eu, future, homeplan, insights, learning, live, money, play, psd2, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
+from . import brief, coach, drains, eu, future, homeplan, insights, learning, live, money, play, psd2, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -350,6 +350,13 @@ def wrapped_year(cid: str, lang: str = "en"):
 @app.get("/api/future/{cid}")
 def future_line(cid: str):
     return future.future(_cid(cid))
+
+
+@app.get("/api/brief/{cid}")
+def home_brief(cid: str, lang: str = "en", explored: str = ""):
+    """Home's AI layer: a one-line briefing, three questions picked for this person, and the order of the cards.
+    explored: Money Detective concepts already lit (comma-separated), so the AI favours new corners."""
+    return brief.brief(_cid(cid), lang, [c for c in explored.split(",") if c][:20])
 
 
 @app.get("/api/notes/{cid}")

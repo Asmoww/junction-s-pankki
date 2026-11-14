@@ -10,6 +10,9 @@ not only where it went. Every number is computed from the data by code; the AI p
 - Five-minute path: `docs/DEMO.md`, section P.
 
 ## What it does
+- **Home, led by the AI:** one sentence on where your money stands (written by the AI, every number checked), three
+  questions about your own money picked for you this week and answered right there, and "why?" on anything on the
+  graph. No chat box needed; the cards below are ordered for you.
 - **The line:** your balance since payday and the forecast to the next one, with bills as steps, AI notes on the
   line, and a zoom out to 3 months, 12 months and 2 years.
 - **Ask:** a coach in English, Finnish and Swedish that answers from your own data with charts ("taxis last month",
@@ -36,7 +39,7 @@ not only where it went. Every number is computed from the data by code; the AI p
   switched off. See `docs/VERDA.md`.
 - **Live web data** with sources (`app/live.py`, Context.dev): prices confirmed on shop pages, official rules
   (loan cap, transfer tax, Euribor, HSL fares). See `docs/CONTEXT_DEV.md`.
-- Offline tests: `pytest tests` (about 70).
+- Offline tests: `pytest tests` (about 110).
 
 ## Privacy
 The model sees computed totals and the question; never names, customer ids or account numbers. Live web lookups send
