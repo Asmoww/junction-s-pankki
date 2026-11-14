@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import charts, homeplan, insights, live, money, readiness, verify
+from . import charts, homeplan, insights, live, money, readiness, saving, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -124,6 +124,12 @@ TOOLS = [
                     "days below zero, buffer before payday, long-term saving) with tier, trend and at most two next steps. "
                     "Use for 'how am I doing overall'. Never compare the person with others.",
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "get_safe_to_save",
+     "description": "Safe to save: how much the customer could move to savings on payday without running short before "
+                    "the next salary, from their own last 12 pay months (safe in at least 3 of 4 months; stretch in "
+                    "about half), after a buffer for surprise must-pays. Also says if they already move money to savings. "
+                    "Use for 'how much can I save', 'how much should I put aside', 'safe to save'.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
                     "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
@@ -176,6 +182,7 @@ _FUNCS["forecast_with_events"] = charts.forecast_with_events
 _FUNCS["check_purchase"] = lambda cid, item: live.check_purchase(item)
 _FUNCS["plan_home"] = homeplan.plan_home
 _FUNCS["home_readiness"] = readiness.home_readiness
+_FUNCS["get_safe_to_save"] = saving.get_safe_to_save
 
 
 LANGS = {"en": "English. Format amounts like 1,234.50 €.",

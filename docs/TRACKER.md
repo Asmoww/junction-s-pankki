@@ -49,6 +49,14 @@
 | D5 | ASSUMPTIONS.md "last month" = August | **ON BRANCH** | — |
 | D6 | Safe-to-spend backtest against `money.get_safe_to_spend` with a movable today (replica said savings dip 40.7 %) | **ON BRANCH**: `scripts/analysis/backtest_app_safe_to_spend.py` runs the app's own function with a movable today (view cut at T). **Needs a run on the server** | docs/REVIEW-RESPONSE.md §2 |
 
+## F. New from the brief check (docs/BRIEF-FIT.md)
+| # | Item | Status | Where |
+|---|---|---|---|
+| F1 | **Safe to save** (brief names it; app had none): `app/saving.py`, tool `get_safe_to_save`, `/api/safe-to-save/{cid}` | **ON BRANCH** (UI line OPEN) | docs/BRIEF-FIT.md §3 |
+| F2 | Home decision line "spend up to X, save Z on payday" + real steps in "How I worked this out" | **OPEN** | §5.2 |
+| F3 | One learning check after a what-if / why answer | **OPEN** | §5.4 |
+| F4 | S-mobiili integration story (identity, consent, data boundary, AI notice, fallback) | **OPEN** (Rasmus: slide) | §2, §5.5 |
+
 ## E. Research and pitch (reference, no code)
 docs/RESEARCH-CHAT-WITH-YOUR-DATA.md (what the booth's "chat with your own data" should mean: control, correction,
 provenance) · docs/RESEARCH-NEXT.md (ASP 2026 rules, Nordea already has budgets + health check, OmaSP deal) ·

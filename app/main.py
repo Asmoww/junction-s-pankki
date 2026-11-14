@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money, readiness, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, readiness, saving, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -244,6 +244,12 @@ def live_home(cid: str, price: float, property_type: str = "apartment"):
         return homeplan.plan_home(_cid(cid), price, property_type)
     except money.ToolError as e:
         raise HTTPException(400, str(e))
+
+
+@app.get("/api/safe-to-save/{cid}")
+def safe_to_save(cid: str):
+    """Brief: 'safe-to-spend and safe-to-save guidance'. How much could go to savings on payday."""
+    return saving.get_safe_to_save(_cid(cid))
 
 
 @app.get("/api/readiness/{cid}")
