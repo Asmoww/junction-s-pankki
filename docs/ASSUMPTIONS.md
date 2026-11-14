@@ -57,7 +57,7 @@ full files (sha256 of the transactions CSV `49b3265d…6f1e63`).
   timestamp, then by the order that makes the balance chain consistent. The latest balance = `balance_after_eur`
   of the last row in that order.
 - **Data ends 2026-09-30.** "Today" in the demo is 2026-09-30 (or a chosen date inside the data), not the real
-  date. "Last month" = September 2026. Every answer states the period it used.
+  date. "Last month" = August 2026 (demo today is 2026-09-30; see DECISIONS.md). Every answer states the period it used.
 
 ## Special customers
 - `CUST05001`–`CUST05100` (100 customers, average age 55 vs 43) hold 124 of the 136 extreme one-offs and many odd
