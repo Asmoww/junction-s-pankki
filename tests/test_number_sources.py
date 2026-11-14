@@ -179,3 +179,20 @@ def test_a_stray_fence_does_not_swallow_the_answer():
     from app.coach import strip_data_dumps
     assert strip_data_dumps("Use ``` carefully, then more text.") == "Use ``` carefully, then more text."
     assert strip_data_dumps("Answer.\n```json\n{\"cut\": 1") == "Answer."
+
+
+def test_users_numbers_keep_their_unit():
+    # Live bug, 14 Nov: "...a millionaire in 20 years?" made the coach's "20 %" show as "Your number".
+    users = ["How much would I need to invest every month assuming 7% return to be a millionaire in 20 years?", "yes",
+             "Show me the extras"]
+    st = lambda a: [(n["text"], n["status"]) for n in verify.check(a, [], users, "en", explain=True, notes=[])]
+    assert st("Would you like to see what cutting these extras by, say, 20 % saves?") == [("20 %", "suggestion")]
+    assert st("Cutting extras by **20 %** saves money.") == [("20 %", "unverified")]
+    assert st("That is **20 €** a day.") == [("20 €", "unverified")]
+    assert st("At **7 %** a year you reach **1,000,000 €**.") == [("7 %", "yours"), ("1,000,000 €", "yours")]
+
+
+def test_user_number_kinds():
+    got = [(v, k.kind) for v, k in verify._user_numbers(
+        "Save 500 € or $4000 or 4000 a month for 20 years, 6 kuukautta, 3 år, 15%, 20-vuotiaana")]
+    assert got == [(500, "eur"), (4000, "eur"), (4000, "other"), (20, "time"), (6, "time"), (3, "time"), (15, "pct"), (20, "time")]
