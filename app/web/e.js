@@ -11,7 +11,7 @@ const ES = {
         long_term: (g) => `Put ${g} a month into long-term saving` },
       points: (p) => `+${p} points`, next: "What would lift it", unknown: (n) => `${n} measured; debt, credit, insurance and planning aren't in your account data`,
       method: "Based on the Spend and Save pillars of the Financial Health Network framework. Never compared with other people.", askQ: (s) => `Help me with this step: ${s}.` },
-    shortBy: (d) => `short by payday ${d}`, buy: "Check a purchase", buyPh: "e.g. iPhone 17 256 GB", checking: "Checking shop pages…",
+    aiNotes: "AI notes", shortBy: (d) => `short by payday ${d}`, buy: "Check a purchase", buyPh: "e.g. iPhone 17 256 GB", checking: "Checking shop pages…",
     checked: (m) => `price read from the shop page${m != null ? `, ${m} min old` : ""}`, claimDiff: (c) => `Search said ${c}; the page says otherwise`,
     notConf: (n) => `${n} shop${n === 1 ? "" : "s"} couldn't be confirmed`, noneConf: "No price could be confirmed, so it stays unknown.",
     own: "Use my own estimate", ownPh: "your estimate, €", ownLabel: "your estimate", notConnected: "Live prices aren't connected yet.",
@@ -37,7 +37,7 @@ const ES = {
         long_term: (g) => `Laita ${g} kuussa pitkäaikaiseen säästöön` },
       points: (p) => `+${p} pistettä`, next: "Mikä nostaisi sitä", unknown: (n) => `${n} mitattu; velka, luotto, vakuutukset ja suunnitelmat eivät näy tilitiedoista`,
       method: "Perustuu Financial Health Networkin Spend- ja Save-pilareihin. Sinua ei verrata muihin.", askQ: (s) => `Auta minua tässä: ${s}.` },
-    shortBy: (d) => `vajetta palkkapäivään ${d}`, buy: "Tarkista ostos", buyPh: "esim. iPhone 17 256 Gt", checking: "Tarkistan kauppojen sivuja…",
+    aiNotes: "Tekoälyn huomiot", shortBy: (d) => `vajetta palkkapäivään ${d}`, buy: "Tarkista ostos", buyPh: "esim. iPhone 17 256 Gt", checking: "Tarkistan kauppojen sivuja…",
     checked: (m) => `hinta luettu kaupan sivulta${m != null ? `, ${m} min vanha` : ""}`, claimDiff: (c) => `Haku sanoi ${c}; sivu sanoo toisin`,
     notConf: (n) => `${n} kauppaa ei voitu vahvistaa`, noneConf: "Hintaa ei voitu vahvistaa, joten se on tuntematon.",
     own: "Käytä omaa arviotani", ownPh: "oma arvio, €", ownLabel: "oma arvio", notConnected: "Live-hinnat eivät ole vielä käytössä.",
@@ -63,7 +63,7 @@ const ES = {
         long_term: (g) => `Sätt ${g} i månaden i långsiktigt sparande` },
       points: (p) => `+${p} poäng`, next: "Vad skulle lyfta det", unknown: (n) => `${n} mätta; skulder, kredit, försäkringar och planering syns inte i kontodata`,
       method: "Baserat på Spend- och Save-pelarna i Financial Health Networks ramverk. Jämförs aldrig med andra.", askQ: (s) => `Hjälp mig med detta: ${s}.` },
-    shortBy: (d) => `saknas till lönedagen ${d}`, buy: "Kolla ett köp", buyPh: "t.ex. iPhone 17 256 GB", checking: "Kollar butikernas sidor…",
+    aiNotes: "AI-anteckningar", shortBy: (d) => `saknas till lönedagen ${d}`, buy: "Kolla ett köp", buyPh: "t.ex. iPhone 17 256 GB", checking: "Kollar butikernas sidor…",
     checked: (m) => `pris läst från butikens sida${m != null ? `, ${m} min gammalt` : ""}`, claimDiff: (c) => `Sökningen sa ${c}; sidan säger annat`,
     notConf: (n) => `${n} butiker kunde inte bekräftas`, noneConf: "Inget pris kunde bekräftas, så det är okänt.",
     own: "Använd min egen uppskattning", ownPh: "din uppskattning, €", ownLabel: "egen uppskattning", notConnected: "Livepriser är inte anslutna än.",
@@ -99,7 +99,7 @@ function smooth(p) {
 }
 
 function graph() {
-  const r = home.ribbon, W = Math.min(window.innerWidth, 480), H = 380, px = 20, top = 96, bot = 44;
+  const r = home.ribbon, W = Math.min(window.innerWidth, 480), H = 396, px = 20, top = 112, bot = 44;
   const past = r.past, base = fut.base.path, noext = fut.no_extras.path, sc = scen && scen.scenario ? scen.scenario.path : null;
   const all = [...past, ...base, ...noext, ...(sc || [])].map((p) => p.balance_eur);
   let lo = Math.min(...all), hi = Math.max(...all);
@@ -147,7 +147,7 @@ function graph() {
     <circle class="cursor" cx="${todayPt[0]}" cy="${todayPt[1]}" r="7"/></svg>`;
   const bandMid = pBase[Math.floor(pBase.length * 0.6)], noMid = pNo[Math.floor(pNo.length * 0.6)];
   const bandLab = Math.abs(bandMid[1] - noMid[1]) > 22 ? `<div class="bandlab" style="left:${bandMid[0]}px;top:${(bandMid[1] + noMid[1]) / 2}px">${E().extras}</div>` : "";
-  const credit = nl.length ? `<div class="credit">${SPARK}AI</div>` : "";
+  const credit = nl.length ? `<div class="credit">${SPARK}${E().aiNotes}</div>` : "";
   return { html: `<div class="g" id="g">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nl.join("")}${bandLab}${credit}<div class="tip" hidden></div></div>`, X, Y, W, n, iT, px, past, base, sc };
 }
 
@@ -169,7 +169,7 @@ function layoutNotes() {
     });
     if (!best) best = { c: want, li: 1 };
     lanes[best.li].push([best.c, best.c + w]);
-    const top = 6 + best.li * 46;
+    const top = 26 + best.li * 44;
     el.style.left = `${best.c}px`; el.style.top = `${top}px`;
     const ax = Math.max(best.c + 14, Math.min(best.c + w - 14, x));
     lines += `<path d="M${ax},${top + el.offsetHeight} L${x},${y - 6}" />`;
@@ -421,7 +421,7 @@ window.renderHomeE = async function () {
   if (!fut || fut.cid !== cid) { fut = await api(`/api/future/${cid}`); fut.cid = cid; active = null; scen = null; picked = null; buyRes = null; }
   if (!liveSt) { try { liveSt = await api("/api/live/status"); } catch { liveSt = null; } }
   notes = null;
-  $("#view-home").innerHTML = `<section id="hero"></section>` + strip() + `<p class="ainote">${SPARK}${E().aiNote}</p>`;
+  $("#view-home").innerHTML = `<section id="hero"></section>` + strip();
   redraw();
   bindAsks($("#view-home"));
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));

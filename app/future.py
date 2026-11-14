@@ -152,7 +152,7 @@ NOTES_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["notes"],
     "properties": {"notes": {"type": "array", "items": {
         "type": "object", "additionalProperties": False, "required": ["date", "text"],
-        "properties": {"date": {"type": "string"}, "text": {"type": "string", "description": "Max 30 characters."}}}}},
+        "properties": {"date": {"type": "string"}, "text": {"type": "string", "description": "2-4 words, max 22 characters."}}}}},
 }
 
 
@@ -181,9 +181,9 @@ def _fallback_notes(f: dict) -> list[dict]:
     notes = []
     if f["biggest_spending_days"]:
         b = f["biggest_spending_days"][0]
-        notes.append({"date": b["date"], "text": f"Biggest day: {round(b['total_eur'])} €"})
+        notes.append({"date": b["date"], "text": f"Biggest day {round(b['total_eur'])} €"})
     if f["goes_below_zero_on"]:
-        notes.append({"date": f["goes_below_zero_on"], "text": "Below zero from here"})
+        notes.append({"date": f["goes_below_zero_on"], "text": "Below zero here"})
     return notes
 
 
@@ -195,11 +195,12 @@ def annotations(cid: str, lang: str = "en") -> dict:
         return cache[key]
     f = line_facts(cid, lang)
     lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
-    system = (f"You annotate a customer's balance line in a banking app with 2-3 short notes in {lname}, each pinned to a "
-              "date in the facts. Point at what explains the shape: big spending days, the payday-week effect, a bill "
-              f"that pushes the balance below zero, no-spend streaks. Max 30 characters each, plain words, no blame. "
-              f"Round amounts to whole euros and write them like 205 €. Call bills by their 'name'. Don't repeat a bill's "
-              f"name and amount on its own: the graph already labels bills; say what it does instead. {FACTS_HELP}")
+    system = (f"You annotate a customer's balance line in a banking app with 2-3 tiny labels in {lname}, each pinned to a "
+              "date in the facts. Each label is 2-4 words and at most 22 characters, like a chart annotation: "
+              "'Biggest day 205 €', 'Payday splurge', '6 no-spend days', 'Below zero here'. No full sentences, no verbs "
+              "like 'pushes' or 'took'. Point at what explains the shape: big spending days, the payday-week effect, the "
+              "day it goes below zero, no-spend streaks. Don't name bills: the graph already labels them. "
+              f"Round amounts to whole euros, written like 205 €. {FACTS_HELP}")
     try:
         notes = _json_call(system, json.dumps(f, default=str), NOTES_SCHEMA)["notes"]
         trace = [{"tool": "facts", "error": False, "result": f}]
@@ -208,7 +209,7 @@ def annotations(cid: str, lang: str = "en") -> dict:
                       {b["date"] for b in f["bills_ahead"]} | ({f["goes_below_zero_on"]} if f["goes_below_zero_on"] else set())
         for n in notes[:3]:
             nums = verify.check(n["text"], trace, [], lang)
-            if n["date"] in valid_dates and all(x["status"] != "unverified" for x in nums):
+            if len(n["text"]) <= 24 and n["date"] in valid_dates and all(x["status"] != "unverified" for x in nums):
                 ok.append(n)
         source = "ai"
     except Exception as e:  # API down or refused: deterministic notes, clearly marked
