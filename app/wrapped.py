@@ -94,8 +94,8 @@ def facts(cid: str) -> dict:
     for i in range(total_days):
         run = 0 if (start + timedelta(days=i)) in spend_days else run + 1
         streak = max(streak, run)
-    neg_days = _q("SELECT count(DISTINCT tx_date) n FROM tx WHERE customer_id = ? AND tx_date BETWEEN ? AND ? AND balance < 0",
-                  [cid, start, end])[0]["n"]
+    # Calendar days that ended below zero, the same count as the Home trend view (not only days with a transaction)
+    neg_days = insights.balance_history(cid, 12)["days_below_zero"]
     pp = insights.payday_pattern(cid, months=12)
     health = insights.money_health(cid)
     from .personas import PERSONAS

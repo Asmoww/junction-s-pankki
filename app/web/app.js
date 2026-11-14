@@ -262,8 +262,8 @@ function renderLearn() {
     : k === "transactions_while_overdrawn" ? v : `${Math.round(v * 100)} %`);
   const sig = Object.entries(t.signals).map(([k, v]) => `<li><span>${esc(T().signals[k] || k)}</span><span class="amt">${fmtSig(k, v)}</span></li>`).join("");
   $("#view-learn").innerHTML = `
-    ${window.learnCard ? window.learnCard() : ""}
     ${window.openSort ? sortCard().replace("mini sortcard", "card sortcard learn") : ""}
+    ${window.learnCard ? window.learnCard() : ""}
     <section class="card typecard"><div class="label">${T().typeTitle}</div><div class="type">${esc(tname)}</div><p class="lead">${esc(tsum)}</p>
       <details class="how"><summary>${T().typeSignals}</summary><ul class="steps">${sig}</ul></details></section>
     <section class="card" id="trust"><div class="label">${T().trustTitle}</div><div class="skeleton"></div></section>`;

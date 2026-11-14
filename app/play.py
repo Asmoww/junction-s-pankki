@@ -20,7 +20,7 @@ import threading
 from datetime import timedelta
 from pathlib import Path
 
-from . import eu, future, live, money, style, verify
+from . import eu, future, insights, live, money, style, verify
 from .money import TODAY, _q, _r
 
 log = logging.getLogger("play")
@@ -92,7 +92,15 @@ def deal(cid: str) -> dict:
                 "hours_of_work": round(hsl["value"] / hour, 1) if hour else None}
     return {"days": days, "today": TODAY.isoformat(), "next_payday": payday.isoformat(), "balance_eur": comp["balance"],
             "no_extras_path": noext["path"], "keep_all_end_eur": base["end_eur"], "skip_all_end_eur": noext["end_eur"],
-            "cards": cards, "swap": swap}
+            "cards": cards, "swap": swap, "monthly_gap_eur": _monthly_gap(cid)}
+
+
+def _monthly_gap(cid: str) -> float | None:
+    """The structural gap: how much a typical month runs short (12-month average of income minus spending). The game
+    can get someone to payday by timing; this says honestly whether the months themselves add up."""
+    f = insights.money_health(cid)["facts"]
+    gap = (f.get("spend_month") or 0) - (f.get("income_month") or 0)
+    return _r(gap) if gap > 0 else None
 
 
 def outcome(cid: str, kept: list[str], move_rent: bool, d: dict | None = None, swap: bool = False) -> dict:
@@ -123,6 +131,7 @@ def outcome(cid: str, kept: list[str], move_rent: bool, d: dict | None = None, s
             "extras_skipped_eur": _r(sum(c["amount_eur"] for c in skipped)),
             "skipped": [{"what": c["label"], "date": c["date"], "eur": c["amount_eur"]} for c in skipped],
             "rent_moved_after_payday": move_rent, "keep_all_end_eur": d["keep_all_end_eur"], "next_payday": d["next_payday"],
+            "months_still_short_by_eur": d.get("monthly_gap_eur"),
             "swapped_to_ticket": ({"ticket_eur": sw["price_eur"], "replaced_parking_and_taxis_eur": sw["replaced_eur"],
                                    "source": urlparse(sw["source_url"]).netloc.removeprefix("www.")} if sw else None),
             "scenario": sc}
@@ -182,7 +191,7 @@ def finish(cid: str, kept: list[str], move_rent: bool, lang: str = "en", swap: b
     o = outcome(cid, kept, move_rent, swap=swap)
     lname = {"fi": "Finnish", "sv": "Swedish"}.get(lang, "English")
     system = (f"In {lname}, write ONE short sentence (max 140 characters) summing up a customer's plan until payday: what "
-              "they skipped, swapped or moved and where they land. If they land below zero, be kind and name the one lever that "
+              "they skipped, swapped or moved and where they land. If rent was moved, say it needs the landlord's OK. If they land below zero, be kind and name the one lever that "
               "would help most. At most two numbers, from the facts, rounded to whole euros like 87 €. Never judge." + style.guide(lang))
     facts = {k: v for k, v in o.items() if k != "scenario"}
     trace = [{"tool": "plan", "error": False, "result": facts}]

@@ -7,9 +7,9 @@ const ES = {
       tryTip: (v) => `Try the coach's plan (${v})`, start: (n) => `Play it myself · ${n} cards`, groceries: "Groceries and commuting", surprises: "Surprise buffer",
       rent: "Rent", bills: "Bills", rest: "Everything else, small buys", wholePeriod: "Until payday", hours: (h) => `= ${h} h of your work`,
       ruleExtra: "An everyday extra: your choice. Swipe or tap.", ruleBuffer: "The dentist, a broken phone: surprises come anyway, so this stays.",
-      ruleFixed: "A fixed must-pay: it can't be skipped.", ruleRent: "You can't skip rent, but you can ask to pay it after payday.",
-      skip: "Skip", keep: "Keep", move: "Pay after payday", payOnTime: "Pay on time", ok: "OK", win: "You made it to payday", lose: "Still short on payday",
-      skipped: "Extras skipped", rentMoved: "Rent moved", yes: "Yes", no: "No", showGraph: "Show on my graph", again: "Play again", altLine: (p, src) => `An HSL 30-day ticket costs ${p} today (${src})`, swapBtn: (p) => `Swap parking and taxis for an HSL ticket, ${p}`, swapNote: (d, src) => `30 days, until ${d} · price read live from ${src}`, swappedT: "Swapped to a ticket", planLabel: "Your two-week plan" },
+      ruleFixed: "A fixed must-pay: it can't be skipped.", ruleRent: "You can't skip rent. Ask your landlord first whether paying it after payday is OK; it is still due.",
+      skip: "Skip", keep: "Keep", move: "Ask to pay after payday", payOnTime: "Pay on time", ok: "OK", win: "You made it to payday", lose: "Still short on payday",
+      skipped: "Extras skipped", rentMoved: "Rent moved", yes: "Yes", no: "No", showGraph: "Show on my graph", again: "Play again", altLine: (p, src) => `An HSL 30-day ticket costs ${p} today (${src})`, gapLine: (a) => `This gets you to payday. Your months still run about ${a} short on average, so the gap comes back next month unless spending or income changes.`, gapAsk: "How do I close the monthly gap", gapQ: "My months run short on average. How could I close the gap for good?", swapBtn: (p) => `Swap parking and taxis for an HSL ticket, ${p}`, swapNote: (d, src) => `30 days, until ${d} · price read live from ${src}`, swappedT: "Swapped to a ticket", planLabel: "Your two-week plan" },
     so: { card: "Your three baskets", cardB: "Where does your money really go?", go: "Sort yours with the AI", loading: "Finding the spending only you can sort…",
       none: "Nothing unclear to sort right now.", title: "Sort your money", intro: "Everything you spend lands in one of three baskets. We sorted most of it; a few things only you can sort.",
       start: (n) => `Start · ${n} questions`, habit: (n, t) => `${n} times · ${t} in 12 months`, now: (b) => `Counted now as: ${b}`, next: "Next",
@@ -45,7 +45,7 @@ const ES = {
     setupMon: "Set up monitors", ruleChanged: "A rule changed", sourceOnly: "Only the item name or rule is sent, never your data.",
     rng: { pay: "Pay month", m3: "3 months", m12: "12 months", m24: "2 years", label: "Show balance for" }, hChange: "Change", hLow: "Lowest", hBelow: (n) => `${n} days below zero`, hNet: "In minus out, per month", hNote: "Real balances only; the forecast is in the pay-month view.", capShort: "Loan cap", euriborShort: "Euribor 12 m", homeCard: "Buying a home?", homeSub: "Today's rules and sources",
     since: (a) => `${a} since payday`, today: "Today", pay: "Payday", forecast: "forecast", extras: "your extras",
-    payResult: (d) => `On payday, ${d}`, whatIf: "What if…", whatIfPh: "e.g. concert tickets 150 € on Friday",
+    payResultPlan: (d) => `On payday, ${d}, with this change`, payResult: (d) => `On payday, ${d}, at your usual pace`, whatIf: "What if…", whatIfPh: "e.g. concert tickets 150 € on Friday",
     pause: "Pause extras", eatLess: "Eat out −50 %", rentLater: "Rent after payday", ask: (d) => `Ask about ${d}`,
     askQ: (d) => `What did I spend on ${d}, and was it a lot for me?`, thinking: "Reading your words…",
     aiNote: "Notes written by AI from your numbers", noAmount: "Tell me an amount, e.g. 150 €.", failed: "Couldn't do that one. Try again.",
@@ -61,21 +61,21 @@ const ES = {
       already: (a) => `You already move about ${a} a month to savings or investments.`, saveSetup: (a, d) => `Move ${a} to savings on payday (${d})`,
       saveDone: (a) => `In S-mobiili this sets up a ${a} transfer to savings on every payday.`, askGap: "How do I close the monthly gap?", askGapQ: "How could I close my monthly gap so I can start saving?",
       drainSub: (y) => `${y} a year`, drainCap: (n) => (n === 1 ? "1 habit that recurs like a subscription" : `${n} habits that recur like subscriptions`), drainsTitle: "What leaves your account every month",
-      drainsLead: (m, y, h) => `Habits that recur almost every month take ${m} a month: ${y} a year, about ${h} hours of your work each month. Nobody signed up for them.`,
+      drainsLead: (m, y, h) => `Habits that recur in at least half of the months take ${m} a month: ${y} a year, about ${h} hours of your work each month. Nobody signed up for them.`,
       habitsT: "Habits that work like a subscription", subsT: "Subscriptions", billsT: "Bills (must-pays)",
       habitMeta: (m, t, h) => `${m}/12 months · ${t}× a month${h ? ` · ${h} h of work` : ""}`, subMeta: (m) => `steady charge, ${m}/12 months`,
       billMeta: (n) => `${n} payments in 12 months`, noSubs: "No steady subscription charges in this data. With real data: streaming, gym, apps.",
       halfQ: (n) => `How much would I save in a year if I halved ${n}?`, drainsNote: "Tap a habit to ask the coach what halving it would save.",
-      fam: { eating_out: "Eating out", kiosks: "Kiosks", taxis_parking: "Taxis and parking" },  missing: (a, d) => `${a} missing until ${d}`, perDayTo: (a, d) => `${a}/day until ${d}`, have: "Available", must: "Must-pays", mo: "mo", potSub: "on average, e.g. repairs", last12: "last 12 months", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
+      fam: { eating_out: "Eating out", kiosks: "Kiosks", taxis_parking: "Taxis and parking" },  missing: (a, d) => `${a} missing until ${d}, even with no extras`, perDayTo: (a, d) => `${a}/day until ${d}`, have: "Available", must: "Must-pays", mo: "mo", potSub: "on average, e.g. repairs", last12: "last 12 months", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
   fi: { euOn: "Tekoäly Suomessa", euOff: "Tekoäly: Claude", euToast: (l) => `Tekoäly toimii nyt mallilla ${l}, avoin malli Suomessa. Luvut tulevat yhä koodista.`, claudeToast: "Tekoäly toimii nyt Claudella.", pl: { card: "Pelaa kaksi seuraavaa viikkoa", cardB: "Pääsetkö palkkapäivään plussalla?", go: "Pelaa", title: "Kaksi seuraavaa viikkoasi",
       onPayday: (d) => `Palkkapäivänä ${d}`, usual: (v) => `Tavallisella tahdilla: ${v}`, goal: "Pääse palkkapäivään plussalla", rules: "Todennäköiset päiväsi kortti kerrallaan. Kolme koria ovat säännöt:",
       r1: "Kiinteitä pakollisia ei voi ohittaa. Vuokran voi siirtää.", r2: "Yllätyspuskuri pysyy: yllätyksiä tulee joka tapauksessa.", r3: "Arjen extrat ovat sinun valintasi: pidä tai ohita.",
       tryTip: (v) => `Kokeile valmentajan suunnitelmaa (${v})`, start: (n) => `Pelaan itse · ${n} korttia`, groceries: "Ruoka ja työmatkat", surprises: "Yllätyspuskuri",
       rent: "Vuokra", bills: "Laskut", rest: "Kaikki muu, pienet ostot", wholePeriod: "Palkkapäivään asti", hours: (h) => `= ${h} h työtäsi`,
       ruleExtra: "Arjen extra: sinun valintasi. Pyyhkäise tai napauta.", ruleBuffer: "Hammaslääkäri, rikkinäinen puhelin: yllätyksiä tulee joka tapauksessa, joten tämä pysyy.",
-      ruleFixed: "Kiinteä pakollinen: sitä ei voi ohittaa.", ruleRent: "Vuokraa ei voi ohittaa, mutta sen maksua voi pyytää siirtämään palkkapäivän jälkeen.",
-      skip: "Ohita", keep: "Pidä", move: "Maksa palkan jälkeen", payOnTime: "Maksa ajallaan", ok: "OK", win: "Pääsit palkkapäivään", lose: "Palkkapäivänä yhä miinuksella",
-      skipped: "Ohitetut extrat", rentMoved: "Vuokra siirretty", yes: "Kyllä", no: "Ei", showGraph: "Näytä kuvaajassa", again: "Pelaa uudelleen", altLine: (p, src) => `HSL:n 30 päivän lippu maksaa tänään ${p} (${src})`, swapBtn: (p) => `Vaihda pysäköinti ja taksit HSL-lippuun, ${p}`, swapNote: (d, src) => `30 päivää, ${d} asti · hinta luettu suoraan: ${src}`, swappedT: "Vaihdettu lippuun", planLabel: "Kahden viikon suunnitelmasi" },
+      ruleFixed: "Kiinteä pakollinen: sitä ei voi ohittaa.", ruleRent: "Vuokraa ei voi ohittaa. Kysy ensin vuokranantajalta, sopiiko maksu palkkapäivän jälkeen; vuokra on silti maksettava.",
+      skip: "Ohita", keep: "Pidä", move: "Pyydä maksuaikaa palkkaan", payOnTime: "Maksa ajallaan", ok: "OK", win: "Pääsit palkkapäivään", lose: "Palkkapäivänä yhä miinuksella",
+      skipped: "Ohitetut extrat", rentMoved: "Vuokra siirretty", yes: "Kyllä", no: "Ei", showGraph: "Näytä kuvaajassa", again: "Pelaa uudelleen", altLine: (p, src) => `HSL:n 30 päivän lippu maksaa tänään ${p} (${src})`, gapLine: (a) => `Tällä pääset palkkapäivään. Kuukautesi jäävät silti keskimäärin noin ${a} vajaiksi, joten vaje palaa ensi kuussa, ellei kulutus tai tulot muutu.`, gapAsk: "Miten saan kuukausivajeen kiinni", gapQ: "Kuukauteni jäävät keskimäärin vajaiksi. Miten saisin vajeen kiinni pysyvästi?", swapBtn: (p) => `Vaihda pysäköinti ja taksit HSL-lippuun, ${p}`, swapNote: (d, src) => `30 päivää, ${d} asti · hinta luettu suoraan: ${src}`, swappedT: "Vaihdettu lippuun", planLabel: "Kahden viikon suunnitelmasi" },
     so: { card: "Kolme koriasi", cardB: "Mihin rahasi oikeasti menevät?", go: "Lajittele omasi tekoälyn kanssa", loading: "Etsitään menoja, jotka vain sinä voit lajitella…",
       none: "Ei nyt mitään epäselvää lajiteltavaa.", title: "Lajittele rahasi", intro: "Jokainen menosi päätyy yhteen kolmesta korista. Lajittelimme suurimman osan; muutaman asian voit lajitella vain sinä.",
       start: (n) => `Aloita · ${n} kysymystä`, habit: (n, t) => `${n} kertaa · ${t} 12 kuukaudessa`, now: (b) => `Nyt laskettu: ${b}`, next: "Seuraava",
@@ -111,7 +111,7 @@ const ES = {
     setupMon: "Ota seuranta käyttöön", ruleChanged: "Sääntö muuttui", sourceOnly: "Vain tuotteen nimi tai sääntö lähtee, ei koskaan tietojasi.",
     rng: { pay: "Palkkakuukausi", m3: "3 kk", m12: "12 kk", m24: "2 vuotta", label: "Näytä saldo ajalta" }, hChange: "Muutos", hLow: "Alin", hBelow: (n) => `${n} päivää miinuksella`, hNet: "Tulot miinus menot kuukausittain", hNote: "Vain toteutuneet saldot; ennuste on palkkakuukauden näkymässä.", capShort: "Lainakatto", euriborShort: "Euribor 12 kk", homeCard: "Asunnon osto?", homeSub: "Säännöt nyt ja lähteet",
     since: (a) => `${a} palkkapäivästä`, today: "Tänään", pay: "Palkka", forecast: "ennuste", extras: "extrasi",
-    payResult: (d) => `Palkkapäivänä ${d}`, whatIf: "Entä jos…", whatIfPh: "esim. konserttiliput 150 € perjantaina",
+    payResultPlan: (d) => `Palkkapäivänä ${d} tällä muutoksella`, payResult: (d) => `Palkkapäivänä ${d} tavallisella tahdilla`, whatIf: "Entä jos…", whatIfPh: "esim. konserttiliput 150 € perjantaina",
     pause: "Tauko extroille", eatLess: "Ulkona syöminen −50 %", rentLater: "Vuokra palkan jälkeen", ask: (d) => `Kysy päivästä ${d}`,
     askQ: (d) => `Mihin käytin rahaa ${d}, ja oliko se minulle paljon?`, thinking: "Luen pyyntöäsi…",
     aiNote: "Tekoälyn muistiinpanot lukujesi pohjalta", noAmount: "Kerro summa, esim. 150 €.", failed: "Tämä ei onnistunut. Yritä uudelleen.",
@@ -127,21 +127,21 @@ const ES = {
       already: (a) => `Siirrät jo noin ${a} kuussa säästöön tai sijoituksiin.`, saveSetup: (a, d) => `Siirrä ${a} säästöön palkkapäivänä (${d})`,
       saveDone: (a) => `S-mobiilissa tämä asettaa ${a} siirron säästöön joka palkkapäivä.`, askGap: "Miten saan kuukausivajeen kiinni?", askGapQ: "Miten voisin kuroa kuukausivajeen umpeen, jotta voin alkaa säästää?",
       drainSub: (y) => `${y} vuodessa`, drainCap: (n) => (n === 1 ? "1 tapa, joka toistuu kuin tilaus" : `${n} tapaa, jotka toistuvat kuin tilaukset`), drainsTitle: "Mikä valuu tililtä joka kuukausi",
-      drainsLead: (m, y, h) => `Lähes joka kuukausi toistuvat tavat vievät ${m} kuussa: ${y} vuodessa, noin ${h} tuntia työtäsi kuukaudessa. Kukaan ei tilannut niitä.`,
+      drainsLead: (m, y, h) => `Ainakin joka toinen kuukausi toistuvat tavat vievät ${m} kuussa: ${y} vuodessa, noin ${h} tuntia työtäsi kuukaudessa. Kukaan ei tilannut niitä.`,
       habitsT: "Tavat, jotka toimivat kuin tilaus", subsT: "Tilaukset", billsT: "Laskut (pakolliset)",
       habitMeta: (m, t, h) => `${m}/12 kk · ${t}× kuussa${h ? ` · ${h} h työtä` : ""}`, subMeta: (m) => `tasainen veloitus, ${m}/12 kk`,
       billMeta: (n) => `${n} maksua 12 kuukaudessa`, noSubs: "Tässä datassa ei ole tasaisia tilausmaksuja. Oikeassa datassa: suoratoisto, kuntosali, sovellukset.",
       halfQ: (n) => `Paljonko säästäisin vuodessa, jos puolittaisin tämän: ${n}?`, drainsNote: "Napauta tapaa, niin valmentaja laskee, paljonko puolittaminen säästäisi.",
-      fam: { eating_out: "Ulkona syöminen", kiosks: "Kioskit", taxis_parking: "Taksit ja pysäköinti" },  missing: (a, d) => `${d} asti puuttuu ${a}`, perDayTo: (a, d) => `${a}/pv ${d} asti`, have: "Käytettävissä", must: "Pakolliset", mo: "kk", potSub: "keskimäärin, esim. korjaukset", last12: "viimeiset 12 kk", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
+      fam: { eating_out: "Ulkona syöminen", kiosks: "Kioskit", taxis_parking: "Taksit ja pysäköinti" },  missing: (a, d) => `${d} asti puuttuu ${a}, vaikka extrat jäisivät pois`, perDayTo: (a, d) => `${a}/pv ${d} asti`, have: "Käytettävissä", must: "Pakolliset", mo: "kk", potSub: "keskimäärin, esim. korjaukset", last12: "viimeiset 12 kk", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
   sv: { euOn: "AI i Finland", euOff: "AI: Claude", euToast: (l) => `AI körs nu på ${l}, en öppen modell i Finland. Siffrorna kommer fortfarande från koden.`, claudeToast: "AI körs nu på Claude.", pl: { card: "Spela dina två nästa veckor", cardB: "Klarar du lönedagen på plus?", go: "Spela", title: "Dina två nästa veckor",
       onPayday: (d) => `På lönedagen ${d}`, usual: (v) => `I din vanliga takt: ${v}`, goal: "Nå lönedagen på plus", rules: "Dina troliga dagar, ett kort i taget. De tre korgarna är reglerna:",
       r1: "Fasta måsten kan inte hoppas över. Hyran kan flyttas.", r2: "Bufferten för överraskningar stannar: de kommer ändå.", r3: "Vardagsextra är ditt val: behåll eller hoppa över.",
       tryTip: (v) => `Prova coachens plan (${v})`, start: (n) => `Spela själv · ${n} kort`, groceries: "Mat och pendling", surprises: "Buffert för överraskningar",
       rent: "Hyra", bills: "Räkningar", rest: "Allt annat, små köp", wholePeriod: "Till lönen", hours: (h) => `= ${h} h av ditt arbete`,
       ruleExtra: "Ett vardagsextra: ditt val. Svep eller tryck.", ruleBuffer: "Tandläkaren, en trasig telefon: överraskningar kommer ändå, så den stannar.",
-      ruleFixed: "Ett fast måste: kan inte hoppas över.", ruleRent: "Hyran kan inte hoppas över, men du kan be att få betala efter lönen.",
-      skip: "Hoppa över", keep: "Behåll", move: "Betala efter lönen", payOnTime: "Betala i tid", ok: "OK", win: "Du klarade lönedagen", lose: "Fortfarande minus på lönedagen",
-      skipped: "Överhoppade extra", rentMoved: "Hyran flyttad", yes: "Ja", no: "Nej", showGraph: "Visa i grafen", again: "Spela igen", altLine: (p, src) => `Ett HSL-kort för 30 dagar kostar ${p} i dag (${src})`, swapBtn: (p) => `Byt parkering och taxi mot ett HSL-kort, ${p}`, swapNote: (d, src) => `30 dagar, till ${d} · priset läst direkt från ${src}`, swappedT: "Bytt till ett kort", planLabel: "Din tvåveckorsplan" },
+      ruleFixed: "Ett fast måste: kan inte hoppas över.", ruleRent: "Hyran kan inte hoppas över. Fråga först hyresvärden om det går att betala efter lönen; hyran ska ändå betalas.",
+      skip: "Hoppa över", keep: "Behåll", move: "Be om att betala efter lönen", payOnTime: "Betala i tid", ok: "OK", win: "Du klarade lönedagen", lose: "Fortfarande minus på lönedagen",
+      skipped: "Överhoppade extra", rentMoved: "Hyran flyttad", yes: "Ja", no: "Nej", showGraph: "Visa i grafen", again: "Spela igen", altLine: (p, src) => `Ett HSL-kort för 30 dagar kostar ${p} i dag (${src})`, gapLine: (a) => `Det här tar dig till lönedagen. Dina månader går ändå i snitt cirka ${a} back, så underskottet kommer tillbaka nästa månad om inte utgifterna eller inkomsten ändras.`, gapAsk: "Hur täpper jag till månadsunderskottet", gapQ: "Mina månader går i snitt back. Hur kan jag täppa till underskottet för gott?", swapBtn: (p) => `Byt parkering och taxi mot ett HSL-kort, ${p}`, swapNote: (d, src) => `30 dagar, till ${d} · priset läst direkt från ${src}`, swappedT: "Bytt till ett kort", planLabel: "Din tvåveckorsplan" },
     so: { card: "Dina tre korgar", cardB: "Vart går dina pengar egentligen?", go: "Sortera dina med AI:n", loading: "Letar efter utgifter som bara du kan sortera…",
       none: "Inget oklart att sortera just nu.", title: "Sortera dina pengar", intro: "Allt du spenderar hamnar i en av tre korgar. Vi sorterade det mesta; några saker kan bara du sortera.",
       start: (n) => `Börja · ${n} frågor`, habit: (n, t) => `${n} gånger · ${t} på 12 månader`, now: (b) => `Räknas nu som: ${b}`, next: "Nästa",
@@ -177,7 +177,7 @@ const ES = {
     setupMon: "Sätt upp bevakning", ruleChanged: "En regel ändrades", sourceOnly: "Bara varans namn eller regeln skickas, aldrig dina data.",
     rng: { pay: "Lönemånad", m3: "3 mån", m12: "12 mån", m24: "2 år", label: "Visa saldo för" }, hChange: "Förändring", hLow: "Lägst", hBelow: (n) => `${n} dagar under noll`, hNet: "In minus ut per månad", hNote: "Endast verkliga saldon; prognosen finns i lönemånadsvyn.", capShort: "Lånetak", euriborShort: "Euribor 12 m", homeCard: "Köpa bostad?", homeSub: "Dagens regler och källor",
     since: (a) => `${a} sedan lönedagen`, today: "I dag", pay: "Lön", forecast: "prognos", extras: "dina extra",
-    payResult: (d) => `På lönedagen ${d}`, whatIf: "Tänk om…", whatIfPh: "t.ex. konsertbiljetter 150 € på fredag",
+    payResultPlan: (d) => `På lönedagen ${d} med den här ändringen`, payResult: (d) => `På lönedagen ${d} i din vanliga takt`, whatIf: "Tänk om…", whatIfPh: "t.ex. konsertbiljetter 150 € på fredag",
     pause: "Pausa extra", eatLess: "Äta ute −50 %", rentLater: "Hyran efter lön", ask: (d) => `Fråga om ${d}`,
     askQ: (d) => `Vad spenderade jag den ${d}, och var det mycket för mig?`, thinking: "Läser det du skrev…",
     aiNote: "Anteckningar skrivna av AI utifrån dina siffror", noAmount: "Ange ett belopp, t.ex. 150 €.", failed: "Det gick inte. Försök igen.",
@@ -193,12 +193,12 @@ const ES = {
       already: (a) => `Du flyttar redan cirka ${a} i månaden till sparande eller investeringar.`, saveSetup: (a, d) => `Flytta ${a} till sparande på lönedagen (${d})`,
       saveDone: (a) => `I S-mobiili ställer detta in en överföring på ${a} till sparande varje lönedag.`, askGap: "Hur täpper jag till månadsunderskottet?", askGapQ: "Hur kan jag täppa till mitt månadsunderskott så att jag kan börja spara?",
       drainSub: (y) => `${y} per år`, drainCap: (n) => (n === 1 ? "1 vana som återkommer som en prenumeration" : `${n} vanor som återkommer som prenumerationer`), drainsTitle: "Vad som lämnar kontot varje månad",
-      drainsLead: (m, y, h) => `Vanor som återkommer nästan varje månad tar ${m} i månaden: ${y} per år, cirka ${h} timmar av ditt arbete i månaden. Ingen tecknade dem.`,
+      drainsLead: (m, y, h) => `Vanor som återkommer minst varannan månad tar ${m} i månaden: ${y} per år, cirka ${h} timmar av ditt arbete i månaden. Ingen tecknade dem.`,
       habitsT: "Vanor som fungerar som en prenumeration", subsT: "Prenumerationer", billsT: "Räkningar (måsten)",
       habitMeta: (m, t, h) => `${m}/12 mån · ${t}× i månaden${h ? ` · ${h} h arbete` : ""}`, subMeta: (m) => `jämn debitering, ${m}/12 mån`,
       billMeta: (n) => `${n} betalningar på 12 månader`, noSubs: "Inga jämna prenumerationsavgifter i den här datan. Med riktig data: streaming, gym, appar.",
       halfQ: (n) => `Hur mycket sparar jag på ett år om jag halverar ${n}?`, drainsNote: "Tryck på en vana så räknar coachen ut vad en halvering sparar.",
-      fam: { eating_out: "Äta ute", kiosks: "Kiosker", taxis_parking: "Taxi och parkering" },  missing: (a, d) => `${a} saknas till ${d}`, perDayTo: (a, d) => `${a}/dag till ${d}`, have: "Tillgängligt", must: "Måsten", mo: "mån", potSub: "i snitt, t.ex. reparationer", last12: "senaste 12 mån", vsFin: (a) => `${a} i Finland`, moved: "flyttades" },
+      fam: { eating_out: "Äta ute", kiosks: "Kiosker", taxis_parking: "Taxi och parkering" },  missing: (a, d) => `${a} saknas till ${d}, även utan extra`, perDayTo: (a, d) => `${a}/dag till ${d}`, have: "Tillgängligt", must: "Måsten", mo: "mån", potSub: "i snitt, t.ex. reparationer", last12: "senaste 12 mån", vsFin: (a) => `${a} i Finland`, moved: "flyttades" },
 };
 const E = () => ES[lang] || ES.en;
 const SPARK = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
@@ -338,7 +338,7 @@ function layoutNotes() {
 function resultRow() {
   const b = fut.base.end_eur, s = scen && scen.scenario;
   const cls = (v) => (v < 0 ? "neg" : "pos");
-  return `<div class="result"><span>${E().payResult(day(fut.next_payday))}</span>
+  return `<div class="result"><span>${s ? E().payResultPlan(day(fut.next_payday)) : E().payResult(day(fut.next_payday))}</span>
     <span class="vals">${s ? `<s class="${cls(b)}">${eur0(b)}</s><b class="${cls(s.end_eur)}">${eur0(s.end_eur)}</b>
       <i class="${s.delta_at_payday_eur >= 0 ? "up" : "down"}">${s.delta_at_payday_eur >= 0 ? "+" : "−"}${eur0(Math.abs(s.delta_at_payday_eur))}</i>`
       : `<b class="${cls(b)}">${eur0(b)}</b>`}</span></div>`;
@@ -349,9 +349,9 @@ function dock() {
   if (picked !== null) chips.push(`<button class="chip ask" data-pick>${SPARK}${esc(E().ask(day(picked)))}</button>`);
   chips.push(`<button class="chip ai ${active === "ai" ? "on" : ""}" data-whatif>${SPARK}${active === "ai" && scen ? esc(scen.parsed.label) + ` <span class="x">×</span>` : E().whatIf}</button>`);
   chips.push(`<button class="chip buy ${active === "buy" ? "on" : ""}" data-buy>${CART}${active === "buy" && scen ? esc(scen.label) + ` <span class="x">×</span>` : E().buy}</button>`);
-  chips.push(`<button class="chip ${active === "pause" ? "on" : ""}" data-sc="pause">${E().pause}</button>`);
-  if ((fut.extras_by_category_until_payday || {}).Restaurants) chips.push(`<button class="chip ${active === "eat" ? "on" : ""}" data-sc="eat">${E().eatLess}</button>`);
-  if (fut.bills.some((b) => b.bill === "Housing" && b.date !== fut.next_payday)) chips.push(`<button class="chip ${active === "rent" ? "on" : ""}" data-sc="rent">${E().rentLater}</button>`);
+  chips.push(`<button class="chip ${active === "preset" && presets.has("pause") ? "on" : ""}" data-sc="pause">${E().pause}</button>`);
+  if ((fut.extras_by_category_until_payday || {}).Restaurants) chips.push(`<button class="chip ${active === "preset" && presets.has("eat") ? "on" : ""}" data-sc="eat">${E().eatLess}</button>`);
+  if (fut.bills.some((b) => b.bill === "Housing" && b.date !== fut.next_payday)) chips.push(`<button class="chip ${active === "preset" && presets.has("rent") ? "on" : ""}" data-sc="rent">${E().rentLater}</button>`);
   return `<div class="dock"><div class="chips">${chips.join("")}</div>
     <form class="wi" hidden><span>${SPARK}</span><input maxlength="200" placeholder="${esc(E().whatIfPh)}"><button class="go" aria-label="Go">→</button></form>
     <div class="wimsg" hidden></div>
@@ -546,6 +546,13 @@ function bindDock() {
     e.preventDefault();
     const item = bf.querySelector("input").value.trim(); if (!item) return;
     offers.hidden = false; offers.innerHTML = `<p class="omsg"><span class="typing"><i></i><i></i><i></i></span> ${E().checking}</p>`;
+    // An amount was given ("concert ticket 80 € on Friday"): use it and its date directly, no shop lookup needed
+    if (/\d+(?:[.,]\d+)?\s*(€|eur|euro|e\b)|(€|eur)\s*\d/i.test(item)) {
+      try {
+        const r = await api("/api/whatif", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_id: cid, text: item, lang }) });
+        if (r.parsed && r.parsed.one_offs && r.parsed.one_offs.length) { buyRes = null; scen = r; active = "ai"; return redraw(); }
+      } catch {}
+    }
     try {
       const r = await fetch("/api/live/purchase", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ item }) });
       buyRes = r.ok ? await r.json() : { error: r.status === 503 ? E().notConnected : E().failed };
@@ -592,24 +599,27 @@ function bindOffers() {
   });
 }
 
-// The three preset chips are preloaded right after Home loads, so a tap redraws at once (no network round trip).
-let presetCache = {};
-const presetScenario = (k) => ({ pause: { pause_extras: true }, eat: { cuts: [{ category: "Restaurants", percent: 50 }] },
+// The preset chips combine (Pause extras + Rent after payday = both on the line). Single presets are preloaded right
+// after Home loads, combinations are cached after their first use, so a tap redraws at once.
+let presetCache = {}, presets = new Set();
+const presetPart = (k) => ({ pause: { pause_extras: true }, eat: { cuts: [{ category: "Restaurants", percent: 50 }] },
   rent: { move_bills: [{ bill: "Housing", date: (() => { const d = new Date(fut.next_payday + "T12:00:00"); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })() }] } })[k];
-function fetchPreset(k) {
-  const key = `${cid}:${k}`;
+function fetchPreset(keys) {
+  const ks = [...keys].sort(), key = `${cid}:${ks.join("+")}`;
   if (!presetCache[key]) presetCache[key] = api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customer_id: cid, scenario: presetScenario(k) }) }).catch((e) => { delete presetCache[key]; throw e; });
+    body: JSON.stringify({ customer_id: cid, scenario: Object.assign({}, ...ks.map(presetPart)) }) }).catch((e) => { delete presetCache[key]; throw e; });
   return presetCache[key];
 }
-function preloadPresets() { ["pause", "eat", "rent"].forEach((k) => fetchPreset(k).catch(() => {})); }
+function preloadPresets() { ["pause", "eat", "rent"].forEach((k) => fetchPreset([k]).catch(() => {})); }
 
 async function runPreset(k) {
-  if (active === k) { active = null; scen = null; return redraw(); }
+  if (active !== "preset") presets.clear();  // a what-if or purchase on the line is replaced by presets
+  presets.has(k) ? presets.delete(k) : presets.add(k);
+  if (!presets.size) { active = null; scen = null; return redraw(); }
   const chip = document.querySelector(`[data-sc="${k}"]`);
-  if (chip) { chip.classList.add("on", "busy"); document.querySelector("#g")?.classList.add("dim"); }  // react to the tap at once
-  try { scen = await fetchPreset(k); active = k; }
-  catch { toast(E().failed); }
+  if (chip) { chip.classList.toggle("on", presets.has(k)); chip.classList.add("busy"); document.querySelector("#g")?.classList.add("dim"); }
+  try { scen = await fetchPreset(presets); active = "preset"; }
+  catch { presets.delete(k); toast(E().failed); }
   redraw();
 }
 
@@ -1105,7 +1115,9 @@ async function openPlay() {
       ${r.summary ? `<p class="sq">${SPARK}<span>${esc(r.summary)}</span></p>${listenBtn(r.summary)}` : ""}
       <div class="sch"><div><span>${S.skipped}</span><b>${eur0(r.extras_skipped_eur)}</b></div><div><span>${S.rentMoved}</span><b>${r.rent_moved_after_payday ? S.yes : S.no}</b></div>
       ${r.swapped_to_ticket ? `<div class="wide"><span>🚌 ${S.swappedT}</span><b>${eur(r.swapped_to_ticket.ticket_eur)} · ${esc(r.swapped_to_ticket.source)}</b></div>` : ""}</div>
+      ${r.months_still_short_by_eur ? `<div class="pgap"><p>${esc(S.gapLine(eur0(r.months_still_short_by_eur)))}</p><button class="link" data-gap>${S.gapAsk} ›</button></div>` : ""}
       <div class="actions"><button class="btn" data-graph>${S.showGraph}</button><button class="btn ghost" data-again>${S.again}</button></div>`;
+    const gb = body.querySelector("[data-gap]"); if (gb) gb.onclick = () => { root.remove(); ask(S.gapQ); };
     body.querySelector("[data-again]").onclick = () => { skip.clear(); moveRent = false; swapped = false; chart(); intro(); };
     body.querySelector("[data-graph]").onclick = async () => {
       const f = await api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_id: cid, scenario: r.scenario }) });

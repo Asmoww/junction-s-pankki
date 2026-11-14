@@ -429,3 +429,8 @@ ul.drains .dv { text-align: right; } ul.drains .dv b { color: var(--ink); }
 .nets i { flex: 1; height: var(--h); min-height: 2px; background: var(--g500); border-radius: 2px; }
 .nets i.neg { background: var(--neg); }
 .hnote { font-size: 11px; color: var(--muted); margin-top: 6px; }
+/* Money Detective, compact on Learn */
+body.e .detective .lmap { gap: 6px; margin: 10px 0 4px; } body.e .ltile { min-height: 56px; padding: 8px; font-size: 12px; border-radius: 12px; }
+body.e .detective .lmore { padding: 0; margin-top: 8px; font-weight: 600; color: var(--g700); text-align: left; }
+.pgap { margin: 4px 0 12px; padding: 12px 14px; border-radius: 14px; background: #fff7e6; border: 1px solid #f1d39b; }
+.pgap p { margin: 0 0 6px; font-size: 14px; line-height: 1.4; } .pgap .link { padding: 0; font-weight: 700; color: var(--g700); }

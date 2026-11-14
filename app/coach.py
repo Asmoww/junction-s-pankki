@@ -142,7 +142,8 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
-                    "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
+                    "Use it for every sum, difference, percentage or average you state (e.g. a yearly total / 12 for "
+                    "'about X a month'). Only + - * / ** and parentheses.",
      "input_schema": {"type": "object", "properties": {
          "expression": {"type": "string"}, "what": {"type": "string", "description": "What the result means."}},
          "required": ["expression", "what"], "additionalProperties": False}},
@@ -234,6 +235,9 @@ Rules:
 - If the user is short of money or overdrawn, say so kindly and plainly, with one concrete next step.
 - Prices of things to buy and outside rules (loan cap, transfer tax, Euribor) come only from check_purchase and
   plan_home, with the shop or source named. If a value is unknown, say it is unknown; never use 0 or a guess.
+- If the user wants to change how something counts ("taxis are essential for me"), say you can't change it from the
+  chat, but they can in "Sort with the AI" (Home → Your three baskets), and their answer then counts everywhere.
+- If you offer to connect another bank, say it is a demo connection in this prototype.
 - Quick loans and payday loans: say plainly they are expensive (high interest and fees), suggest talking to S-Bank
   first, and show a cheaper way through the numbers.
 - Money the user says they have elsewhere (another account or bank) is not visible to you: check get_other_accounts.
@@ -370,9 +374,11 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
     msgs = [{"role": "system", "content": system}] + [{"role": m["role"], "content": m["content"]} for m in messages]
     tools, trace = eu.tools_openai(TOOLS), []
     usage = {"input_tokens": 0, "output_tokens": 0, "calls": 0}
-    for _ in range(MAX_STEPS):
+    for step in range(MAX_STEPS + 1):
+        # Last round: no more tools, write the answer from what the tools already returned (as on the Claude path)
+        last = {"tool_choice": "none"} if step == MAX_STEPS else {}
         try:
-            out = eu.complete(msgs, tools=tools, max_tokens=2000)
+            out = eu.complete(msgs, tools=tools, max_tokens=2000, **last)
         except Exception as e:  # noqa: BLE001
             log.warning("EU model error: %s", e)
             return {"answer": "The coach in EU mode isn't reachable right now. Please try again.", "trace": trace, "error": True}

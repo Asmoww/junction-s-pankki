@@ -130,24 +130,28 @@
         ${q.first_try ? `<em>${X().firstTry}</em>` : ""}</span><span class="lst">${due ? X().due : X().status[q.status]}</span><span class="chev">›</span></button>`;
     }).join("");
     const ms = !hide && st.milestones ? `<div class="lms">${st.milestones.map((m) => `<span class="${m.reached ? "on" : ""}">${m.reached ? "🏅" : "○"} ${esc(m.title)}</span>`).join("")}</div>` : "";
+    // One compact card (map + count); everything else lives in a sheet behind one link, so Learn stays calm.
     el.innerHTML = `<div class="label">${X().title}</div>
-      ${hide ? "" : `<div class="big">${X().explored(cu.concepts_explored, cu.concepts_total)}</div><div class="sub">${X().exploredSub}</div>`}
-      <div class="lmap">${tiles}</div><p class="note left">${X().tapHint} ${X().legend}</p>
-      ${hide ? "" : `<p class="lline">🗓️ ${esc(X().week(st.this_week, st.weekly_goal))}</p>`}
-      <p class="lline">🎯 ${esc(guess)}</p>
-      <div class="label" style="margin-top:14px">${X().checkTitle}</div><div class="lquests">${quests}</div>${ms}
-      <p class="note left">${X().private}</p>
-      <div class="lfoot"><button class="link" data-hide>${hide ? X().show : X().hide}</button><button class="link" data-reset>${X().reset}</button></div>`;
+      ${hide ? "" : `<div class="big">${X().explored(cu.concepts_explored, cu.concepts_total)}</div>`}
+      <div class="lmap">${tiles}</div>
+      <button class="link lmore" data-more>${X().checkTitle} ›</button>`;
     el.querySelectorAll("[data-concept]").forEach((b) => b.onclick = () => ask(X().ask[b.dataset.concept]));
-    el.querySelectorAll("[data-quest]").forEach((b) => b.onclick = () => openQuest(b.dataset.quest, !!b.dataset.revisit));
-    el.querySelector("[data-hide]").onclick = async () => {
-      try { await api(`/api/learn/${cid}/settings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ device, hide_rewards: !hide }) }); } catch {}
-      refresh();
-    };
-    el.querySelector("[data-reset]").onclick = async () => {
-      if (!confirm(X().resetQ)) return;
-      try { await fetch(`/api/learn/${cid}?device=${encodeURIComponent(device)}`, { method: "DELETE" }); } catch {}
-      refresh();
+    el.querySelector("[data-more]").onclick = () => {
+      const sh = sheet(`<h2>${X().title}</h2><p class="sub">${X().exploredSub}. ${X().tapHint} ${X().legend}</p>
+        ${hide ? "" : `<p class="lline">🗓️ ${esc(X().week(st.this_week, st.weekly_goal))}</p>`}<p class="lline">🎯 ${esc(guess)}</p>
+        <div class="label" style="margin-top:14px">${X().checkTitle}</div><div class="lquests">${quests}</div>${ms}
+        <p class="note left">${X().private}</p>
+        <div class="lfoot"><button class="link" data-hide>${hide ? X().show : X().hide}</button><button class="link" data-reset>${X().reset}</button></div>`);
+      sh.querySelectorAll("[data-quest]").forEach((b) => b.onclick = () => { closeSheet(); openQuest(b.dataset.quest, !!b.dataset.revisit); });
+      sh.querySelector("[data-hide]").onclick = async () => {
+        try { await api(`/api/learn/${cid}/settings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ device, hide_rewards: !hide }) }); } catch {}
+        closeSheet(); refresh();
+      };
+      sh.querySelector("[data-reset]").onclick = async () => {
+        if (!confirm(X().resetQ)) return;
+        try { await fetch(`/api/learn/${cid}?device=${encodeURIComponent(device)}`, { method: "DELETE" }); } catch {}
+        closeSheet(); refresh();
+      };
     };
   }
 
