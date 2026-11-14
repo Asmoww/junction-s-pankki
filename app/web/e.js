@@ -276,6 +276,9 @@ function graph() {
     let my, lx;
     if (y1 - y0 >= 30) { my = (y0 + y1) / 2; lx = xb + 10; if (lx + tw > W - px) lx = xb - 10 - tw; }
     else { my = y1 + 26; lx = Math.max(px, Math.min(W - px - tw, xb - tw / 2)); if (my + ph / 2 > H - bot) my = y0 - 22; }
+    // Where it happens: a dot on the step, and a short leader from the pill when the pill sits apart from it
+    const lead = my - ph / 2 > y1 + 4 ? `<line class="billlead ${neg ? "neg" : ""}" x1="${xb}" y1="${y1 + 5}" x2="${xb}" y2="${(my - ph / 2).toFixed(1)}"/>` : "";
+    marks.push(`${lead}<circle class="billdot ${neg ? "neg" : ""}" cx="${xb}" cy="${y1}" r="5"/>`);
     marks.push(`<g class="billpill ${neg ? "neg" : ""}" data-why="${esc(hbT().bill(g.names.join(" + ").toLowerCase()))}" transform="translate(${lx.toFixed(1)},${(my - ph / 2).toFixed(1)})">
       <rect width="${tw.toFixed(1)}" height="${ph}" rx="12"/>${g.housing
         ? `<g class="hic" transform="translate(15,12.5)"><path d="M-6 -0.2 L0 -5.6 L6 -0.2"/><path d="M-4.4 -1.4 V5 H4.4 V-1.4"/><path d="M-1.3 5 V1.7 H1.3 V5"/></g>`
@@ -662,7 +665,7 @@ function redraw() {
   if (range !== "pay" && !scen) return drawLong();
   range = "pay";                                       // a scenario (play, what-if, buy) always shows on the pay-month graph
   const G = graph();
-  $("#hero").innerHTML = rangeBar() + G.html + resultRow() + dock();
+  $("#hero").innerHTML = G.html + rangeBar() + resultRow() + dock();
   layoutNotes(); bindGraph(G); bindDock(); bindRange();
 }
 
@@ -670,7 +673,7 @@ function redraw() {
 // above stays exactly as it was; this only replaces it while a longer range is chosen.
 async function drawLong() {
   const want = `${cid}:${range}`, E_ = E();
-  $("#hero").innerHTML = rangeBar() + `<div class="long"></div>`;
+  $("#hero").innerHTML = `<div class="long"></div>` + rangeBar() + `<div class="longx"></div>`;
   bindRange();
   let h = histCache[want];
   if (!h) scene($("#hero .long"), "graph", ld().long(range));
@@ -679,7 +682,7 @@ async function drawLong() {
   if (!ln) api(`/api/history/${cid}/notes?months=${range}&lang=${lang}`).then((n) => { histCache[nk] = n; if (`${cid}:${range}` === want) drawLong(); }).catch(() => {});
   if (!h) {
     try { h = histCache[want] = await api(`/api/history/${cid}?months=${range}`); }
-    catch { $("#hero .long").innerHTML = `<p class="hnote">${esc(E_.failed || "Couldn't load")}</p>`; return; }
+    catch { $("#hero .longx").innerHTML = `<p class="hnote">${esc(E_.failed || "Couldn't load")}</p>`; return; }
   }
   if (`${cid}:${range}` !== want) return;            // the user switched again while this loaded
   const lnotes = (ln && ln.notes) || [], pt = lnotes.length ? 112 : 26;   // room for two lanes of notes above the line
@@ -714,8 +717,8 @@ async function drawLong() {
   const nhtml = lnotes.map((nt) => { const i = near(nt.date), x = X(i), y = Y(pts[i].balance_eur);
     return `<div class="note" data-why="${esc(whyNote(nt))}" data-x="${x.toFixed(1)}" data-y="${y.toFixed(1)}">${SPARK}<span>${esc(nt.text).replace(/ (€|%)/g, "\u00a0$1")}</span></div>
       <span class="ndot" style="left:${x}px;top:${y}px"></span>`; }).join("");
-  $("#hero .long").innerHTML = `<div class="lg">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nhtml}<div class="tip" hidden></div></div>
-    <div class="hsum"><span>${esc(E_.hChange)} <b class="${ch < 0 ? "neg" : ""}">${ch < 0 ? "−" : "+"}${esc(eur0(Math.abs(ch)))}</b></span>
+  $("#hero .long").innerHTML = `<div class="lg">${svg}<svg class="leaders" width="${W}" height="${H}"></svg>${nhtml}<div class="tip" hidden></div></div>`;
+  $("#hero .longx").innerHTML = `<div class="hsum"><span>${esc(E_.hChange)} <b class="${ch < 0 ? "neg" : ""}">${ch < 0 ? "−" : "+"}${esc(eur0(Math.abs(ch)))}</b></span>
       <span>${esc(E_.hLow)} <b>${esc(eur0(h.lowest.balance_eur))}</b> · ${esc(day(h.lowest.date))}</span></div>
     <div class="hmonths" ${monthsOpen ? "" : "hidden"}>${h.days_below_zero ? `<p class="hsum"><span class="neg">${esc(E_.hBelow(h.days_below_zero))}</span></p>` : ""}
       <p class="hnet">${esc(E_.hNet)}</p>${bars}<p class="hnote">${esc(E_.hNote)}</p></div>

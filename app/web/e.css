@@ -418,7 +418,7 @@ ul.drains .dv { text-align: right; } ul.drains .dv b { color: var(--ink); }
 .strip .mini[data-act=psd2], .strip .mini.fullpic { grid-column: 1 / -1; }
 
 /* Home trend line ranges: pay month (original graph) or 3 / 12 / 24 months of real balances */
-.rng { display: flex; gap: 6px; margin: 8px 0 2px; overflow-x: auto; }
+.rng { display: flex; gap: 6px; margin: 4px 0 12px; overflow-x: auto; }
 .rng button { flex: 1 0 auto; border: 1px solid var(--line); background: #fff; color: var(--g700); border-radius: 999px;
   padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; min-height: 36px; }
 .rng button.on { background: var(--g700); border-color: var(--g700); color: #fff; }
@@ -554,3 +554,7 @@ div.brief { display: block; } div.brief .skeleton { margin: 6px 0; }
 /* Clean top: the long-range month bars only on request */
 .hmonths { margin-top: 4px; }
 #hero .long .morel { margin-top: 2px; }
+#g .billdot { fill: #fff; stroke: var(--g900); stroke-width: 2.5; }
+#g .billdot.neg { stroke: var(--neg); }
+#g .billlead { stroke: var(--g900); stroke-width: 1.2; stroke-dasharray: 2 3; }
+#g .billlead.neg { stroke: var(--neg); }
