@@ -677,9 +677,12 @@ async function drawLong() {
     <text x="${pl}" y="14" class="ed">${esc(eur0(h.start_eur))}</text>
     <text x="${W - pr}" y="14" class="ed end">${esc(eur0(h.end_eur))}</text>${ticks}
     <line x1="0" x2="0" y1="${pt}" y2="${H - pb}" class="cur" hidden/></svg>`;
-  const nets = h.per_month.map((m) => m.in_eur - m.out_eur), big = Math.max(1, ...nets.map(Math.abs));
-  const bars = `<div class="nets" aria-label="${esc(E_.hNet)}">${h.per_month.map((m, i) => `<i title="${esc(m.month)}: ${esc(eur0(nets[i]))}"
-    class="${nets[i] < 0 ? "neg" : ""}" style="--h:${Math.round(Math.abs(nets[i]) / big * 100)}%"></i>`).join("")}</div>`;
+  // Money in minus out per month: slim columns around a zero line (up = money left over, down = short)
+  const nets = h.per_month.map((m) => m.in_eur - m.out_eur), n = nets.length;
+  const up = Math.max(0, ...nets), dn = Math.max(0, ...nets.map((v) => -v)), span = up + dn || 1, lblEvery = n > 12 ? 3 : 1;
+  const bars = `<div class="nets" style="--z:${(up / span) * 100}%;--n:${n}" aria-label="${esc(E_.hNet)}">${h.per_month.map((m, i) => `<span class="nb ${nets[i] < 0 ? "neg" : ""}"
+    title="${esc(m.month)}: ${nets[i] < 0 ? "−" : "+"}${esc(eur0(Math.abs(nets[i])))}"><i style="--h:${(Math.abs(nets[i]) / span) * 100}%"></i>
+    ${i % lblEvery === 0 ? `<em>${esc(new Date(m.month.slice(0, 7) + "-15T12:00:00").toLocaleDateString(T().locale, { month: "narrow" }))}</em>` : ""}</span>`).join("")}</div>`;
   const ch = h.change_eur;
   $("#hero .long").innerHTML = `<div class="lg">${svg}<div class="tip" hidden></div></div>
     <div class="hsum"><span>${esc(E_.hChange)} <b class="${ch < 0 ? "neg" : ""}">${ch < 0 ? "−" : "+"}${esc(eur0(Math.abs(ch)))}</b></span>

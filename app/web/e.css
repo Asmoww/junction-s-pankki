@@ -425,9 +425,12 @@ ul.drains .dv { text-align: right; } ul.drains .dv b { color: var(--ink); }
 .hsum b { color: var(--ink); }
 .hsum .neg, .hsum b.neg { color: var(--neg); }
 .hnet { font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
-.nets { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
-.nets i { flex: 1; height: var(--h); min-height: 2px; background: var(--g500); border-radius: 2px; }
-.nets i.neg { background: var(--neg); }
+.nets { position: relative; display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 3px; height: 56px; margin: 4px 0 18px; }
+.nets::before { content: ""; position: absolute; left: 0; right: 0; top: var(--z); border-top: 1px solid #cfd9d3; }
+.nets .nb { position: relative; display: flex; justify-content: center; }
+.nets .nb i { position: absolute; width: min(14px, 70%); bottom: calc(100% - var(--z)); height: max(var(--h), 2px); border-radius: 3px 3px 1px 1px; background: var(--g500); }
+.nets .nb.neg i { bottom: auto; top: var(--z); border-radius: 1px 1px 3px 3px; background: var(--neg); opacity: .85; }
+.nets .nb em { position: absolute; bottom: -16px; font-size: 10px; font-style: normal; color: var(--muted); }
 .hnote { font-size: 11px; color: var(--muted); margin-top: 6px; }
 /* Money Detective, compact on Learn */
 body.e .detective .lmap { gap: 6px; margin: 10px 0 4px; } body.e .ltile { min-height: 56px; padding: 8px; font-size: 12px; border-radius: 12px; }
