@@ -260,3 +260,13 @@ body:not([data-tab="coach"]) main { padding-bottom: calc(90px + var(--safe-botto
   font-size: 12px; font-weight: 600; text-align: left; animation: lpop .5s ease-out; }
 .lnote .go { margin-left: auto; font-weight: 400; color: var(--muted); } .lnote .spark { color: var(--green); }
 @keyframes lpop { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Coach steps: one line per tool the coach really runs; the newest one pulses, finished ones get a tick */
+.csteps ol { list-style: none; margin: 0; padding: 2px 0; display: grid; gap: 7px; }
+.csteps li { position: relative; padding-left: 22px; font-size: 14px; line-height: 1.35; color: var(--muted); animation: cstep .35s ease both; }
+.csteps li::before { content: ""; position: absolute; left: 3px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--green-2); animation: cpulse 1.1s ease-in-out infinite; }
+.csteps li:not(.done) { color: var(--fg, #0f2219); font-weight: 500; }
+.csteps li.done::before { content: "✓"; background: none; width: auto; height: auto; top: 0; left: 2px; color: var(--green-2); font-size: 13px; font-weight: 700; animation: none; }
+@keyframes cstep { from { opacity: 0; transform: translateY(4px); } }
+@keyframes cpulse { 50% { transform: scale(.6); opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .csteps li, .csteps li::before { animation: none; } }

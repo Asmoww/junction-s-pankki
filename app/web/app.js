@@ -367,6 +367,71 @@ function addMsg(role, html, cls = "") {
   return d;
 }
 
+/* ---------- coach steps: what the coach is really doing while you wait (one line per tool it runs) ---------- */
+const STEP_TXT = {
+  en: { read: "Reading your question", get_spending: "Adding up your spending", list_transactions: "Looking through your purchases",
+    get_cashflow: "Comparing money in and out", get_three_baskets: "Sorting into your three baskets", get_safe_to_spend: "Working out what's safe to spend",
+    simulate_cut: "Trying the cut on your numbers", get_surprise_pot: "Sizing your surprise pot", get_payday_pattern: "Looking at your paydays",
+    get_payday_forecast: "Projecting to payday", get_benchmark: "Comparing with Statistics Finland", get_spender_type: "Finding your spender type",
+    get_spender_profile: "Finding your spender type", check_purchase: "Checking live prices", plan_home: "Planning the home purchase",
+    show_chart: "Drawing a chart", forecast_with_events: "Running your forecast", money_health: "Checking your money fitness",
+    get_safe_to_save: "Working out what's safe to save", get_monthly_drains: "Finding monthly drains", get_other_accounts: "Reading your other bank (demo)",
+    calculate: "Calculating", check: "Checking every number against your data", other: "Looking at your data" },
+  fi: { read: "Luen kysymyksesi", get_spending: "Lasken kulujasi yhteen", list_transactions: "Käyn läpi ostojasi",
+    get_cashflow: "Vertaan tuloja ja menoja", get_three_baskets: "Jaan menot kolmeen koriin", get_safe_to_spend: "Lasken, mitä voit turvallisesti käyttää",
+    simulate_cut: "Kokeilen säästöä luvuillasi", get_surprise_pot: "Mitoitan yllätyspottia", get_payday_pattern: "Katson palkkapäiviäsi",
+    get_payday_forecast: "Ennustan palkkapäivään", get_benchmark: "Vertaan Tilastokeskuksen lukuihin", get_spender_type: "Etsin kuluttajatyyppiäsi",
+    get_spender_profile: "Etsin kuluttajatyyppiäsi", check_purchase: "Tarkistan hintoja verkosta", plan_home: "Suunnittelen asunnon ostoa",
+    show_chart: "Piirrän kuvaajan", forecast_with_events: "Lasken ennusteesi", money_health: "Tarkistan rahakuntoasi",
+    get_safe_to_save: "Lasken, mitä voit turvallisesti säästää", get_monthly_drains: "Etsin kuukausittaisia vuotoja", get_other_accounts: "Luen toisen pankkisi (demo)",
+    calculate: "Lasken", check: "Tarkistan jokaisen luvun tiedoistasi", other: "Katson tietojasi" },
+  sv: { read: "Läser din fråga", get_spending: "Räknar ihop dina utgifter", list_transactions: "Går igenom dina köp",
+    get_cashflow: "Jämför pengar in och ut", get_three_baskets: "Sorterar i dina tre korgar", get_safe_to_spend: "Räknar ut vad som är säkert att spendera",
+    simulate_cut: "Testar minskningen på dina siffror", get_surprise_pot: "Räknar ut din överraskningspott", get_payday_pattern: "Tittar på dina lönedagar",
+    get_payday_forecast: "Räknar fram till lönen", get_benchmark: "Jämför med Statistikcentralen", get_spender_type: "Letar efter din spendertyp",
+    get_spender_profile: "Letar efter din spendertyp", check_purchase: "Kollar priser på nätet", plan_home: "Planerar bostadsköpet",
+    show_chart: "Ritar ett diagram", forecast_with_events: "Kör din prognos", money_health: "Kollar din ekonomiska kondition",
+    get_safe_to_save: "Räknar ut vad som är säkert att spara", get_monthly_drains: "Letar efter månatliga läckor", get_other_accounts: "Läser din andra bank (demo)",
+    calculate: "Räknar", check: "Kollar varje siffra mot dina data", other: "Tittar på dina data" },
+};
+function coachStepText(st) {
+  const S = STEP_TXT[lang] || STEP_TXT.en, base = S[st.tool] || S.other;
+  const on = st.subcategory ? label(st.subcategory) : st.category ? label(st.category) : st.basket ? T().baskets[st.basket][0] : st.item || "";
+  return on ? `${base}: ${on}` : base;
+}
+function addStep(msg, st) {
+  const ol = msg.querySelector(".csteps ol"); if (!ol) return;
+  const txt = coachStepText(st), last = ol.lastElementChild;
+  if (last && last.dataset.t === txt) return;        // the same tool twice in a row is one step
+  if (last) last.classList.add("done");
+  const li = document.createElement("li"); li.dataset.t = txt; li.textContent = txt;
+  ol.appendChild(li);
+}
+// The answer with live steps (NDJSON from /api/chat/stream); falls back to the plain endpoint if streaming fails.
+async function chatStream(body, onStep) {
+  let r;
+  try {
+    r = await fetch("/api/chat/stream", { method: "POST", body, headers: { "Content-Type": "application/json", "X-AI-Provider": aiProvider() } });
+  } catch { r = null; }
+  if (r && r.status === 401) { location.href = "/login"; throw new Error("login"); }
+  if (r && r.ok && r.body) {
+    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { value, done } = await rd.read();
+      buf += dec.decode(value || new Uint8Array(), { stream: !done });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+        if (!line) continue;
+        const ev = JSON.parse(line);
+        if (ev.step) onStep(ev.step); else if (ev.done) return ev.done;
+      }
+      if (done) break;
+    }
+  }
+  return api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+}
+
 async function ask(text) {
   text = (text || "").trim();
   if (!text || busy || !cid) return;
@@ -374,10 +439,11 @@ async function ask(text) {
   busy = true; $("#send").disabled = true; $("#q").value = "";
   addMsg("user", esc(text));
   history.push({ role: "user", text });
-  const pending = addMsg("bot", `<span class="typing"><i></i><i></i><i></i></span> <span class="sub">${T().thinking}</span>`);
+  const pending = addMsg("bot", `<div class="csteps" role="status" aria-label="${esc(T().thinking)}"><ol></ol></div>`, "working");
+  addStep(pending, { tool: "read" });
   try {
-    const r = await api("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customer_id: cid, history, lang }) });
+    const r = await chatStream(JSON.stringify({ customer_id: cid, history, lang }), (st) => addStep(pending, st));
+    pending.classList.remove("working");
     pending.innerHTML = answerHtml(r);
     if (window.learnAfterAnswer) window.learnAfterAnswer(r, pending);  // Money Detective: a new question lights up the map
     if (r.error) { pending.classList.add("err"); history.pop(); } else if (r.refused) { history.pop(); } else history.push({ role: "assistant", text: r.answer });

@@ -547,7 +547,7 @@ function bindDock() {
   bf.addEventListener("submit", async (e) => {
     e.preventDefault();
     const item = bf.querySelector("input").value.trim(); if (!item) return;
-    offers.hidden = false; offers.innerHTML = `<p class="omsg"><span class="typing"><i></i><i></i><i></i></span> ${E().checking}</p>`;
+    offers.hidden = false; scene(offers, "shops", ld().price);
     // An amount was given ("concert ticket 80 € on Friday"): use it and its date directly, no shop lookup needed
     if (/\d+(?:[.,]\d+)?\s*(€|eur|euro|e\b)|(€|eur)\s*\d/i.test(item)) {
       try {
@@ -569,7 +569,7 @@ function bindDock() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = form.querySelector("input").value.trim(); if (!text) return;
-    msg.hidden = false; msg.innerHTML = `<span class="typing"><i></i><i></i><i></i></span> ${E().thinking}`;
+    msg.hidden = false; scene(msg, "redraw", ld().whatif);
     try {
       const r = await api("/api/whatif", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_id: cid, text, lang }) });
       const p = r.parsed;
@@ -649,8 +649,8 @@ function redraw() {
 // above stays exactly as it was; this only replaces it while a longer range is chosen.
 async function drawLong() {
   const want = `${cid}:${range}`, E_ = E();
-  $("#hero").innerHTML = rangeBar() + `<div class="long"><span class="typing"><i></i><i></i><i></i></span></div>`;
-  bindRange();
+  $("#hero").innerHTML = rangeBar() + `<div class="long"></div>`;
+  bindRange(); scene($("#hero .long"), "graph", ld().long(range));
   let h = histCache[want];
   if (!h) {
     try { h = histCache[want] = await api(`/api/history/${cid}?months=${range}`); }
@@ -706,29 +706,71 @@ const EMOJI = { "Amusement parks": "🎢", "Attractions & museums": "🏛️", "
   Hotels: "🏨", "Kiosks & convenience stores": "🏪", "Other entertainment": "🎟️", "Other home & tech": "🔌", "Other lifestyle": "✨",
   "Other restaurants": "🍽️", "Other shopping": "🛍️", "Other travel": "🧳", Parking: "🅿️", "Recreation & sports": "🏸", Restaurants: "🍽️",
   "Software & apps": "💾", "Sports gear": "👟", Taxis: "🚕", "Theatre & concerts": "🎭", "Toys & games": "🧸", "Travel agencies": "🌴" };
-// Wrapped loader: a receipt prints the year, one line per month (amounts shown as blank bars: nothing to verify yet)
-function wrapLoader() {
-  const W = E().wr, y = (home && home.year) || { start: "2025-10-01" }, d0 = new Date(y.start + "T12:00:00");
-  const months = Array.from({ length: 12 }, (_, k) => new Date(d0.getFullYear(), d0.getMonth() + k, 15).toLocaleDateString(T().locale, { month: "short" }));
-  return `<div class="wload" role="status" aria-live="polite"><div class="wrcp" aria-hidden="true"><div class="wslot"></div>
-    <div class="wpaper"><b>${esc(W.rcpHead)}</b>${months.map((m) => `<p><span>${esc(m)}</span><i></i></p>`).join("")}</div></div>
-    <p class="wlcap">${esc(W.load[0])}</p></div>`;
-}
-function loaderCaptions(root) {
-  const caps = E().wr.load;
+// ---------------------------------------------------------------- Loading scenes
+// Each wait shows a small picture of what is actually happening and a caption that changes every few seconds.
+// Screen readers hear the first caption once (role=status); the rotating copy is hidden from them.
+const LD = {
+  en: { sort: ["Finding the spending only you can sort", "Skipping what's clearly sorted", "Picking the purchases only you know"],
+    play: ["Looking at your usual days", "Dealing your next two weeks", "Putting the bills in place"],
+    playEnd: ["Playing out your two weeks", "Adding up what you kept", "Checking where payday lands you"],
+    price: ["Checking prices on shop pages", "Reading the prices", "Comparing the shops"],
+    whatif: ["Reading your change", "Redrawing your next weeks", "Checking it against your bills"],
+    sortEnd: ["Re-sorting your money", "Updating safe to spend", "Redrawing your graph"],
+    long: (m) => [`Loading ${m} months of balances`, "Drawing the line", "Marking the lowest days"] },
+  fi: { sort: ["Etsitään menoja, jotka vain sinä voit lajitella", "Ohitetaan selvät tapaukset", "Valitaan ostot, jotka vain sinä tunnet"],
+    play: ["Katsotaan tavallisia päiviäsi", "Jaetaan kaksi seuraavaa viikkoa", "Asetetaan laskut paikoilleen"],
+    playEnd: ["Pelataan kaksi viikkoasi läpi", "Lasketaan, mitä pidit", "Katsotaan, mihin palkkapäivä osuu"],
+    price: ["Tarkistetaan hintoja kauppojen sivuilta", "Luetaan hintoja", "Verrataan kauppoja"],
+    whatif: ["Luetaan muutostasi", "Piirretään seuraavat viikot uudelleen", "Tarkistetaan laskujasi vasten"],
+    sortEnd: ["Lajitellaan rahojasi uudelleen", "Päivitetään turvallista summaa", "Piirretään kuvaaja uudelleen"],
+    long: (m) => [`Haetaan ${m} kuukauden saldot`, "Piirretään viivaa", "Merkitään matalimmat päivät"] },
+  sv: { sort: ["Letar efter utgifter som bara du kan sortera", "Hoppar över det som är tydligt", "Väljer köpen bara du känner till"],
+    play: ["Tittar på dina vanliga dagar", "Delar ut dina två nästa veckor", "Lägger räkningarna på plats"],
+    playEnd: ["Spelar upp dina två veckor", "Räknar ihop det du behöll", "Kollar var lönedagen hamnar"],
+    price: ["Kollar priser på butikernas sidor", "Läser priserna", "Jämför butikerna"],
+    whatif: ["Läser din ändring", "Ritar om dina nästa veckor", "Kollar mot dina räkningar"],
+    sortEnd: ["Sorterar om dina pengar", "Uppdaterar säkert att spendera", "Ritar om grafen"],
+    long: (m) => [`Hämtar ${m} månaders saldon`, "Ritar linjen", "Markerar de lägsta dagarna"] },
+};
+const ld = () => LD[lang] || LD.en;
+const ART = {
+  // Wrapped: a receipt prints the year, one line per month (amounts are blank bars: nothing to verify yet)
+  receipt: () => {
+    const y = (home && home.year) || { start: "2025-10-01" }, d0 = new Date(y.start + "T12:00:00");
+    const months = Array.from({ length: 12 }, (_, k) => new Date(d0.getFullYear(), d0.getMonth() + k, 15).toLocaleDateString(T().locale, { month: "short" }));
+    return `<div class="wrcp"><div class="wslot"></div><div class="wpaper"><b>${esc(E().wr.rcpHead)}</b>${months.map((m) => `<p><span>${esc(m)}</span><i></i></p>`).join("")}</div></div>`;
+  },
+  // Sort: purchases drop into the three baskets in turn
+  baskets: () => `<div class="ldbk">${[1, 2, 3].map((b) => `<span style="--c:${BASKET_COLORS[b]};--k:${b - 1}"><i></i><em></em></span>`).join("")}</div>`,
+  // Play: day cards are dealt into a fan
+  deal: () => `<div class="lddeal">${["🛒", "☕", "🏠", "🚌", "🍽️"].map((e, k) => `<i style="--k:${k}">${e}</i>`).join("")}</div>`,
+  // Play result: the 14 days fill in one by one
+  days: () => `<div class="lddays">${Array.from({ length: 14 }, (_, k) => `<i style="--k:${k}"></i>`).join("")}</div>`,
+  // Live price: shop rows are read one after another
+  shops: () => `<div class="ldshop">${[0, 1, 2].map((k) => `<p style="--k:${k}"><i></i><b></b><em>€</em></p>`).join("")}</div>`,
+  // What-if: your line, then the changed line splitting off it
+  redraw: () => `<svg class="ldline" viewBox="0 0 200 70" preserveAspectRatio="none"><path class="a" pathLength="1" d="M2 22 L40 30 L62 26 L84 48 L120 44 L150 58 L198 52"/>
+    <path class="b" pathLength="1" d="M84 48 L120 36 L150 40 L198 28"/></svg>`,
+  // Graph zoom: a faint line draws itself across the graph area
+  graph: () => `<svg class="ldline big" viewBox="0 0 300 120" preserveAspectRatio="none"><line x1="0" y1="96" x2="300" y2="96"/>
+    <path class="a" pathLength="1" d="M2 40 L30 52 L52 30 L80 64 L104 58 L130 84 L156 36 L184 50 L210 78 L236 46 L262 60 L298 34"/></svg>`,
+};
+function scene(el, art, caps) {
+  el.innerHTML = `<div class="ld" role="status"><span class="sr">${esc(caps[0])}</span><div class="ldart" aria-hidden="true">${ART[art]()}</div>
+    <p class="ldcap" aria-hidden="true">${esc(caps[0])}</p></div>`;
+  const cap = el.querySelector(".ldcap");
   let n = 0;
   const t = setInterval(() => {
-    const el = root.querySelector(".wlcap");
-    if (!el || !root.isConnected) return clearInterval(t);
-    el.classList.add("fade");
-    setTimeout(() => { n = (n + 1) % caps.length; el.textContent = caps[n]; el.classList.remove("fade"); }, 300);
+    if (!cap.isConnected) return clearInterval(t);   // the answer replaced it, or the sheet was closed
+    cap.classList.add("fade");
+    setTimeout(() => { n = (n + 1) % caps.length; cap.textContent = caps[n]; cap.classList.remove("fade"); }, 300);
   }, 2200);
 }
 async function openWrapped() {
   const root = document.createElement("div");
-  root.className = "wrap"; root.innerHTML = `<div class="wtop"><div class="wbars"></div><button class="wx" aria-label="Close">×</button></div><div class="wslide">${wrapLoader()}</div>`;
+  root.className = "wrap"; root.innerHTML = `<div class="wtop"><div class="wbars"></div><button class="wx" aria-label="Close">×</button></div><div class="wslide"></div>`;
   document.body.appendChild(root);
-  loaderCaptions(root);
+  scene(root.querySelector(".wslide"), "receipt", E().wr.load);
   root.querySelector(".wx").onclick = () => root.remove();
   let w;
   try { w = await api(`/api/wrapped/${cid}?lang=${lang}`); } catch { root.remove(); return; }
@@ -992,8 +1034,8 @@ function sortCard() {
 }
 
 async function openSort() {
-  const S = E().so, wait = (t) => `<div class="swait"><span class="typing"><i></i><i></i><i></i></span><p class="sub">${t}</p></div>`;
-  const s = sheet(`<div class="sort">${wait(S.loading)}</div>`), box = s.querySelector(".sort");
+  const S = E().so, s = sheet(`<div class="sort"></div>`), box = s.querySelector(".sort");
+  scene(box, "baskets", ld().sort);
   let d; try { d = await api(`/api/sort/${cid}?lang=${lang}`); } catch { d = { cards: [] }; }
   if (!d.cards.length) { box.innerHTML = `<p class="lead">${S.none}</p>`; return; }
   const ans = {}, cards = d.cards;
@@ -1023,7 +1065,7 @@ async function openSort() {
     }));
   };
   const submit = async () => {
-    box.innerHTML = wait(S.working);
+    scene(box, "baskets", ld().sortEnd);
     let r;
     try { r = await api(`/api/sort/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: ans, lang }) }); }
     catch { box.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
@@ -1065,8 +1107,9 @@ async function openPlay() {
   const S = E().pl, root = document.createElement("div");
   root.className = "play";
   root.innerHTML = `<div class="ptop"><b>${S.title}</b><button class="wx" aria-label="Close">×</button></div>
-    <div class="pchart"></div><div class="pbody"><div class="swait"><span class="typing"><i></i><i></i><i></i></span></div></div>`;
+    <div class="pchart"></div><div class="pbody"></div>`;
   document.body.appendChild(root);
+  scene(root.querySelector(".pbody"), "deal", ld().play);
   root.querySelector(".wx").onclick = () => root.remove();
   let d; try { d = await api(`/api/play/${cid}?lang=${lang}`); } catch { root.remove(); return; }
   const cards = d.cards, extras = cards.filter((c) => c.kind === "extra"), rent = cards.find((c) => c.movable);
@@ -1143,7 +1186,7 @@ async function openPlay() {
   };
   const end = async () => {
     const kept = extras.filter((c) => !skip.has(c.id)).map((c) => c.id);
-    body.innerHTML = `<div class="swait"><span class="typing"><i></i><i></i><i></i></span></div>`;
+    scene(body, "days", ld().playEnd);
     let r; try { r = await api(`/api/play/${cid}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kept, move_rent: moveRent, swap: swapped, lang }) }); }
     catch { body.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
     if (window.learnNote) learnNote(["forecast"], "tried_whatif");

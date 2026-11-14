@@ -382,8 +382,9 @@ def _drop_refused(history: list[dict]) -> list[dict]:
     return out
 
 
-def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, messages: list[dict]) -> dict:
+def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, messages: list[dict], progress=None) -> dict:
     """The same coach on the open model we host in Europe (eu.py): same tools, same numbers check."""
+    progress = progress or (lambda step, args: None)
     msgs = [{"role": "system", "content": system}] + [{"role": m["role"], "content": m["content"]} for m in messages]
     tools, trace = eu.tools_openai(TOOLS), []
     usage = {"input_tokens": 0, "output_tokens": 0, "calls": 0}
@@ -405,6 +406,7 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
         if not calls:
             text = (m.get("content") or "").strip()
             usage.update({"model": out["model"], "where": eu.label(), "cost_usd": None})
+            progress("check", {})
             numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang, earlier=[h["text"] for h in history if h["role"] == "assistant"], context=
                                    {"balance": c["balance"], "age": c["age"]})
             bad = [n["text"] for n in numbers if n["status"] == "unverified"]
@@ -419,6 +421,7 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
             except json.JSONDecodeError:
                 args, out_t, is_err = {}, {"error": "arguments were not valid JSON"}, True
             else:
+                progress(fn.get("name", ""), args)
                 out_t, is_err = _run_tool(cid, fn.get("name", ""), args)
             trace.append({"tool": fn.get("name"), "input": args, "result": out_t, "error": is_err})
             msgs.append({"role": "tool", "tool_call_id": call.get("id"),
@@ -426,8 +429,11 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
     return {"answer": "That took too many steps. Could you ask in a simpler way?", "trace": trace, "error": True}
 
 
-def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
-    """history: [{"role": "user"|"assistant", "text": str}, ...] ending with the user's new message."""
+def chat(cid: str, history: list[dict], lang: str = "en", progress=None) -> dict:
+    """history: [{"role": "user"|"assistant", "text": str}, ...] ending with the user's new message.
+    progress(step, args), if given, is called before each tool runs and with "check" before the numbers check, so the
+    app can show what the coach is really doing while it waits."""
+    progress = progress or (lambda step, args: None)
     if not os.environ.get("ANTHROPIC_API_KEY") and not eu.active():
         return {"answer": "The coach is not connected yet (no API key on the server).", "trace": [], "error": True}
     c = money.customer(cid)
@@ -439,7 +445,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
                                        f"format instead.\nCustomer: age {c['age']}, postal code "
                                        f"{c['postal_code']}, balance now {c['balance']} €."}]
     if eu.active():
-        return _chat_eu(cid, history, lang, c, "\n\n".join(b["text"] for b in system), messages)
+        return _chat_eu(cid, history, lang, c, "\n\n".join(b["text"] for b in system), messages, progress)
     trace = []
     usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "calls": 0}
     client = _client()
@@ -476,6 +482,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
         if resp.stop_reason != "tool_use" or not uses:
             text = "\n".join(b.text for b in resp.content if b.type == "text").strip()
             usage["model"] = resp.model
+            progress("check", {})
             usage["cost_usd"] = round((usage["input_tokens"] * PRICE_IN + usage["output_tokens"] * PRICE_OUT
                                        + usage["cache_read_tokens"] * PRICE_CACHE_READ
                                        + usage["cache_write_tokens"] * PRICE_CACHE_WRITE) / 1e6, 4)
@@ -488,6 +495,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
                     "attachments": _attachments(trace, text), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang}
         results = []
         for u in uses:
+            progress(u.name, dict(u.input))
             out, is_err = _run_tool(cid, u.name, dict(u.input))
             trace.append({"tool": u.name, "input": dict(u.input), "result": out, "error": is_err})
             results.append({"type": "tool_result", "tool_use_id": u.id,

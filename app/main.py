@@ -2,6 +2,8 @@
 
 Run: .venv/bin/uvicorn app.main:app --port 5202
 """
+import asyncio
+import contextvars
 import hashlib
 import hmac
 import json
@@ -12,7 +14,7 @@ import secrets
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -551,6 +553,44 @@ def chat(body: ChatIn):
     if body.history[-1].role != "user":
         raise HTTPException(400, "last turn must be the user's")
     return coach.chat(_cid(body.customer_id), [t.model_dump() for t in body.history], body.lang)
+
+
+_STEP_KEYS = ("period", "start", "end", "category", "subcategory", "basket", "group_by", "what", "item", "sort")
+
+
+@app.post("/api/chat/stream")
+async def chat_stream(body: ChatIn):
+    """The same answer as /api/chat, as NDJSON: one {"step": ...} line per tool the coach really runs (name and filters
+    only, no results), then {"done": result}. The app shows the steps while it waits."""
+    if body.history[-1].role != "user":
+        raise HTTPException(400, "last turn must be the user's")
+    cid = _cid(body.customer_id)
+    q: asyncio.Queue = asyncio.Queue()
+    loop = asyncio.get_running_loop()
+
+    def progress(step, args):
+        info = {k: args[k] for k in _STEP_KEYS if isinstance(args, dict) and k in args and isinstance(args[k], (str, int))}
+        loop.call_soon_threadsafe(q.put_nowait, {"step": {"tool": step, **info}})
+
+    def run():
+        try:
+            out = coach.chat(cid, [t.model_dump() for t in body.history], body.lang, progress)
+        except Exception:  # noqa: BLE001
+            logging.getLogger("coach").exception("chat stream failed")
+            out = {"answer": "Something went wrong. Please try again.", "error": True, "trace": []}
+        loop.call_soon_threadsafe(q.put_nowait, {"done": out})
+
+    ctx = contextvars.copy_context()  # keeps the per-request AI provider (EU or Claude) inside the worker thread
+    loop.run_in_executor(None, ctx.run, run)
+
+    async def lines():
+        while True:
+            ev = await q.get()
+            yield json.dumps(ev, default=str) + "\n"
+            if "done" in ev:
+                return
+
+    return StreamingResponse(lines(), media_type="application/x-ndjson", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.exception_handler(404)

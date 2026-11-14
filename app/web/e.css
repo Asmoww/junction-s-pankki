@@ -190,11 +190,10 @@ body.e #view-learn { gap: 12px; }
 .wslide { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 28px 40px; cursor: pointer; user-select: none; }
 .wslide.in > * { animation: wup .45s ease both; } .wslide.in > *:nth-child(2) { animation-delay: .06s; } .wslide.in > *:nth-child(3) { animation-delay: .12s; } .wslide.in > *:nth-child(4) { animation-delay: .18s; }
 /* Wrapped loader: a receipt prints out of a slot, one line per month */
-.wload { display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .wrcp { position: relative; width: 190px; height: 340px; overflow: hidden; display: flex; justify-content: center; }
 .wslot { position: absolute; top: 0; left: 0; right: 0; height: 8px; border-radius: 4px; background: var(--acc); z-index: 1; }
 .wrap.light .wslot { background: var(--fg); }
-.wpaper { position: absolute; top: 4px; width: 158px; padding: 18px 14px 18px; background: #fff; color: #0f2219; font: 500 12px/1.85 ui-monospace, Menlo, monospace;
+.wpaper { position: absolute; top: 4px; width: 158px; padding: 24px 14px 18px; background: #fff; color: #0f2219; font: 500 12px/1.85 ui-monospace, Menlo, monospace;
   transform: translateY(-100%); animation: wprint 5s steps(14) infinite;
   -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 6px) no-repeat, radial-gradient(circle at 5px 6px, transparent 4px, #000 4.5px) bottom / 10px 6px repeat-x;
   mask: linear-gradient(#000 0 0) top / 100% calc(100% - 6px) no-repeat, radial-gradient(circle at 5px 6px, transparent 4px, #000 4.5px) bottom / 10px 6px repeat-x; }
@@ -203,9 +202,7 @@ body.e #view-learn { gap: 12px; }
 .wpaper p { display: flex; justify-content: space-between; align-items: center; margin: 0; }
 .wpaper p i { width: 44px; height: 6px; border-radius: 3px; background: #d7efe0; }
 @keyframes wprint { from { transform: translateY(-100%); } 75%, to { transform: translateY(0); } }
-.wlcap { margin: 0; font-size: 15px; color: var(--muted); min-height: 20px; text-align: center; transition: opacity .3s; }
-.wlcap.fade { opacity: 0; }
-@media (prefers-reduced-motion: reduce) { .wpaper { animation: none; transform: none; } .wlcap { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .wpaper { animation: none; transform: none; } }
 @keyframes wup { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .wslide.in > * { animation: none; } .wrap { transition: none; } }
 .wslide h1 { font: 700 42px/1.05 Geologica; letter-spacing: -1.2px; margin: 8px 0 14px; color: var(--fg); } .wslide h2 { font: 600 26px/1.2 Geologica; margin: 8px 0; color: var(--fg); }
@@ -463,3 +460,54 @@ body.e .detective .lmore { padding: 0; margin-top: 8px; font-weight: 600; color:
 .healthcard .ring { margin-top: 0; }
 /* Payday row: amounts never wrap; the label takes the remaining width */
 .result { gap: 10px; } .result > span:first-child { flex: 1 1 auto; min-width: 0; line-height: 1.3; } .result .vals { flex: none; white-space: nowrap; }
+
+/* Loading scenes (scene() in e.js): a small picture of what is happening, and a caption that changes */
+.ld { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 22px 0; }
+.wimsg .ld, .offers .ld { padding: 10px 0 4px; }
+.ld .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ldcap { margin: 0; font-size: 15px; line-height: 1.35; color: var(--muted); min-height: 20px; text-align: center; transition: opacity .3s; }
+.ldcap.fade { opacity: 0; }
+.wslide .ld { gap: 18px; }
+/* Sort: a purchase drops into each basket in turn, and the basket fills a little */
+.ldbk { display: flex; gap: 18px; padding-top: 44px; }
+.ldbk span { position: relative; width: 52px; height: 42px; border: 3px solid var(--c); border-top: 0; border-radius: 0 0 14px 14px; }
+.ldbk em { position: absolute; left: 3px; right: 3px; bottom: 3px; height: 0; border-radius: 0 0 9px 9px; background: var(--c); opacity: .25;
+  animation: ldfill 3s ease infinite; animation-delay: calc(var(--k) * 1s); }
+.ldbk i { position: absolute; left: 50%; top: -40px; width: 14px; height: 14px; margin-left: -7px; border-radius: 4px; background: var(--c); opacity: 0;
+  animation: lddrop 3s cubic-bezier(.5, 0, .7, .4) infinite; animation-delay: calc(var(--k) * 1s); }
+@keyframes lddrop { 0% { opacity: 0; transform: translateY(0) rotate(0); } 6% { opacity: 1; } 28% { opacity: 1; transform: translateY(58px) rotate(90deg); } 33%, 100% { opacity: 0; transform: translateY(58px) rotate(90deg); } }
+@keyframes ldfill { 0%, 25% { height: 0; } 35%, 85% { height: 12px; } 100% { height: 0; } }
+/* Play: day cards are dealt into a fan */
+.lddeal { position: relative; width: 200px; height: 112px; }
+.lddeal i { position: absolute; left: 50%; bottom: 0; width: 54px; height: 76px; margin-left: -27px; display: grid; place-items: center; font-size: 24px; font-style: normal;
+  background: #fff; border: 1.5px solid var(--line); border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 61, 37, .12); transform-origin: 50% 130%;
+  animation: lddeal 3.6s ease infinite; animation-delay: calc(var(--k) * .22s); }
+@keyframes lddeal { 0% { opacity: 0; transform: translateY(-70px); } 14% { opacity: 1; }
+  32%, 82% { opacity: 1; transform: rotate(calc((var(--k) - 2) * 15deg)); } 100% { opacity: 0; transform: rotate(calc((var(--k) - 2) * 15deg)); } }
+/* Play result: the 14 days fill in one by one */
+.lddays { display: grid; grid-template-columns: repeat(7, 20px); gap: 6px; }
+.lddays i { height: 20px; border-radius: 6px; background: var(--g100); animation: ldday 3.4s ease infinite; animation-delay: calc(var(--k) * .14s); }
+@keyframes ldday { 0% { background: var(--g100); } 15%, 75% { background: var(--g500); } 100% { background: var(--g100); } }
+/* Live price: shop rows are read one after another */
+.ldshop { width: 220px; display: grid; gap: 8px; }
+.ldshop p { display: flex; align-items: center; gap: 10px; margin: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  animation: ldshop 2.4s ease infinite; animation-delay: calc(var(--k) * .8s); }
+.ldshop i { width: 16px; height: 16px; border-radius: 50%; background: var(--g100); }
+.ldshop b { flex: 1; height: 7px; border-radius: 4px; background: var(--g100); }
+.ldshop em { font-style: normal; font-weight: 600; color: var(--g300); }
+@keyframes ldshop { 0%, 40%, 100% { border-color: var(--line); background: #fff; } 10%, 30% { border-color: var(--g300); background: var(--g50); } }
+/* What-if and graph zoom: the line draws itself; in what-if the changed line splits off it */
+.ldline { width: 220px; height: 70px; overflow: visible; }
+.ldline.big { width: 100%; height: 150px; }
+.ldline path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.ldline line { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ldline .a { stroke: var(--g300); animation: ldraw 2.8s ease infinite; }
+.ldline.big .a { stroke: var(--g500); }
+.ldline .b { stroke: var(--g700); animation: ldrawb 2.8s ease infinite; }
+@keyframes ldraw { 0% { stroke-dashoffset: 1; opacity: 1; } 50%, 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ldrawb { 0%, 40% { stroke-dashoffset: 1; opacity: 1; } 70%, 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .ld *, .ldcap { animation: none !important; transition: none; }
+  .ldline path { stroke-dashoffset: 0; } .ldbk i { display: none; } .ldbk em { height: 12px; } .lddays i { background: var(--g300); }
+  .lddeal i { transform: rotate(calc((var(--k) - 2) * 15deg)); }
+}
