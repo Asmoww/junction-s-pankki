@@ -1,6 +1,7 @@
 """Verified numbers: every euro amount and percentage in a coach answer is matched against the tool results.
 
-Status per number: "derived" (exact sum or difference of two numbers from one tool result), "yours" (the user's own
+Status per number: "derived" (exact arithmetic on matched numbers: a sum or difference of two numbers from one tool
+result or from this answer, a total of the amounts listed just above, or a tool value per 2/3/4/6/12 months), "yours" (the user's own
 number), "suggestion" (a percentage offered in a question, not a claim), "verified" (equals a tool value at the shown precision), "rounded" (a tool value rounded to
 tens/hundreds, e.g. "about 1,000 €" for 997 €), "unverified" (no source: flagged in the UI and counted in traps).
 """
@@ -60,7 +61,7 @@ def _collect(obj, path="", out=None):
 
 
 def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en",
-          context: dict | None = None) -> list[dict]:
+          context: dict | None = None, earlier: list[str] | None = None) -> list[dict]:
     """context: values the coach was given up front (e.g. the customer's balance)."""
     sources = [(abs(float(v)), f"customer.{k}") for k, v in (context or {}).items() if isinstance(v, (int, float))]
     per_tool = []
@@ -69,10 +70,16 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
             vals = [(v, f"{t['tool']}.{p}") for v, p in _collect(t["result"])]
             sources += vals
             per_tool.append([(v, p) for v, p in vals if v >= 1 and " (as %)" not in p][:80])
-    for u in user_texts:  # numbers the user said themselves ("cut by 20 %", "€500") are theirs, not claims
-        for _, num, _ in _matches(u):
+    for u in user_texts:  # numbers the user said themselves ("cut by 20 %", "save 200 euros", "$4000") are theirs
+        for m in re.finditer(_NUM, u):
             try:
-                sources.append((_parse(num)[0], "your question"))
+                sources.append((_parse(m.group(0))[0], "your question"))
+            except ValueError:
+                pass
+    for e in earlier or []:  # the coach's own earlier answers in this chat (they were checked when first shown)
+        for _, num, _ in _matches(e):
+            try:
+                sources.append((_parse(num)[0], "earlier in this chat"))
             except ValueError:
                 pass
     found = []
@@ -114,5 +121,44 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
                 status = "suggestion"
         if src == "your question":
             status = "yours"
-        found.append({"text": full, "value": val, "status": status, "source": src})
+        elif src == "earlier in this chat":
+            status = "earlier"
+        found.append({"text": full, "value": val, "status": status, "source": src, "decimals": dec})
+    _derive_more(found, sources)
     return found
+
+
+_PERIODS = (2, 3, 4, 6, 12)
+
+
+def _derive_more(found: list[dict], sources: list[tuple[float, str]]) -> None:
+    """Exact arithmetic the model showed in its own answer, cent-exact only: a sum or difference of two amounts already
+    matched in this answer, the total of the 3-4 matched amounts listed just before it, or a tool value per period
+    (/ or × 2, 3, 4, 6, 12 months). Repeats so a total can then be used in a later difference."""
+    eq = lambda a, b: abs(round(a, 2) - b) < 0.006
+    for _ in range(3):
+        changed = False
+        for i, f in enumerate(found):
+            if f["status"] != "unverified" or f["decimals"] != 2 or f["value"] < 1:
+                continue
+            val, hit = f["value"], None
+            known = [g["value"] for g in found if g is not f and g["status"] not in ("unverified", "suggestion")]
+            for x, a in enumerate(known):
+                b = next((b for b in known[x + 1:] if eq(a + b, val) or eq(abs(a - b), val)), None)
+                if b is not None:
+                    hit = f"{max(a, b):.2f} {'+' if eq(a + b, val) else '−'} {min(a, b):.2f} (in this answer)"
+                    break
+            if not hit:
+                prev = [g["value"] for g in found[:i] if g["status"] not in ("unverified", "suggestion")]
+                k = next((k for k in (3, 4) if len(prev) >= k and eq(sum(prev[-k:]), val)), None)
+                hit = f"total of the {k} amounts above" if k else None
+            if not hit:
+                for v, p in sources:
+                    k = next((k for k in _PERIODS if v >= 1 and (eq(v / k, val) or eq(v * k, val))), None) if v >= 1 else None
+                    if k:
+                        hit = f"{p} {'/' if eq(v / k, val) else '×'} {k}"
+                        break
+            if hit:
+                f["status"], f["source"], changed = "derived", hit, True
+        if not changed:
+            break

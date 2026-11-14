@@ -206,6 +206,15 @@ def get_spending(cid: str, period: str | None = None, start: str | None = None, 
                   f"AND tx_date BETWEEN ? AND ? AND {where} GROUP BY 1 ORDER BY {order} LIMIT 30", base)
         out["breakdown"] = [{"key": (BASKETS[r["key"]]["name"] if group_by == "basket" else str(r["key"])),
                              "total_eur": _r(r["total"]), "transactions": r["n"]} for r in rows]
+        if group_by == "month":  # every month in the period with data, 0 where nothing was spent (averages stay right)
+            have = {b["key"]: b for b in out["breakdown"]}
+            m, last = max(s, DATA_START).replace(day=1), min(e, TODAY)
+            months = []
+            while m <= last:
+                k = m.strftime("%Y-%m")
+                months.append(have.get(k, {"key": k, "total_eur": 0.0, "transactions": 0}))
+                m = date(m.year + (m.month == 12), m.month % 12 + 1, 1)
+            out["breakdown"] = months
     return out
 
 

@@ -9,6 +9,7 @@ import json
 import logging
 import operator
 import os
+import re
 
 import anthropic
 
@@ -186,11 +187,20 @@ def _calc(node):
     raise money.ToolError("Only numbers, + - * / ** and parentheses are allowed.")
 
 
+_NUM = re.compile(r"\d[\d\u00a0\u202f ,.]*\d|\d")
+
+
+def _normalize_numbers(expression: str) -> str:
+    """Read every number the way verify.py reads answers: '412,30' = 412.30, '1,234.50' = 1234.50, '985 280,02' =
+    985280.02. (Stripping all commas turned (412,30+380,10)/2 into 39,620 and the check then matched it.)"""
+    return _NUM.sub(lambda m: repr(verify._parse(m.group(0))[0]), expression)
+
+
 def calculate(cid: str, expression: str, what: str = "") -> dict:
     if len(expression) > 200:
         raise money.ToolError("Expression too long.")
     try:
-        val = _calc(ast.parse(expression.replace(",", ""), mode="eval"))
+        val = _calc(ast.parse(_normalize_numbers(expression), mode="eval"))
     except (SyntaxError, ZeroDivisionError, OverflowError) as e:
         raise money.ToolError(f"Can't calculate: {e}")
     if isinstance(val, complex):
@@ -238,6 +248,9 @@ Rules:
 - If the user wants to change how something counts ("taxis are essential for me"), say you can't change it from the
   chat, but they can in "Sort with the AI" (Home → Your three baskets), and their answer then counts everywhere.
 - If you offer to connect another bank, say it is a demo connection in this prototype.
+- Monthly averages: use the tool's average_per_month_eur. Never average the rows of a month breakdown yourself, and
+  a month with no spending counts as 0.
+- Numbers you gave earlier in this chat may be repeated; numbers from your earlier answers count as known.
 - Quick loans and payday loans: say plainly they are expensive (high interest and fees), suggest talking to S-Bank
   first, and show a cheaper way through the numbers.
 - Money the user says they have elsewhere (another account or bank) is not visible to you: check get_other_accounts.
@@ -392,8 +405,11 @@ def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, mes
         if not calls:
             text = (m.get("content") or "").strip()
             usage.update({"model": out["model"], "where": eu.label(), "cost_usd": None})
-            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
+            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang, earlier=[h["text"] for h in history if h["role"] == "assistant"], context=
                                    {"balance": c["balance"], "age": c["age"]})
+            bad = [n["text"] for n in numbers if n["status"] == "unverified"]
+            if bad:
+                log.warning("unverified numbers (eu) %s in answer to %r", bad, history[-1]["text"][:80])
             return {"answer": text, "trace": trace, "error": False, "model": out["model"], "numbers": numbers,
                     "attachments": _attachments(trace, text), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
         for call in calls:
@@ -463,7 +479,7 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
             usage["cost_usd"] = round((usage["input_tokens"] * PRICE_IN + usage["output_tokens"] * PRICE_OUT
                                        + usage["cache_read_tokens"] * PRICE_CACHE_READ
                                        + usage["cache_write_tokens"] * PRICE_CACHE_WRITE) / 1e6, 4)
-            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
+            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang, earlier=[h["text"] for h in history if h["role"] == "assistant"], context=
                                    {"balance": c["balance"], "age": c["age"]})
             bad = [n for n in numbers if n["status"] == "unverified"]
             if bad:

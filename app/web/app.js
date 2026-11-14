@@ -335,7 +335,7 @@ function traceLine(t) {
 }
 
 function answerHtml(r) {
-  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion" && n.status !== "yours"), v = nums.filter((n) => n.status !== "unverified").length;
+  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion" && n.status !== "yours" && n.status !== "earlier"), v = nums.filter((n) => n.status !== "unverified").length;
   const badge = nums.length ? `<div class="vbadge ${v === nums.length ? "all" : "some"}">${v === nums.length ? "✓" : "!"} ${T().verified(v, nums.length)}</div>` : "";
   const att = (r.attachments || []).map((a) => `<div class="att">${renderAttachment(a)}</div>`).join("");
   const u = r.usage || {}, pv = r.privacy || {};
@@ -440,7 +440,7 @@ document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("c
 $("#thread").addEventListener("click", (e) => {
   const n = e.target.closest(".num"); if (!n) return;
   const st = n.dataset.status;
-  toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : st === "yours" ? `<b>${T().numYours}</b>`
+  toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : st === "yours" ? `<b>${T().numYours}</b>` : st === "earlier" ? `<b>${T().numEarlier}</b>`
     : `<b>${st === "verified" ? T().numVerified : st === "derived" ? T().numDerived : T().numRounded}</b><br><code>${esc(n.dataset.src)}</code>`);
 });
 

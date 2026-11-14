@@ -27,7 +27,7 @@ def run_case(c):
         eu.provider.set("eu")
     r = coach.chat(c["persona"], [{"role": "user", "text": c["q"]}], c.get("lang", "en"))
     ans, failed = r["answer"], []
-    nums = [n for n in r.get("numbers", []) if n["status"] not in ("suggestion", "yours")]
+    nums = [n for n in r.get("numbers", []) if n["status"] not in ("suggestion", "yours", "earlier")]
     if r.get("error"):
         failed.append("coach error")
     bad = [n["text"] for n in nums if n["status"] == "unverified"]

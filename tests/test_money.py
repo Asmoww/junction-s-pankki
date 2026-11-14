@@ -270,3 +270,38 @@ def test_psd2_full_picture_is_consented_labelled_and_revocable(monkeypatch, tmp_
     assert o["connected"] and "demo" in o["source"] and o["total_eur"] == pytest.approx(o["s_bank_balance_eur"] + o["other_balance_eur"], abs=0.01)
     psd2.revoke(jussi)
     assert not psd2.status(jussi)["connected"]
+
+
+@pytest.mark.parametrize("expr, want", [("(412,30+380,10)/2", 396.20), ("1,234.50 + 1", 1235.50), ("985 280,02 - 0,02", 985280.0),
+                                        ("2 * 3", 6.0), ("4000 * ((1 + 0.08/12) ** 48 - 1) / (0.08/12)", 225399.66)])
+def test_calculate_reads_numbers_like_the_number_check(expr, want):
+    # Review: stripping every comma turned (412,30+380,10)/2 into 39,620, and the check then marked it verified.
+    from app import coach
+    assert coach.calculate(EMMA, expr)["result"] == pytest.approx(want, abs=0.01)
+
+
+def test_numbers_from_earlier_answers_count_as_known():
+    from app import verify
+    earlier = ["Over 12 months that is 985 280,02 € in total, and halving it saves about 122 € a month."]
+    n = verify.check("Yes: about 122 € a month, from the 985 280,02 € total.", [], ["yes"], "fi", earlier=earlier)
+    assert [x["status"] for x in n] == ["earlier", "earlier"]
+    assert verify.check("About 123 € a month.", [], [], "en", earlier=earlier)[0]["status"] == "unverified"
+
+
+def test_month_breakdown_lists_every_month_so_row_averages_are_right():
+    # Review: kiosks Apr-Sep listed 3 of 6 months; the mean of the rows was 70.55 € vs the true 35.27 €.
+    r = money.get_spending(EMMA, start="2026-04-01", end="2026-09-30", subcategory="Kiosks & convenience stores", group_by="month")
+    assert [b["key"] for b in r["breakdown"]] == ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"]
+    assert sum(b["total_eur"] for b in r["breakdown"]) / 6 == pytest.approx(r["average_per_month_eur"], abs=0.01)
+
+
+def test_exact_arithmetic_shown_in_the_answer_is_derived_not_flagged():
+    # Gemma probe 14 Nov: a total of listed baskets, a 3-month average and their difference were all cent-exact but flagged
+    from app import verify
+    trace = [{"tool": "get_three_baskets", "error": False, "result": {"b1": 1089.66, "b2": 368.60, "b3": 699.45, "income_3_months": 5723.97}}]
+    ans = ("Fixed 1 089,66 €, surprises 368,60 €, extras 699,45 €. Yhteensä 2 157,71 €. Tulot 1 907,99 € kuussa "
+           "(5 723,97 € / 3). Ylitys 249,72 €.")
+    st = {n["text"]: n["status"] for n in verify.check(ans, trace, [], "fi")}
+    assert st["2 157,71 €"] == st["1 907,99 €"] == st["249,72 €"] == "derived"
+    assert verify.check("You could save 200.00 € a month.", [], ["Plan my spending so I can save 200 euros a month"], "en")[0]["status"] == "yours"
+    assert verify.check("About 2 157,72 €.", trace, [], "fi")[0]["status"] == "unverified"   # one cent off stays flagged
