@@ -330,7 +330,7 @@ const TOOL_LABEL = {
   get_payday_pattern: "Compared spending before and after payday", get_payday_forecast: "Projected your balance to payday",
   get_benchmark: "Compared with Statistics Finland", get_spender_type: "Worked out your spender type", calculate: "Calculated",
   show_chart: "Drew a chart from your transactions", forecast_with_events: "Put your planned costs on their dates",
-  check_purchase: "Checked live prices on shop pages", plan_home: "Planned a home purchase with live rules", money_health: "Worked out your Rahakunto score",
+  check_purchase: "Checked live prices on shop pages", plan_home: "Planned a home purchase with live rules", money_health: "Worked out your money fitness score",
 };
 function traceLine(t) {
   const r = t.result || {}, i = t.input || {};
