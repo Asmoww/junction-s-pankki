@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, eu, future, homeplan, insights, live, money, play, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, drains, eu, future, homeplan, insights, live, money, play, saving, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -150,7 +150,8 @@ def home(cid: str):
     cid = _cid(cid)
     return {"overview": money.overview(cid), "cards": insights.cards(cid), "pot": insights.surprise_pot(cid),
             "type": insights.spender_type(cid), "benchmark": insights.benchmark(cid), "ribbon": insights.ribbon(cid),
-            "health": insights.money_health(cid), "year": wrapped.calendar(cid), "surprise_example": live.surprise_example()}
+            "health": insights.money_health(cid), "year": wrapped.calendar(cid), "surprise_example": live.surprise_example(),
+            "save": saving.get_safe_to_save(cid), "drains": drains.drains(cid)}
 
 
 class PlayIn(BaseModel):

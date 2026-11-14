@@ -246,3 +246,14 @@ def test_graph_notes_are_rendered_from_facts_in_proper_finnish():
     assert future._render_note("biggest_day", "1999-01-01", f, "fi") is None
     bz = future._render_note("below_zero", f["goes_below_zero_on"], f, "sv")
     assert bz["text"] == "Här blir det minus"
+
+
+def test_monthly_drains_add_up_and_stay_honest():
+    from app import drains
+    d = drains.drains(EMMA)
+    assert d["habits"] and all(h["months_present"] >= drains.HABIT_MIN_MONTHS for h in d["habits"])
+    assert d["drain_eur_month"] == pytest.approx(sum(h["eur_month"] for h in d["habits"]) + sum(s["eur_month"] for s in d["subscriptions"]), abs=0.05)
+    assert d["drain_eur_year"] == pytest.approx(d["drain_eur_month"] * 12, abs=0.1)
+    eat = next(h for h in d["habits"] if h["habit"] == "eating_out")
+    assert "Restaurants" in eat["merchant_types"]
+    assert {b["bill"] for b in d["bills"]} <= {"Housing", "Utilities"}

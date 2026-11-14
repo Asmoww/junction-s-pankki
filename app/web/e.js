@@ -50,8 +50,20 @@ const ES = {
     askQ: (d) => `What did I spend on ${d}, and was it a lot for me?`, thinking: "Reading your words…",
     aiNote: "Notes written by AI from your numbers", noAmount: "Tell me an amount, e.g. 150 €.", failed: "Couldn't do that one. Try again.",
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
-    cards: { safe: "Free to spend this week", month: (m) => m, payday: "After payday", pot: "Surprise costs", fin: "vs Finland", psd2: "Other bank" },
-    perMonth: "a month", missing: (a, d) => `${a} missing until ${d}`, perDayTo: (a, d) => `${a}/day until ${d}`, have: "Available", must: "Must-pays", mo: "mo", potSub: "on average, e.g. repairs", last12: "last 12 months", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
+    cards: { save: "Safe to save on payday", drains: "Monthly drains", safe: "Free to spend this week", month: (m) => m, payday: "After payday", pot: "Surprise costs", fin: "vs Finland", psd2: "Other bank" },
+    perMonth: "a month", fitMonths: (k, n) => `fitted ${k} of ${n} months`, gapFirst: "close the monthly gap first", yr: "yr",
+      saveLead: (a, k, n) => `Moving ${a} to savings on payday would have fitted in ${k} of your last ${n} pay months, with a buffer left for surprise costs.`,
+      saveZero: "In most pay months your money ran down to the buffer or below before the next salary. Close the monthly gap first; then saving can start.",
+      saveChart: "Room left in each pay month after a buffer for surprises (red: below the buffer).", stretch: (a, k) => `Stretch: ${a} would have fitted in ${k} months.`,
+      already: (a) => `You already move about ${a} a month to savings or investments.`, saveSetup: (a, d) => `Move ${a} to savings on payday (${d})`,
+      saveDone: (a) => `In S-mobiili this sets up a ${a} transfer to savings on every payday.`, askGap: "How do I close the monthly gap?", askGapQ: "How could I close my monthly gap so I can start saving?",
+      drainSub: (y) => `${y} a year`, drainCap: (n) => `${n} habits that recur like subscriptions`, drainsTitle: "What leaves your account every month",
+      drainsLead: (m, y, h) => `Habits that recur almost every month take ${m} a month: ${y} a year, about ${h} hours of your work each month. Nobody signed up for them.`,
+      habitsT: "Habits that work like a subscription", subsT: "Subscriptions", billsT: "Bills (must-pays)",
+      habitMeta: (m, t, h) => `${m}/12 months · ${t}× a month${h ? ` · ${h} h of work` : ""}`, subMeta: (m) => `steady charge, ${m}/12 months`,
+      billMeta: (n) => `${n} payments in 12 months`, noSubs: "No steady subscription charges in this data. With real data: streaming, gym, apps.",
+      halfQ: (n) => `How much would I save in a year if I halved ${n}?`, drainsNote: "Tap a habit to ask the coach what halving it would save.",
+      fam: { eating_out: "Eating out", kiosks: "Kiosks", taxis_parking: "Taxis and parking" },  missing: (a, d) => `${a} missing until ${d}`, perDayTo: (a, d) => `${a}/day until ${d}`, have: "Available", must: "Must-pays", mo: "mo", potSub: "on average, e.g. repairs", last12: "last 12 months", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
   fi: { euOn: "Tekoäly Suomessa", euOff: "Tekoäly: Claude", euToast: (l) => `Tekoäly toimii nyt mallilla ${l}, avoin malli Suomessa. Luvut tulevat yhä koodista.`, claudeToast: "Tekoäly toimii nyt Claudella.", pl: { card: "Pelaa kaksi seuraavaa viikkoa", cardB: "Pääsetkö palkkapäivään plussalla?", go: "Pelaa", title: "Kaksi seuraavaa viikkoasi",
       onPayday: (d) => `Palkkapäivänä ${d}`, usual: (v) => `Tavallisella tahdilla: ${v}`, goal: "Pääse palkkapäivään plussalla", rules: "Todennäköiset päiväsi kortti kerrallaan. Kolme koria ovat säännöt:",
       r1: "Kiinteitä pakollisia ei voi ohittaa. Vuokran voi siirtää.", r2: "Yllätyspuskuri pysyy: yllätyksiä tulee joka tapauksessa.", r3: "Arjen extrat ovat sinun valintasi: pidä tai ohita.",
@@ -101,8 +113,20 @@ const ES = {
     askQ: (d) => `Mihin käytin rahaa ${d}, ja oliko se minulle paljon?`, thinking: "Luen pyyntöäsi…",
     aiNote: "Tekoälyn muistiinpanot lukujesi pohjalta", noAmount: "Kerro summa, esim. 150 €.", failed: "Tämä ei onnistunut. Yritä uudelleen.",
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
-    cards: { safe: "Vapaata käyttöön tällä viikolla", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätysmenot", fin: "vs Suomi", psd2: "Toinen pankki" },
-    perMonth: "kuussa", missing: (a, d) => `${d} asti puuttuu ${a}`, perDayTo: (a, d) => `${a}/pv ${d} asti`, have: "Käytettävissä", must: "Pakolliset", mo: "kk", potSub: "keskimäärin, esim. korjaukset", last12: "viimeiset 12 kk", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
+    cards: { save: "Säästettävissä palkkapäivänä", drains: "Kuukausittaiset vuodot", safe: "Vapaata käyttöön tällä viikolla", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätysmenot", fin: "vs Suomi", psd2: "Toinen pankki" },
+    perMonth: "kuussa", fitMonths: (k, n) => `sopi ${k}/${n} kuukauteen`, gapFirst: "ensin kuukausivaje kiinni", yr: "v",
+      saveLead: (a, k, n) => `Jos olisit siirtänyt ${a} säästöön palkkapäivänä, se olisi sopinut ${k} kuukauteen viimeisistä ${n}, ja puskuria olisi jäänyt yllätysmenoihin.`,
+      saveZero: "Useimpina kuukausina rahat hupenivat puskuriin tai sen alle ennen seuraavaa palkkaa. Kurota ensin kuukausivaje umpeen, sitten säästäminen voi alkaa.",
+      saveChart: "Liikkumavara kunakin palkkakuukautena yllätysmenojen puskurin jälkeen (punainen: puskurin alle).", stretch: (a, k) => `Venyttäen: ${a} olisi sopinut ${k} kuukauteen.`,
+      already: (a) => `Siirrät jo noin ${a} kuussa säästöön tai sijoituksiin.`, saveSetup: (a, d) => `Siirrä ${a} säästöön palkkapäivänä (${d})`,
+      saveDone: (a) => `S-mobiilissa tämä asettaa ${a} siirron säästöön joka palkkapäivä.`, askGap: "Miten saan kuukausivajeen kiinni?", askGapQ: "Miten voisin kuroa kuukausivajeen umpeen, jotta voin alkaa säästää?",
+      drainSub: (y) => `${y} vuodessa`, drainCap: (n) => `${n} tapaa, jotka toistuvat kuin tilaukset`, drainsTitle: "Mikä valuu tililtä joka kuukausi",
+      drainsLead: (m, y, h) => `Lähes joka kuukausi toistuvat tavat vievät ${m} kuussa: ${y} vuodessa, noin ${h} tuntia työtäsi kuukaudessa. Kukaan ei tilannut niitä.`,
+      habitsT: "Tavat, jotka toimivat kuin tilaus", subsT: "Tilaukset", billsT: "Laskut (pakolliset)",
+      habitMeta: (m, t, h) => `${m}/12 kk · ${t}× kuussa${h ? ` · ${h} h työtä` : ""}`, subMeta: (m) => `tasainen veloitus, ${m}/12 kk`,
+      billMeta: (n) => `${n} maksua 12 kuukaudessa`, noSubs: "Tässä datassa ei ole tasaisia tilausmaksuja. Oikeassa datassa: suoratoisto, kuntosali, sovellukset.",
+      halfQ: (n) => `Paljonko säästäisin vuodessa, jos puolittaisin tämän: ${n}?`, drainsNote: "Napauta tapaa, niin valmentaja laskee, paljonko puolittaminen säästäisi.",
+      fam: { eating_out: "Ulkona syöminen", kiosks: "Kioskit", taxis_parking: "Taksit ja pysäköinti" },  missing: (a, d) => `${d} asti puuttuu ${a}`, perDayTo: (a, d) => `${a}/pv ${d} asti`, have: "Käytettävissä", must: "Pakolliset", mo: "kk", potSub: "keskimäärin, esim. korjaukset", last12: "viimeiset 12 kk", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
   sv: { euOn: "AI i Finland", euOff: "AI: Claude", euToast: (l) => `AI körs nu på ${l}, en öppen modell i Finland. Siffrorna kommer fortfarande från koden.`, claudeToast: "AI körs nu på Claude.", pl: { card: "Spela dina två nästa veckor", cardB: "Klarar du lönedagen på plus?", go: "Spela", title: "Dina två nästa veckor",
       onPayday: (d) => `På lönedagen ${d}`, usual: (v) => `I din vanliga takt: ${v}`, goal: "Nå lönedagen på plus", rules: "Dina troliga dagar, ett kort i taget. De tre korgarna är reglerna:",
       r1: "Fasta måsten kan inte hoppas över. Hyran kan flyttas.", r2: "Bufferten för överraskningar stannar: de kommer ändå.", r3: "Vardagsextra är ditt val: behåll eller hoppa över.",
@@ -152,8 +176,20 @@ const ES = {
     askQ: (d) => `Vad spenderade jag den ${d}, och var det mycket för mig?`, thinking: "Läser det du skrev…",
     aiNote: "Anteckningar skrivna av AI utifrån dina siffror", noAmount: "Ange ett belopp, t.ex. 150 €.", failed: "Det gick inte. Försök igen.",
     bills: { Housing: "Hyra", Utilities: "Räkningar" }, nothing: "Inga köp",
-    cards: { safe: "Fritt att använda i veckan", month: (m) => m, payday: "Efter lön", pot: "Oväntade kostnader", fin: "vs Finland", psd2: "Annan bank" },
-    perMonth: "i månaden", missing: (a, d) => `${a} saknas till ${d}`, perDayTo: (a, d) => `${a}/dag till ${d}`, have: "Tillgängligt", must: "Måsten", mo: "mån", potSub: "i snitt, t.ex. reparationer", last12: "senaste 12 mån", vsFin: (a) => `${a} i Finland`, moved: "flyttades" },
+    cards: { save: "Kan sparas på lönedagen", drains: "Månatliga läckor", safe: "Fritt att använda i veckan", month: (m) => m, payday: "Efter lön", pot: "Oväntade kostnader", fin: "vs Finland", psd2: "Annan bank" },
+    perMonth: "i månaden", fitMonths: (k, n) => `passade ${k} av ${n} månader`, gapFirst: "täpp först månadsunderskottet", yr: "år",
+      saveLead: (a, k, n) => `Att flytta ${a} till sparande på lönedagen hade passat ${k} av dina senaste ${n} lönemånader, med en buffert kvar för oväntade kostnader.`,
+      saveZero: "De flesta lönemånader tog pengarna slut ner till bufferten eller under före nästa lön. Täpp först till underskottet, sedan kan sparandet börja.",
+      saveChart: "Utrymme kvar varje lönemånad efter en buffert för överraskningar (rött: under bufferten).", stretch: (a, k) => `Med marginal: ${a} hade passat ${k} månader.`,
+      already: (a) => `Du flyttar redan cirka ${a} i månaden till sparande eller investeringar.`, saveSetup: (a, d) => `Flytta ${a} till sparande på lönedagen (${d})`,
+      saveDone: (a) => `I S-mobiili ställer detta in en överföring på ${a} till sparande varje lönedag.`, askGap: "Hur täpper jag till månadsunderskottet?", askGapQ: "Hur kan jag täppa till mitt månadsunderskott så att jag kan börja spara?",
+      drainSub: (y) => `${y} per år`, drainCap: (n) => `${n} vanor som återkommer som prenumerationer`, drainsTitle: "Vad som lämnar kontot varje månad",
+      drainsLead: (m, y, h) => `Vanor som återkommer nästan varje månad tar ${m} i månaden: ${y} per år, cirka ${h} timmar av ditt arbete i månaden. Ingen tecknade dem.`,
+      habitsT: "Vanor som fungerar som en prenumeration", subsT: "Prenumerationer", billsT: "Räkningar (måsten)",
+      habitMeta: (m, t, h) => `${m}/12 mån · ${t}× i månaden${h ? ` · ${h} h arbete` : ""}`, subMeta: (m) => `jämn debitering, ${m}/12 mån`,
+      billMeta: (n) => `${n} betalningar på 12 månader`, noSubs: "Inga jämna prenumerationsavgifter i den här datan. Med riktig data: streaming, gym, appar.",
+      halfQ: (n) => `Hur mycket sparar jag på ett år om jag halverar ${n}?`, drainsNote: "Tryck på en vana så räknar coachen ut vad en halvering sparar.",
+      fam: { eating_out: "Äta ute", kiosks: "Kiosker", taxis_parking: "Taxi och parkering" },  missing: (a, d) => `${a} saknas till ${d}`, perDayTo: (a, d) => `${a}/dag till ${d}`, have: "Tillgängligt", must: "Måsten", mo: "mån", potSub: "i snitt, t.ex. reparationer", last12: "senaste 12 mån", vsFin: (a) => `${a} i Finland`, moved: "flyttades" },
 };
 const E = () => ES[lang] || ES.en;
 const SPARK = `<svg class="spark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
@@ -338,6 +374,62 @@ function wrapCard() {
     <span class="go">▶ ${E().wr.open}</span></span><span class="ycal" aria-hidden="true">${rows}</span></button>`;
 }
 
+// Safe to save on payday (brief: "safe-to-spend and safe-to-save"): from the customer's own last 12 pay months
+function saveCard() {
+  const v = home.save; if (!v || v.status !== "ok") return "";
+  const hm = v.per_month.slice(-12), mx = Math.max(...hm.map((m) => Math.abs(m.headroom_eur)), 1), amt = v.safe_to_save_on_payday_eur;
+  return `<button class="mini" data-act="save"><span class="t">${E().cards.save}</span><b>${eur0(amt)}</b>
+    <span class="s">${amt > 0 ? E().fitMonths(v.months_it_would_have_been_safe, v.pay_months_seen) : E().gapFirst}</span>
+    <div class="spark12 hr">${hm.map((m) => `<i class="${m.headroom_eur < 0 ? "n" : ""}" style="height:${Math.max(4, (Math.abs(m.headroom_eur) / mx) * 100)}%"></i>`).join("")}</div>
+    <span class="cap">${E().last12}</span></button>`;
+}
+
+function saveSheet() {
+  const v = home.save, amt = v.safe_to_save_on_payday_eur, S = E();
+  const hm = v.per_month.slice(-12), mx = Math.max(...hm.map((m) => Math.abs(m.headroom_eur)), 1);
+  const bars = hm.map((m) => { const h = (Math.abs(m.headroom_eur) / mx) * 46;
+    return `<div class="hb2"><i class="${m.headroom_eur < 0 ? "n" : ""}" style="height:${h}px;${m.headroom_eur < 0 ? "top:50px" : `bottom:50px`}"></i>
+      <span>${esc(new Date(m.pay_month_start + "T12:00:00").toLocaleDateString(T().locale, { month: "narrow" }))}</span></div>`; }).join("");
+  const s = sheet(`<h2>${S.cards.save}</h2><div class="sbig">${eur0(amt)}</div>
+    <p class="lead">${amt > 0 ? esc(S.saveLead(eur0(amt), v.months_it_would_have_been_safe, v.pay_months_seen)) : esc(S.saveZero)}</p>
+    <div class="hbars">${bars}<u></u></div><p class="note left">${esc(S.saveChart)}</p>
+    ${v.stretch_eur > amt ? `<p class="sub">${esc(S.stretch(eur0(v.stretch_eur), v.months_stretch_would_have_been_safe))}</p>` : ""}
+    ${v.already_moving_to_savings_eur_month > 0 ? `<p class="sub">${esc(S.already(eur0(v.already_moving_to_savings_eur_month)))}</p>` : ""}
+    ${amt > 0 ? `<button class="btn wide" data-setup>${esc(S.saveSetup(eur0(amt), day(home.overview.safe_to_spend.next_payday)))}</button>` : `<button class="btn wide" data-askgap>${S.askGap}</button>`}
+    <p class="note">${T().demoNote}</p>`);
+  const su = s.querySelector("[data-setup]"); if (su) su.onclick = () => { closeSheet(); toast(esc(S.saveDone(eur0(amt))), 4500); };
+  const ag = s.querySelector("[data-askgap]"); if (ag) ag.onclick = () => { closeSheet(); ask(S.askGapQ); };
+}
+
+// Monthly drains: habits that work like a subscription, real subscriptions, and bills
+const FAMILY = { eating_out: "🍽️", kiosks: "🏪", taxis_parking: "🚕" };
+function drainsCard() {
+  const d = home.drains; if (!d || !d.habits.length) return "";
+  const tot = d.drain_eur_month || 1, shades = ["#003d25", "#00703c", "#2e9c5e", "#8fd0a8", "#d7efe0"];
+  return `<button class="mini" data-act="drains"><span class="t">${E().cards.drains}</span><b>${eur0(d.drain_eur_month)}<small>/${E().mo}</small></b>
+    <span class="s">${esc(E().drainSub(eur0(d.drain_eur_year)))}</span>
+    <span class="dstack">${d.habits.map((h, k) => `<i style="flex:${h.eur_month / tot};background:${shades[k]}"></i>`).join("")}</span>
+    <span class="cap">${esc(E().drainCap(d.habits.length))}</span></button>`;
+}
+
+function drainsSheet() {
+  const d = home.drains, S = E();
+  const name = (h) => (S.fam[h.habit] || label(h.habit)), emo = (h) => FAMILY[h.habit] || EMOJI[h.habit] || "🛍️";
+  const row = (em, nm, meta, m, y, ask) => `<li${ask ? ` data-ask="${esc(ask)}"` : ""}><span class="de">${em}</span><div><b>${esc(nm)}</b><span>${esc(meta)}</span></div>
+    <div class="dv"><b>${eur0(m)}/${S.mo}</b><span>${eur0(y)}/${S.yr}</span></div></li>`;
+  const habits = d.habits.map((h) => row(emo(h), name(h), S.habitMeta(h.months_present, nf(1).format(h.times_month), h.hours_of_work_month ? nf(1).format(h.hours_of_work_month) : null),
+    h.eur_month, h.eur_year, S.halfQ(name(h).toLowerCase()))).join("");
+  const subs = d.subscriptions.length ? d.subscriptions.map((x) => row("🔁", label(x.merchant_type), S.subMeta(x.months_present), x.eur_month, x.eur_year)).join("")
+    : `<li class="empty">${esc(S.noSubs)}</li>`;
+  const bills = d.bills.map((b) => row(b.bill === "Housing" ? "🏠" : "💡", E().bills[b.bill] || b.bill, S.billMeta(b.payments), b.eur_month, b.eur_year)).join("");
+  const s = sheet(`<h2>${S.drainsTitle}</h2><p class="lead">${esc(S.drainsLead(eur0(d.drain_eur_month), eur0(d.drain_eur_year), d.drain_hours_of_work_month ? nf(0).format(d.drain_hours_of_work_month) : "?"))}</p>
+    <div class="label">${S.habitsT}</div><ul class="drains">${habits}</ul>
+    <div class="label">${S.subsT}</div><ul class="drains">${subs}</ul>
+    <div class="label">${S.billsT}</div><ul class="drains">${bills}</ul>
+    <p class="note left">${esc(S.drainsNote)}</p>`);
+  s.querySelectorAll("[data-ask]").forEach((b) => b.addEventListener("click", () => { closeSheet(); ask(b.dataset.ask); }));
+}
+
 function strip() {
   // Five cards, in order of what helps decide: play the next two weeks, what's safe, surprises, the three baskets, the year.
   // Persona-specific extras only where they belong (PSD2 for the customer whose salary moves away, live rules for the home buyer).
@@ -352,12 +444,14 @@ function strip() {
     <span class="s">${shortE ? E().missing(eur0(-s.safe_until_payday_eur), day(s.next_payday)) : E().perDayTo(eur0(s.safe_per_day_eur), day(s.next_payday))}</span>
     <span class="hv"><span><em>${E().have}</em><i style="width:${(Math.max(have, 0) / hm) * 100}%"></i><u>${eur0(have)}</u></span>
       <span class="m"><em>${E().must}</em><i style="width:${(must / hm) * 100}%"></i><u>${eur0(must)}</u></span></span></button>`);
+  cards.push(saveCard());
   // Surprise costs (basket 2): the monthly average, what counts as one, and the last 12 months as bars
   const mx = Math.max(...pot.months.slice(-12).map((x) => x.eur), 1);
   cards.push(`<button class="mini" data-act="pot"><span class="t">${E().cards.pot}</span><b>${eur0(pot.average_per_month_last_12_eur)}<small>/${E().mo}</small></b>
     <span class="s">${E().potSub}</span>
     <div class="spark12">${pot.months.slice(-12).map((x) => `<i style="height:${Math.max(4, (x.eur / mx) * 100)}%"></i>`).join("")}<u style="bottom:${(pot.average_per_month_last_12_eur / mx) * 100}%"></u></div>
     <span class="cap">${E().last12}</span></button>`);
+  cards.push(drainsCard());
   cards.push(sortCard());
   cards.push(wrapCard());
   const psd2 = home.cards.find((c) => c.id === "psd2");
@@ -723,6 +817,8 @@ window.renderHomeE = async function () {
   setTimeout(preloadPresets, 300);
   bindAsks($("#view-home"));
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
+  $("#view-home").querySelectorAll("[data-act=save]").forEach((b) => b.addEventListener("click", saveSheet));
+  $("#view-home").querySelectorAll("[data-act=drains]").forEach((b) => b.addEventListener("click", drainsSheet));
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
   $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
   $("#view-home").querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
