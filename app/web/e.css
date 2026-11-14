@@ -367,3 +367,4 @@ body.e #trust .link { padding: 0; margin-top: 8px; font-weight: 600; color: var(
 /* Bill drops: an arrow down the drop, the bill marked at the top where the money leaves */
 .g .drop { stroke: var(--g900); stroke-width: 2; stroke-linecap: round; } .g .drop.neg { stroke: var(--neg); }
 .g .droph { fill: none; stroke: var(--g900); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .g .droph.neg { stroke: var(--neg); }
+.chip.busy { opacity: .75; } #g.dim svg { opacity: .55; transition: opacity .15s; }

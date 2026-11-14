@@ -446,12 +446,25 @@ function bindOffers() {
   });
 }
 
+// The three preset chips are preloaded right after Home loads, so a tap redraws at once (no network round trip).
+let presetCache = {};
+const presetScenario = (k) => ({ pause: { pause_extras: true }, eat: { cuts: [{ category: "Restaurants", percent: 50 }] },
+  rent: { move_bills: [{ bill: "Housing", date: (() => { const d = new Date(fut.next_payday + "T12:00:00"); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })() }] } })[k];
+function fetchPreset(k) {
+  const key = `${cid}:${k}`;
+  if (!presetCache[key]) presetCache[key] = api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customer_id: cid, scenario: presetScenario(k) }) }).catch((e) => { delete presetCache[key]; throw e; });
+  return presetCache[key];
+}
+function preloadPresets() { ["pause", "eat", "rent"].forEach((k) => fetchPreset(k).catch(() => {})); }
+
 async function runPreset(k) {
   if (active === k) { active = null; scen = null; return redraw(); }
-  const sc = { pause: { pause_extras: true }, eat: { cuts: [{ category: "Restaurants", percent: 50 }] },
-    rent: { move_bills: [{ bill: "Housing", date: (() => { const d = new Date(fut.next_payday + "T12:00:00"); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })() }] } }[k];
-  scen = await api("/api/scenario", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customer_id: cid, scenario: sc }) });
-  active = k; redraw();
+  const chip = document.querySelector(`[data-sc="${k}"]`);
+  if (chip) { chip.classList.add("on", "busy"); document.querySelector("#g")?.classList.add("dim"); }  // react to the tap at once
+  try { scen = await fetchPreset(k); active = k; }
+  catch { toast(E().failed); }
+  redraw();
 }
 
 function redraw() {
@@ -679,6 +692,7 @@ async function aiSwitch() {
 
 window.renderHomeE = async function () {
   aiSwitch();
+  presetCache = {};
   const o = home.overview, r = home.ribbon;
   $("#greet").textContent = `${persona().name} · ${day(o.customer.as_of)}`;
   const [whole, dec] = nf(2).format(o.customer.balance).split(/[.,](?=\d{2}$)/);
@@ -689,6 +703,7 @@ window.renderHomeE = async function () {
   notes = null;
   $("#view-home").innerHTML = `<section id="hero"></section>` + strip();
   redraw();
+  setTimeout(preloadPresets, 300);
   bindAsks($("#view-home"));
   $("#view-home").querySelectorAll("[data-act=pot]").forEach((b) => b.addEventListener("click", potSheet));
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
