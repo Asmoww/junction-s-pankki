@@ -175,3 +175,30 @@ body.e #view-learn { padding-top: 10px; }
 
 /* Learn tab: cards need their gap back (body.e main sets gap 0 for the home layout) */
 body.e #view-learn { gap: 12px; }
+
+/* Money Wrapped */
+.mini.wrapcard { grid-column: 1 / -1; height: auto; min-height: 96px; background: linear-gradient(135deg, #003d25 0%, #00703c 60%, #2e9c5e 100%); color: #fff; }
+.mini.wrapcard .t { color: #cfe8da; font-size: 13px; } .mini.wrapcard b { font-size: 22px; }
+.mini.wrapcard .go { margin-top: 8px; font-size: 14px; font-weight: 600; color: #fff; }
+.wrap { position: fixed; inset: 0; z-index: 50; background: radial-gradient(120% 90% at 20% 10%, #0b7a45 0%, #003d25 55%, #002616 100%); color: #fff;
+  display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; font-family: Geologica, sans-serif; }
+.wtop { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0; }
+.wbars { flex: 1; display: flex; gap: 4px; } .wbars i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); } .wbars i.on { background: #fff; }
+.wx { color: #fff; font-size: 28px; line-height: 1; padding: 0 4px; }
+.wslide { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 28px 40px; cursor: pointer; user-select: none; }
+.wslide.in > * { animation: wup .45s ease both; } .wslide.in > *:nth-child(2) { animation-delay: .06s; } .wslide.in > *:nth-child(3) { animation-delay: .12s; } .wslide.in > *:nth-child(4) { animation-delay: .18s; }
+@keyframes wup { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .wslide.in > * { animation: none; } }
+.wslide h1 { font: 500 40px/1.08 Geologica; letter-spacing: -1px; margin: 8px 0 12px; } .wslide h2 { font: 500 26px/1.2 Geologica; margin: 8px 0; }
+.wk { font-size: 14px; color: #a9d4bb; } .wsub { font-size: 18px; margin: 6px 0 0; color: #e8f5ee; }
+.wbig { font: 600 96px/1 Geologica; letter-spacing: -3px; } .wbig.sm { font-size: 48px; letter-spacing: -1px; margin-top: 6px; }
+.wcap { display: flex; gap: 8px; align-items: flex-start; margin-top: 28px; font-size: 16px; line-height: 1.4; color: #fff; background: rgba(255,255,255,.1); border-radius: 16px; padding: 12px 14px; }
+.wcap .spark { fill: #8fd0a8; margin-top: 3px; }
+.wb { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 16px; } .wb span { font-size: 15px; } .wb div { height: 14px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
+.wb i { display: block; height: 100%; border-radius: 999px; } .wb b { font-size: 22px; font-weight: 500; }
+.wtw { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; } .wtw div { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; align-items: center; }
+.wtw i { display: block; height: 16px; border-radius: 999px; background: #fff; } .wtw i.th { background: #8fd0a8; } .wtw b { font-size: 18px; font-weight: 500; }
+.ring.big.w span { background: #003d25; color: #fff; } .ring.big.w { width: 140px; height: 140px; margin-top: 14px; } .ring.big.w span { width: 112px; height: 112px; font-size: 44px; }
+.wact { display: flex; gap: 10px; margin-top: 28px; } .wact button { flex: 1; padding: 14px; border-radius: 999px; font-weight: 600; background: #fff; color: #003d25; }
+.wact .wdone { background: rgba(255,255,255,.14); color: #fff; }
+.wtap { position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.55); }

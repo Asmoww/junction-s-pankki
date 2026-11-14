@@ -129,3 +129,13 @@ def test_verify_derived_sums_only_within_one_tool():
           {"tool": "b", "error": False, "result": {"x": 100.00}}]
     got = {n["text"]: n["status"] for n in verify.check("About 561.03 € more, and 497.73 € elsewhere, and 777.77 €.", tr, [])}
     assert got == {"561.03 €": "derived", "497.73 €": "unverified", "777.77 €": "unverified"}
+
+
+def test_wrapped_facts_add_up():
+    from app import wrapped
+    f = wrapped.facts(EMMA)
+    assert sum(f["baskets_eur"].values()) == pytest.approx(f["money_out_eur"], abs=0.05)
+    t = f["twins"]
+    assert t["twins_who_never_went_below_zero"] >= 20  # a group, never one person
+    assert t["your_extras_per_month_eur"] == pytest.approx(f["baskets_eur"]["3"] / 12, abs=0.01)
+    assert f["no_spend_days"] >= f["longest_no_spend_streak_days"] > 0

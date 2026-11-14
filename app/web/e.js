@@ -1,7 +1,15 @@
 // Design E v2: the future as a graph. Code draws every number; the AI annotates the line and turns
 // "what if…" sentences into scenarios that redraw the future. Loaded after app.js on /e.
 const ES = {
-  en: { hk: { name: "Rahakunto", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
+  en: { wr: { card: "Your money year", open: "Watch", title: (n) => `${n}, your money year`, inOut: (i, o) => `Money in ${i} · out ${o}`,
+      baskets: "Where it went", habit: "Your number-one habit", meals: "meals out", hours: (h) => `= ${h} hours of your work`,
+      bigDay: "Your biggest day", best: "Best month", tough: "Toughest month", leftOver: (a) => `${a} left over`, lowest: (a) => `lowest ${a}`,
+      noSpend: "no-spend days", streak: (d) => `longest streak ${d} days`, payday: "more on extras the week after payday",
+      twins: (n) => `${n} people like you never went below zero`, youX: "You", themX: "Them", extrasMonth: "extras a month",
+      visits: (a, b) => `Eating out: they ${b}, you ${a} times a month`, score: "Rahakunto", next: "One thing for next year",
+      share: "Share (no amounts)", done: "Done", shareText: (f) => `My money year: ${f.no_spend_days} no-spend days, a ${f.longest_no_spend_streak_days}-day streak and ${f.eat_out.visits} meals out. #MoneyWrapped`,
+      tap: "Tap to continue" },
+    hk: { name: "Rahakunto", tiers: { vulnerable: "Vulnerable", coping: "Coping", healthy: "Healthy" },
       tones: { comfort: "A tight year, and it can get better. One thing first.", encourage: (t) => `Up ${t} points in three months. Keep going.`,
         reassure: (t) => `Down ${t} points: surprise costs did that, and your buffer handled them.`, steady: "Steady. One thing could lift it.",
         gentle_warning: (t) => `Down ${t} points. Here's what slipped.`, celebrate: "Strong. Keep the habit." },
@@ -27,7 +35,15 @@ const ES = {
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
     cards: { safe: "Safe this week", month: (m) => m, payday: "After payday", pot: "Surprises", fin: "vs Finland", psd2: "Other bank" },
     perMonth: "a month", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
-  fi: { hk: { name: "Rahakunto", tiers: { vulnerable: "Haavoittuva", coping: "Pärjäävä", healthy: "Hyvä" },
+  fi: { wr: { card: "Rahavuotesi", open: "Katso", title: (n) => `${n}, rahavuotesi`, inOut: (i, o) => `Rahaa tuli ${i} · meni ${o}`,
+      baskets: "Mihin se meni", habit: "Ykköstapasi", meals: "kertaa ulkona syömässä", hours: (h) => `= ${h} tuntia työtäsi`,
+      bigDay: "Suurin päiväsi", best: "Paras kuukausi", tough: "Tiukin kuukausi", leftOver: (a) => `${a} jäi yli`, lowest: (a) => `alimmillaan ${a}`,
+      noSpend: "päivää ilman ostoja", streak: (d) => `pisin putki ${d} päivää`, payday: "enemmän extroihin palkkaviikolla",
+      twins: (n) => `${n} kaltaistasi ei käynyt kertaakaan miinuksella`, youX: "Sinä", themX: "He", extrasMonth: "extroihin kuussa",
+      visits: (a, b) => `Ulkona syöminen: he ${b}, sinä ${a} kertaa kuussa`, score: "Rahakunto", next: "Yksi asia ensi vuodelle",
+      share: "Jaa (ilman summia)", done: "Valmis", shareText: (f) => `Rahavuoteni: ${f.no_spend_days} päivää ilman ostoja, ${f.longest_no_spend_streak_days} päivän putki ja ${f.eat_out.visits} kertaa ulkona syömässä. #Rahavuosi`,
+      tap: "Napauta jatkaaksesi" },
+    hk: { name: "Rahakunto", tiers: { vulnerable: "Haavoittuva", coping: "Pärjäävä", healthy: "Hyvä" },
       tones: { comfort: "Tiukka vuosi, ja se voi parantua. Yksi asia ensin.", encourage: (t) => `${t} pistettä ylös kolmessa kuussa. Hyvä suunta.`,
         reassure: (t) => `${t} pistettä alas: yllättävät menot tekivät sen, ja puskurisi kesti ne.`, steady: "Vakaa. Yksi asia voisi nostaa sitä.",
         gentle_warning: (t) => `${t} pistettä alas. Tässä mikä lipsui.`, celebrate: "Vahva. Jatka samaan malliin." },
@@ -53,7 +69,15 @@ const ES = {
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
     cards: { safe: "Turvallisesti", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätykset", fin: "vs Suomi", psd2: "Toinen pankki" },
     perMonth: "kuussa", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
-  sv: { hk: { name: "Pengakondition", tiers: { vulnerable: "Sårbar", coping: "Klarar sig", healthy: "Bra" },
+  sv: { wr: { card: "Ditt pengaår", open: "Titta", title: (n) => `${n}, ditt pengaår`, inOut: (i, o) => `In ${i} · ut ${o}`,
+      baskets: "Vart det tog vägen", habit: "Din största vana", meals: "gånger äta ute", hours: (h) => `= ${h} timmar av ditt arbete`,
+      bigDay: "Din största dag", best: "Bästa månaden", tough: "Tuffaste månaden", leftOver: (a) => `${a} över`, lowest: (a) => `lägst ${a}`,
+      noSpend: "dagar utan köp", streak: (d) => `längsta svit ${d} dagar`, payday: "mer på extra veckan efter lönen",
+      twins: (n) => `${n} som du gick aldrig under noll`, youX: "Du", themX: "De", extrasMonth: "extra i månaden",
+      visits: (a, b) => `Äta ute: de ${b}, du ${a} gånger i månaden`, score: "Pengakondition", next: "En sak för nästa år",
+      share: "Dela (utan belopp)", done: "Klar", shareText: (f) => `Mitt pengaår: ${f.no_spend_days} dagar utan köp, en svit på ${f.longest_no_spend_streak_days} dagar och ${f.eat_out.visits} gånger ute och åt. #Pengaåret`,
+      tap: "Tryck för att fortsätta" },
+    hk: { name: "Pengakondition", tiers: { vulnerable: "Sårbar", coping: "Klarar sig", healthy: "Bra" },
       tones: { comfort: "Ett tufft år, och det kan bli bättre. En sak först.", encourage: (t) => `Upp ${t} poäng på tre månader. Fortsätt så.`,
         reassure: (t) => `Ner ${t} poäng: oväntade kostnader gjorde det, och din buffert klarade dem.`, steady: "Stabilt. En sak kunde lyfta det.",
         gentle_warning: (t) => `Ner ${t} poäng. Här är vad som halkade.`, celebrate: "Starkt. Fortsätt så." },
@@ -245,10 +269,11 @@ function strip() {
       <span class="s">${esc(E().vsFin(eur0(big.finland_same_age_per_month_eur)))}</span>
       <div class="pair"><i style="width:${(big.you_per_month_eur / mx) * 100}%"></i><i class="fi" style="width:${(big.finland_same_age_per_month_eur / mx) * 100}%"></i></div></button>`);
   }
+  cards.unshift(`<button class="mini wrapcard" data-wrapped><span class="t">${E().wr.card}</span><b>${esc(day("2025-10-01"))} – ${esc(day(home.overview.customer.as_of))}</b><span class="go">${E().wr.open} ›</span></button>`);
   const hk = home.health;
   if (hk) {
     const ring = `conic-gradient(var(--g700) ${hk.score * 3.6}deg, var(--g100) 0)`;
-    cards.splice(psd2 ? 1 : 0, 0, `<button class="mini health" data-health><span class="t">${E().hk.name}</span>
+    cards.splice(psd2 ? 2 : 1, 0, `<button class="mini health" data-health><span class="t">${E().hk.name}</span>
       <div class="ring" style="background:${ring}"><span>${hk.score}</span></div><span class="s">${E().hk.tiers[hk.tier]}</span></button>`);
   }
   if (liveSt) {
@@ -364,6 +389,51 @@ function redraw() {
   layoutNotes(); bindGraph(G); bindDock();
 }
 
+// ---------------------------------------------------------------- Money Wrapped (story slides)
+async function openWrapped() {
+  const root = document.createElement("div");
+  root.className = "wrap"; root.innerHTML = `<div class="wtop"><div class="wbars"></div><button class="wx" aria-label="Close">×</button></div><div class="wslide"><span class="typing"><i></i><i></i><i></i></span></div>`;
+  document.body.appendChild(root);
+  root.querySelector(".wx").onclick = () => root.remove();
+  let w;
+  try { w = await api(`/api/wrapped/${cid}?lang=${lang}`); } catch { root.remove(); return; }
+  const f = w.facts, cap = (k) => (w.captions && w.captions[k] ? `<p class="wcap">${SPARK}${esc(w.captions[k])}</p>` : "");
+  const W = E().wr, mon = (ym) => new Date(ym + "-15T12:00:00").toLocaleDateString(T().locale, { month: "long" });
+  const tot = (f.baskets_eur["1"] + f.baskets_eur["2"] + f.baskets_eur["3"]) || 1;
+  const slides = [
+    `<div class="wk">${esc(day(f.period.start))} – ${esc(day(f.period.end))}</div><h1>${esc(W.title(f.name || ""))}</h1><p class="wsub">${esc(W.inOut(eur0(f.money_in_eur), eur0(f.money_out_eur)))}</p>${cap("year")}`,
+    `<div class="wk">${W.baskets}</div>${[1, 2, 3].map((b) => `<div class="wb"><span>${esc(T().baskets[b][0])}</span><div><i style="width:${(f.baskets_eur[b] / tot) * 100}%;background:${["", "#fff", "#8fd0a8", "#d7efe0"][b]}"></i></div><b>${eur0(f.baskets_eur[b])}</b></div>`).join("")}${cap("baskets")}`,
+    `<div class="wk">${W.habit}</div><div class="wbig">${f.eat_out.visits}</div><p class="wsub">${W.meals} · ${eur0(f.eat_out.total_eur)}</p>${f.eat_out.hours_of_work ? `<p class="wsub">${esc(W.hours(f.eat_out.hours_of_work))}</p>` : ""}${cap("habit")}`,
+    f.biggest_day ? `<div class="wk">${W.bigDay}</div><div class="wbig sm">${esc(day(f.biggest_day.date))}</div><p class="wsub">${eur0(f.biggest_day.total_eur)} · ${esc(f.biggest_day.what.map(label).join(", "))}</p>${cap("big_day")}` : null,
+    `<div class="wk">${W.best}</div><div class="wbig sm">${esc(mon(f.best_month.month))}</div><p class="wsub">${esc(W.leftOver(eur0(f.best_month.left_over_eur)))}</p>
+     <div class="wk" style="margin-top:28px">${W.tough}</div><div class="wbig sm">${esc(mon(f.toughest_month.month))}</div><p class="wsub">${esc(W.lowest(eur0(f.toughest_month.lowest_balance_eur)))}</p>${cap("months")}`,
+    `<div class="wbig">${f.no_spend_days}</div><p class="wsub">${W.noSpend}</p><p class="wsub">${esc(W.streak(f.longest_no_spend_streak_days))}</p>${cap("no_spend")}`,
+    f.payday_week_change_percent != null ? `<div class="wbig">${f.payday_week_change_percent > 0 ? "+" : ""}${f.payday_week_change_percent} %</div><p class="wsub">${W.payday}</p>${cap("payday")}` : null,
+    f.twins ? (() => { const t = f.twins, me = t.your_extras_per_month_eur, them = t.their_extras_per_month_eur, mx = Math.max(me, them, 1);
+      return `<div class="wk">${esc(W.twins(t.twins_who_never_went_below_zero))}</div>
+      <div class="wtw"><div><span>${W.youX}</span><i style="width:${(me / mx) * 100}%"></i><b>${eur0(me)}</b></div>
+      <div><span>${W.themX}</span><i class="th" style="width:${(them / mx) * 100}%"></i><b>${eur0(them)}</b></div></div>
+      <p class="wsub">${W.extrasMonth}</p><p class="wsub">${esc(W.visits(t.your_eat_out_visits_per_month, t.their_eat_out_visits_per_month))}</p>${cap("twins")}`; })() : null,
+    `<div class="wk">${W.score}</div><div class="ring big w" style="background:conic-gradient(#fff ${f.rahakunto.score * 3.6}deg, rgba(255,255,255,.2) 0)"><span>${f.rahakunto.score}</span></div>
+     <p class="wsub">${esc(E().hk.tiers[f.rahakunto.tier])}</p>`,
+    `<div class="wk">${W.next}</div>${f.next_step ? `<h2>${esc(stepText(f.next_step))}</h2>` : ""}${cap("next")}
+     <div class="wact"><button class="wshare">${W.share}</button><button class="wdone">${W.done}</button></div>`,
+  ].filter(Boolean);
+  let i = 0;
+  const bars = root.querySelector(".wbars"), sl = root.querySelector(".wslide");
+  const show = () => {
+    bars.innerHTML = slides.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("");
+    sl.innerHTML = slides[i] + (i < slides.length - 1 ? `<p class="wtap">${W.tap}</p>` : "");
+    sl.classList.remove("in"); void sl.offsetWidth; sl.classList.add("in");
+    const sh = sl.querySelector(".wshare");
+    if (sh) sh.onclick = async (e) => { e.stopPropagation(); const text = W.shareText(f);
+      try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); toast("✓"); } } catch {} };
+    const dn = sl.querySelector(".wdone"); if (dn) dn.onclick = (e) => { e.stopPropagation(); root.remove(); };
+  };
+  sl.onclick = (e) => { const x = e.clientX / window.innerWidth; i = x < 0.3 ? Math.max(0, i - 1) : Math.min(slides.length - 1, i + 1); show(); };
+  show();
+}
+
 function stepText(st) {
   const h = E().hk.steps;
   if (st.part === "spend") return h[st.target](eur0(st.gap_eur_month));
@@ -428,6 +498,7 @@ window.renderHomeE = async function () {
   $("#view-home").querySelectorAll("[data-act=psd2]").forEach((b) => b.addEventListener("click", psd2Sheet));
   $("#view-home").querySelectorAll("[data-rules]").forEach((b) => b.addEventListener("click", rulesSheet));
   $("#view-home").querySelectorAll("[data-health]").forEach((b) => b.addEventListener("click", healthSheet));
+  $("#view-home").querySelectorAll("[data-wrapped]").forEach((b) => b.addEventListener("click", openWrapped));
   const fc = home.cards.find((c) => c.id === "forecast");
   if (fc && !notifShown[cid]) { notifShown[cid] = true; showNotif(fc); }
   const want = `${cid}:${lang}`;

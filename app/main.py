@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money  # noqa: E402  (after .env is loaded)
+from . import coach, future, homeplan, insights, live, money, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -133,6 +133,11 @@ def home(cid: str):
             "health": insights.money_health(cid)}
 
 
+@app.get("/api/wrapped/{cid}")
+def wrapped_year(cid: str, lang: str = "en"):
+    return wrapped.wrapped(_cid(cid), lang if lang in ("en", "fi", "sv") else "en")
+
+
 @app.get("/api/future/{cid}")
 def future_line(cid: str):
     return future.future(_cid(cid))
@@ -173,6 +178,7 @@ def _warm_notes():
         for lg in ("en", "fi", "sv"):
             try:
                 future.annotations(p["id"], lg)
+                wrapped.captions(p["id"], lg)
             except Exception as e:  # noqa: BLE001 (warm-up only)
                 logging.getLogger("notes").warning("warm-up failed for %s %s: %s", p["id"], lg, e)
 
