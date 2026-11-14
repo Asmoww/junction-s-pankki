@@ -229,13 +229,14 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
                     status, src = "derived", _Src(f"{a:.2f} {op} {b:.2f}", pa.ti, "")
                     parts = [{"value": a, "op": "", **_ref(pa)}, {"value": b, "op": op, **_ref(pb)}]
                     break
-        if status == "unverified" and unit in ("%", "prosenttia", "procent"):
-            # A percentage inside a closing question ("Want to see a 30 % cut?") is an offer, not a claim.
+        if unit in ("%", "prosenttia", "procent") and (status == "unverified" or src == "your question"):
+            # A percentage inside a closing question ("Want to see a 30 % cut?") is an offer, not a claim, even when
+            # it happens to equal a number the user typed.
             at = answer.find(full) + len(full)
             end = answer.find("\n", at)
             sentence = answer[at: end if end >= 0 else len(answer)]
             if "?" in sentence.split(".")[0]:
-                status = "suggestion"
+                status, src = "suggestion", None
         if src == "your question":
             status = "yours"
         if explain and status == "unverified":

@@ -106,3 +106,10 @@ def test_chart_json_is_removed_from_answers():
     t = '{\n"chart_type": "category_trend",\n"data": [\n{"x": "2025-10", "y": 0.0}\n]\n}\n\nThe highest was **993.20 €**.'
     assert strip_data_dumps(t) == "The highest was **993.20 €**."
     assert strip_data_dumps("A\n```json\n{\"a\": 1}\n```\nB [x] {y}") == "A\n\nB [x] {y}"
+
+
+def test_offer_in_closing_question_is_never_marked_even_if_user_said_it():
+    ans = "Cutting extras helps. Would you like to see what a 20 % cut saves?"
+    for user in (["How could I become a millionaire in 20 years?"], ["Cut dining out by 20%"]):
+        found = verify.check(ans, [], user, "en", explain=True, notes=[])
+        assert [(n["text"], n["status"]) for n in found] == [("20 %", "suggestion")]
