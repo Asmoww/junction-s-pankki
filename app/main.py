@@ -12,7 +12,7 @@ import secrets
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ if _env.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
-from . import coach, future, homeplan, insights, live, money, play, sorter, wrapped  # noqa: E402  (after .env is loaded)
+from . import coach, eu, future, homeplan, insights, live, money, play, sorter, voice, wrapped  # noqa: E402  (after .env is loaded)
 from .personas import PERSONAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +36,26 @@ OPEN_PATHS = {"/login", "/healthz", "/static/style.css", "/static/icon.svg", "/h
 
 app = FastAPI(title="S-Pankki money coach (demo)", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=WEB), name="static")
+
+
+class AIProvider:
+    """Per request: X-AI-Provider: eu runs every AI job on the open model hosted in the EU (eu.py), else Claude."""
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.inner(scope, receive, send)
+        want = dict(scope.get("headers") or []).get(b"x-ai-provider", b"").decode()
+        tok = eu.provider.set("eu" if want == "eu" else "claude")
+        try:
+            await self.inner(scope, receive, send)
+        finally:
+            eu.provider.reset(tok)
+
+
+app.add_middleware(AIProvider)
 app.mount("/design", StaticFiles(directory=ROOT / "design" / "mockups", html=True), name="design")
 
 
@@ -174,6 +194,27 @@ def sort_answer(cid: str, body: SortIn):
 @app.delete("/api/sort/{cid}")
 def sort_reset(cid: str):
     return sorter.reset(_cid(cid))
+
+
+@app.get("/api/ai")
+def ai_info():
+    """Which AI the app can use: Claude (default) and, if configured, the open model hosted in the EU; voice on/off."""
+    return {"eu": eu.info(), "voice": voice.configured()}
+
+
+class SpeakIn(BaseModel):
+    text: str = Field(min_length=1, max_length=400)
+
+
+@app.post("/api/speak")
+def speak(body: SpeakIn):
+    if not voice.configured():
+        raise HTTPException(503, "Voice is not connected.")
+    try:
+        return FileResponse(voice.speak(body.text), media_type="audio/mpeg")
+    except Exception as e:  # noqa: BLE001
+        logging.getLogger("voice").warning("speak failed: %s", e)
+        raise HTTPException(503, "Voice is not available right now.")
 
 
 @app.get("/api/wrapped/{cid}")
@@ -355,8 +396,10 @@ def game(cid: str, seed: int | None = None):
 
 @app.get("/api/traps")
 def traps():
-    f = ROOT / "state" / "traps.json"
-    return json.loads(f.read_text()) if f.exists() else {"runs": []}
+    f, g = ROOT / "state" / "traps.json", ROOT / "state" / "traps_eu.json"
+    out = json.loads(f.read_text()) if f.exists() else {"runs": []}
+    out["eu_runs"] = json.loads(g.read_text())["runs"] if g.exists() else []  # same suite on the EU-hosted open model
+    return out
 
 
 @app.get("/api/baskets/{cid}")

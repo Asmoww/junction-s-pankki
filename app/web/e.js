@@ -1,7 +1,7 @@
 // Design E v2: the future as a graph. Code draws every number; the AI annotates the line and turns
 // "what if…" sentences into scenarios that redraw the future. Loaded after app.js on /e.
 const ES = {
-  en: { pl: { card: "Play your next two weeks", cardB: "Can you reach payday above zero?", go: "Play", title: "Your next two weeks",
+  en: { euOn: "AI in Finland", euOff: "AI: Claude", euToast: (l) => `AI now runs on ${l}, an open model hosted in Finland. Numbers still come from code.`, claudeToast: "AI now runs on Claude.", pl: { card: "Play your next two weeks", cardB: "Can you reach payday above zero?", go: "Play", title: "Your next two weeks",
       onPayday: (d) => `On payday, ${d}`, usual: (v) => `At your usual pace: ${v}`, goal: "Reach payday above zero", rules: "Your likely days, one card at a time. The three baskets are the rules:",
       r1: "Fixed must-pays can't be skipped. Rent can be moved.", r2: "The surprise buffer stays: surprises come anyway.", r3: "Everyday extras are your choice: keep or skip.",
       tryTip: (v) => `Try the coach's plan (${v})`, start: (n) => `Play it myself · ${n} cards`, groceries: "Groceries and commuting", surprises: "Surprise buffer",
@@ -52,7 +52,7 @@ const ES = {
     bills: { Housing: "Rent", Utilities: "Bills" }, nothing: "No spending",
     cards: { safe: "Safe this week", month: (m) => m, payday: "After payday", pot: "Surprises", fin: "vs Finland", psd2: "Other bank" },
     perMonth: "a month", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
-  fi: { pl: { card: "Pelaa kaksi seuraavaa viikkoa", cardB: "Pääsetkö palkkapäivään plussalla?", go: "Pelaa", title: "Kaksi seuraavaa viikkoasi",
+  fi: { euOn: "Tekoäly Suomessa", euOff: "Tekoäly: Claude", euToast: (l) => `Tekoäly toimii nyt mallilla ${l}, avoin malli Suomessa. Luvut tulevat yhä koodista.`, claudeToast: "Tekoäly toimii nyt Claudella.", pl: { card: "Pelaa kaksi seuraavaa viikkoa", cardB: "Pääsetkö palkkapäivään plussalla?", go: "Pelaa", title: "Kaksi seuraavaa viikkoasi",
       onPayday: (d) => `Palkkapäivänä ${d}`, usual: (v) => `Tavallisella tahdilla: ${v}`, goal: "Pääse palkkapäivään plussalla", rules: "Todennäköiset päiväsi kortti kerrallaan. Kolme koria ovat säännöt:",
       r1: "Kiinteitä pakollisia ei voi ohittaa. Vuokran voi siirtää.", r2: "Yllätyspuskuri pysyy: yllätyksiä tulee joka tapauksessa.", r3: "Arjen extrat ovat sinun valintasi: pidä tai ohita.",
       tryTip: (v) => `Kokeile valmentajan suunnitelmaa (${v})`, start: (n) => `Pelaan itse · ${n} korttia`, groceries: "Ruoka ja työmatkat", surprises: "Yllätyspuskuri",
@@ -103,7 +103,7 @@ const ES = {
     bills: { Housing: "Vuokra", Utilities: "Laskut" }, nothing: "Ei ostoja",
     cards: { safe: "Turvallisesti", month: (m) => m, payday: "Palkan jälkeen", pot: "Yllätykset", fin: "vs Suomi", psd2: "Toinen pankki" },
     perMonth: "kuussa", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
-  sv: { pl: { card: "Spela dina två nästa veckor", cardB: "Klarar du lönedagen på plus?", go: "Spela", title: "Dina två nästa veckor",
+  sv: { euOn: "AI i Finland", euOff: "AI: Claude", euToast: (l) => `AI körs nu på ${l}, en öppen modell i Finland. Siffrorna kommer fortfarande från koden.`, claudeToast: "AI körs nu på Claude.", pl: { card: "Spela dina två nästa veckor", cardB: "Klarar du lönedagen på plus?", go: "Spela", title: "Dina två nästa veckor",
       onPayday: (d) => `På lönedagen ${d}`, usual: (v) => `I din vanliga takt: ${v}`, goal: "Nå lönedagen på plus", rules: "Dina troliga dagar, ett kort i taget. De tre korgarna är reglerna:",
       r1: "Fasta måsten kan inte hoppas över. Hyran kan flyttas.", r2: "Bufferten för överraskningar stannar: de kommer ändå.", r3: "Vardagsextra är ditt val: behåll eller hoppa över.",
       tryTip: (v) => `Prova coachens plan (${v})`, start: (n) => `Spela själv · ${n} kort`, groceries: "Mat och pendling", surprises: "Buffert för överraskningar",
@@ -656,7 +656,23 @@ function rulesSheet() {
   const st = s.querySelector("[data-setup]"); if (st) st.addEventListener("click", () => call("/api/live/monitors/setup", () => "✓"));
 }
 
+// EU mode switch in the header: shown only when an EU-hosted open model is configured on the server
+async function aiSwitch() {
+  if (!window.aiInfo) { try { window.aiInfo = await api("/api/ai"); } catch { window.aiInfo = { eu: { configured: false }, voice: false }; } }
+  const eu = window.aiInfo.eu, head = $("#lang").parentElement;
+  if (!eu.configured || head.querySelector("#aichip")) return;
+  const b = document.createElement("button"); b.id = "aichip"; b.className = "aichip";
+  const paint = () => { const on = aiProvider() === "eu"; b.classList.toggle("on", on); b.textContent = on ? `🇪🇺 ${E().euOn}` : E().euOff; };
+  b.onclick = () => {
+    localStorage.setItem("ai", aiProvider() === "eu" ? "claude" : "eu"); paint();
+    toast(esc(aiProvider() === "eu" ? E().euToast(eu.label) : E().claudeToast), 5000);
+    fut = null; load();
+  };
+  head.insertBefore(b, $("#lang")); paint();
+}
+
 window.renderHomeE = async function () {
+  aiSwitch();
   const o = home.overview, r = home.ribbon;
   $("#greet").textContent = `${persona().name} · ${day(o.customer.as_of)}`;
   const [whole, dec] = nf(2).format(o.customer.balance).split(/[.,](?=\d{2}$)/);
@@ -847,7 +863,7 @@ async function openPlay() {
     catch { body.innerHTML = `<p class="lead">${T().wentWrong}</p>`; return; }
     const ok = r.end_eur >= 0;
     body.innerHTML = `<h2 class="${ok ? "win" : "lose"}">${ok ? S.win : S.lose}</h2>
-      ${r.summary ? `<p class="sq">${SPARK}<span>${esc(r.summary)}</span></p>` : ""}
+      ${r.summary ? `<p class="sq">${SPARK}<span>${esc(r.summary)}</span></p>${listenBtn(r.summary)}` : ""}
       <div class="sch"><div><span>${S.skipped}</span><b>${eur0(r.extras_skipped_eur)}</b></div><div><span>${S.rentMoved}</span><b>${r.rent_moved_after_payday ? S.yes : S.no}</b></div>
       ${r.swapped_to_ticket ? `<div class="wide"><span>🚌 ${S.swappedT}</span><b>${eur(r.swapped_to_ticket.ticket_eur)} · ${esc(r.swapped_to_ticket.source)}</b></div>` : ""}</div>
       <div class="actions"><button class="btn" data-graph>${S.showGraph}</button><button class="btn ghost" data-again>${S.again}</button></div>`;

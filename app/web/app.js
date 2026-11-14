@@ -17,8 +17,10 @@ const monthName = (iso) => new Date(iso + "T12:00:00").toLocaleDateString(T().lo
 const monthShort = (ym) => new Date(ym + "-15T12:00:00").toLocaleDateString(T().locale, { month: "narrow" });
 const psd2Key = () => `psd2-${cid}`;
 
-async function api(path, opts) {
-  const r = await fetch(path, opts);
+// Every API call says which AI to use: Claude, or the open model hosted in the EU (the header switch, EU mode)
+const aiProvider = () => (localStorage.getItem("ai") === "eu" ? "eu" : "claude");
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), "X-AI-Provider": aiProvider() } });
   if (r.status === 401) { location.href = "/login"; throw new Error("login"); }
   if (!r.ok) throw new Error(`${r.status}`);
   return r.json();
@@ -273,7 +275,9 @@ async function renderTrust() {
   if (!run) { el.innerHTML = `<div class="label">${T().trustTitle}</div><p class="sub">${T().trustNone}</p>`; return; }
   // One compact card; the full question list (test evidence, not customer content) opens only on tap
   el.innerHTML = `<div class="label">${T().trustTitle}</div><div class="big">${T().passed(run.passed, run.total)}</div>
-    <p class="sub">${T().trustSub}</p><button class="link" id="trust-see">${T().trustSee} ›</button>`;
+    <p class="sub">${T().trustSub}</p>${(() => { const e = d.eu_runs && d.eu_runs[0];
+      return e ? `<p class="euline">🇪🇺 ${esc(e.model)}: <b>${T().passed(e.passed, e.total)}</b>, ${T().verified(e.numbers_verified, e.numbers_total)}</p>` : ""; })()}
+    <button class="link" id="trust-see">${T().trustSee} ›</button>`;
   $("#trust-see").onclick = () => sheet(`<h2>${T().trustTitle}</h2><p class="note left">${esc(run.at)} · ${T().verified(run.numbers_verified, run.numbers_total)}</p>
     <ul class="traps">${run.cases.map((c) => `<li class="${c.ok ? "ok" : "bad"}"><span class="mark">${c.ok ? "✓" : "✗"}</span><span><b>${esc(c.trap)}</b><br>
       <span class="sub">“${esc(c.question)}”</span>${c.ok ? "" : `<br><span class="why">${esc(c.failed.join("; "))}</span>`}</span></li>`).join("")}</ul>`);
@@ -331,10 +335,24 @@ function answerHtml(r) {
   const u = r.usage || {}, pv = r.privacy || {};
   const how = r.trace && r.trace.length ? `<details class="how"><summary>${T().howWorked}</summary><ul class="trace">${r.trace.map(traceLine).join("")}</ul></details>` : "";
   const saw = u.model ? `<details class="how"><summary>${T().whatAiSaw}</summary><ul class="trace">
-    <li><b>${T().model}</b>: ${esc(u.model)} · ${u.calls} × · ${nf(0).format(u.input_tokens + u.cache_read_tokens + u.cache_write_tokens)} / ${nf(0).format(u.output_tokens)} ${T().tokens}</li>
-    <li><b>${T().cost}</b>: $${u.cost_usd.toFixed(3)}</li><li><b>${T().sent}</b>: ${esc(pv.sent)}</li><li><b>${T().neverSent}</b>: ${esc(pv.never_sent)}</li></ul></details>` : "";
-  return markNumbers(md(r.answer), nums) + att + badge + how + saw;
+    <li><b>${T().model}</b>: ${esc(u.model)} · ${u.calls} × · ${nf(0).format(u.input_tokens + (u.cache_read_tokens || 0) + (u.cache_write_tokens || 0))} / ${nf(0).format(u.output_tokens)} ${T().tokens}</li>
+    ${u.where ? `<li><b>${T().where}</b>: ${esc(u.where)}</li>` : `<li><b>${T().cost}</b>: $${(u.cost_usd || 0).toFixed(3)}</li>`}<li><b>${T().sent}</b>: ${esc(pv.sent)}</li><li><b>${T().neverSent}</b>: ${esc(pv.never_sent)}</li></ul></details>` : "";
+  return markNumbers(md(r.answer), nums) + listenBtn(r.answer) + att + badge + how + saw;
 }
+
+// Listen: the sentence read aloud (ElevenLabs), only when voice is connected on the server
+function listenBtn(text) {
+  return window.aiInfo && window.aiInfo.voice && text ? `<button class="listen" data-say="${esc(text.replace(/[*_#`]/g, "").slice(0, 400))}">🔊 ${T().listen}</button>` : "";
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-say]"); if (!b || b.classList.contains("busy")) return;
+  e.stopPropagation(); b.classList.add("busy");
+  try {
+    const r = await fetch("/api/speak", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: b.dataset.say }) });
+    if (!r.ok) throw new Error(r.status);
+    const a = new Audio(URL.createObjectURL(await r.blob())); a.onended = () => b.classList.remove("busy"); await a.play();
+  } catch { b.classList.remove("busy"); toast(T().wentWrong); }
+});
 
 function addMsg(role, html, cls = "") {
   const d = document.createElement("div");

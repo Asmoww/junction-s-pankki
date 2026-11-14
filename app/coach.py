@@ -12,7 +12,7 @@ import os
 
 import anthropic
 
-from . import charts, homeplan, insights, live, money, verify
+from . import charts, eu, homeplan, insights, live, money, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -284,9 +284,48 @@ def _privacy(trace: list[dict]) -> dict:
             "never_sent": "Name, customer id, account number, merchant names (not in the data)."}
 
 
+def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, messages: list[dict]) -> dict:
+    """The same coach on the open model we host in Europe (eu.py): same tools, same numbers check."""
+    msgs = [{"role": "system", "content": system}] + [{"role": m["role"], "content": m["content"]} for m in messages]
+    tools, trace = eu.tools_openai(TOOLS), []
+    usage = {"input_tokens": 0, "output_tokens": 0, "calls": 0}
+    for _ in range(MAX_STEPS):
+        try:
+            out = eu.complete(msgs, tools=tools, max_tokens=2000)
+        except Exception as e:  # noqa: BLE001
+            log.warning("EU model error: %s", e)
+            return {"answer": "The coach in EU mode isn't reachable right now. Please try again.", "trace": trace, "error": True}
+        m, u = out["message"], out["usage"]
+        usage["input_tokens"] += u.get("prompt_tokens", 0)
+        usage["output_tokens"] += u.get("completion_tokens", 0)
+        usage["calls"] += 1
+        log.info("coach eu model=%s finish=%s in=%s out=%s", out["model"], out["finish"], u.get("prompt_tokens"), u.get("completion_tokens"))
+        calls = m.get("tool_calls") or []
+        msgs.append({"role": "assistant", "content": m.get("content") or "", **({"tool_calls": calls} if calls else {})})
+        if not calls:
+            text = (m.get("content") or "").strip()
+            usage.update({"model": out["model"], "where": eu.label(), "cost_usd": None})
+            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
+                                   {"balance": c["balance"], "age": c["age"]})
+            return {"answer": text, "trace": trace, "error": False, "model": out["model"], "numbers": numbers,
+                    "attachments": _attachments(trace), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
+        for call in calls:
+            fn = call.get("function", {})
+            try:
+                args = json.loads(fn.get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args, out_t, is_err = {}, {"error": "arguments were not valid JSON"}, True
+            else:
+                out_t, is_err = _run_tool(cid, fn.get("name", ""), args)
+            trace.append({"tool": fn.get("name"), "input": args, "result": out_t, "error": is_err})
+            msgs.append({"role": "tool", "tool_call_id": call.get("id"),
+                         "content": json.dumps({k: v for k, v in out_t.items() if not k.startswith("_")} if isinstance(out_t, dict) else out_t, default=str)})
+    return {"answer": "That took too many steps. Could you ask in a simpler way?", "trace": trace, "error": True}
+
+
 def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
     """history: [{"role": "user"|"assistant", "text": str}, ...] ending with the user's new message."""
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not os.environ.get("ANTHROPIC_API_KEY") and not eu.active():
         return {"answer": "The coach is not connected yet (no API key on the server).", "trace": [], "error": True}
     c = money.customer(cid)
     messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in history[-12:] if h.get("text")]
@@ -296,6 +335,8 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
                                        "another of English, Finnish or Swedish, reply in that language and its number "
                                        f"format instead.\nCustomer: age {c['age']}, postal code "
                                        f"{c['postal_code']}, balance now {c['balance']} €."}]
+    if eu.active():
+        return _chat_eu(cid, history, lang, c, "\n\n".join(b["text"] for b in system), messages)
     trace = []
     usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "calls": 0}
     client = _client()

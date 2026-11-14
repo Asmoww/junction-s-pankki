@@ -13,7 +13,7 @@ import logging
 import threading
 from pathlib import Path
 
-from . import future, insights, live, money, verify
+from . import eu, future, insights, live, money, verify
 from .money import TODAY, _month_start, _q, _r
 from .taxonomy import BASKETS
 
@@ -80,7 +80,7 @@ def _no_digits(*texts: str) -> bool:
 
 def questions(cid: str, lang: str = "en") -> dict:
     """The cards: code facts (merchant type, amount, date, times) + Claude's question, three answers and a lesson."""
-    key = f"{cid}:{lang}"
+    key = f"{cid}:{lang}{eu.cache_tag()}"
     cache = _read(QUESTIONS)
     pool = {c["id"]: c for c in candidates(cid)}
     if key not in cache:

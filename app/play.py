@@ -20,7 +20,7 @@ import threading
 from datetime import timedelta
 from pathlib import Path
 
-from . import future, live, money, verify
+from . import eu, future, live, money, verify
 from .money import TODAY, _q, _r
 
 log = logging.getLogger("play")
@@ -136,7 +136,7 @@ TIP_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["ski
 def tip(cid: str, lang: str = "en") -> dict | None:
     """Claude suggests a plan (which extras to skip, whether to move rent) with one line of why; code checks where it
     lands. Cached per customer and language."""
-    key = f"{cid}:{lang}"
+    key = f"{cid}:{lang}{eu.cache_tag()}"
     with _lock:
         cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     d = deal(cid)

@@ -18,7 +18,7 @@ from pathlib import Path
 
 import anthropic
 
-from . import insights, live, money, verify
+from . import eu, insights, live, money, verify
 from .money import TODAY, _month_start, _q, _r
 
 log = logging.getLogger("future")
@@ -96,6 +96,8 @@ def _client():
 
 
 def _json_call(system: str, user: str, schema: dict, max_tokens: int = 1500) -> dict:
+    if eu.active():  # EU mode: the open model we host in Finland does the same job
+        return eu.json_call(system, user, schema, max_tokens)
     resp = _client().messages.create(
         model=MODEL, max_tokens=max_tokens, system=system, messages=[{"role": "user", "content": user}],
         output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}})
@@ -220,7 +222,7 @@ def _fallback_notes(f: dict) -> list[dict]:
 
 
 def annotations(cid: str, lang: str = "en") -> dict:
-    key = f"{cid}:{lang}"
+    key = f"{cid}:{lang}{eu.cache_tag()}"
     with _lock:
         cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     if key in cache:

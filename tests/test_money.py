@@ -203,3 +203,33 @@ def test_ticket_swap_replaces_parking_and_taxis(monkeypatch):
     plain, swapped = play.outcome(EMMA, extras, False, d), play.outcome(EMMA, extras, False, d, swap=True)
     assert swapped["end_eur"] == pytest.approx(plain["end_eur"] + sw["replaced_eur"] - 73.9, abs=0.05)
     assert swapped["swapped_to_ticket"]["source"] == "hsl.fi"
+
+
+def test_eu_mode_routes_json_jobs_and_coach(monkeypatch):
+    # EU mode: the structured AI jobs and the coach's tool loop run on the OpenAI-compatible endpoint (faked here).
+    from app import coach, eu, future
+    monkeypatch.setenv("EU_LLM_BASE_URL", "https://eu.example/v1")
+    monkeypatch.setenv("EU_LLM_MODEL", "google/gemma-test")
+    sent = []
+
+    def fake_post(body, timeout=120):
+        sent.append(body)
+        if body.get("response_format"):
+            return {"choices": [{"message": {"content": '{"takeaway": "ok"}'}}], "model": body["model"]}
+        if not any(m["role"] == "tool" for m in body["messages"]):
+            call = {"id": "c1", "type": "function", "function": {"name": "get_safe_to_spend", "arguments": "{}"}}
+            return {"choices": [{"message": {"content": None, "tool_calls": [call]}, "finish_reason": "tool_calls"}], "model": body["model"]}
+        sts = money.get_safe_to_spend(EMMA)
+        return {"choices": [{"message": {"content": f"You are short by {abs(sts['safe_until_payday_eur']):,.2f} €."}, "finish_reason": "stop"}],
+                "model": body["model"], "usage": {"prompt_tokens": 10, "completion_tokens": 5}}
+    monkeypatch.setattr(eu, "_post", fake_post)
+    tok = eu.provider.set("eu")
+    try:
+        assert future._json_call("s", "u", {"type": "object"}) == {"takeaway": "ok"}
+        r = coach.chat(EMMA, [{"role": "user", "text": "What is safe to spend?"}])
+    finally:
+        eu.provider.reset(tok)
+    assert r["eu"] and not r["error"] and r["trace"][0]["tool"] == "get_safe_to_spend"
+    assert all(n["status"] != "unverified" for n in r["numbers"])
+    assert sent[1]["tools"][0]["type"] == "function"
+    assert eu.cache_tag() == ""  # back to Claude outside the request

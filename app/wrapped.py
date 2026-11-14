@@ -10,7 +10,7 @@ import threading
 from datetime import date, timedelta
 from pathlib import Path
 
-from . import future, insights, money, verify
+from . import eu, future, insights, money, verify
 from .money import TODAY, _month_start, _q, _r
 from .taxonomy import BASKETS
 
@@ -132,7 +132,7 @@ CAPTIONS_SCHEMA = {"type": "object", "additionalProperties": False, "required": 
 
 
 def captions(cid: str, lang: str = "en") -> dict:
-    key = f"{cid}:{lang}"
+    key = f"{cid}:{lang}{eu.cache_tag()}"
     with _lock:
         cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     if key in cache:
