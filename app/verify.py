@@ -350,7 +350,7 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
                     status, src = "derived", _Src(f"{a:.2f} {op} {b:.2f}", pa.ti, "")
                     parts = [{"value": a, "op": "", **_ref(pa)}, {"value": b, "op": op, **_ref(pb)}]
                     break
-        if unit in _PCT_UNITS and (status == "unverified" or src == "your question"):
+        if unit in _PCT_UNITS and (status == "unverified" or src in ("your question", "earlier in this chat")):
             # A percentage inside a closing question ("Want to see a 30 % cut?") is an offer, not a claim, even when
             # it equals a number the user typed.
             end = answer.find("\n", cursor)

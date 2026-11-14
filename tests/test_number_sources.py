@@ -196,3 +196,16 @@ def test_user_number_kinds():
     got = [(v, k.kind) for v, k in verify._user_numbers(
         "Save 500 € or $4000 or 4000 a month for 20 years, 6 kuukautta, 3 år, 15%, 20-vuotiaana")]
     assert got == [(500, "eur"), (4000, "eur"), (4000, "other"), (20, "time"), (6, "time"), (3, "time"), (15, "pct"), (20, "time")]
+
+
+def test_offer_in_closing_question_is_never_marked_even_if_user_said_it():
+    ans = "Cutting extras helps. Would you like to see what a 20 % cut saves?"
+    for user in (["How could I become a millionaire in 20 years?"], ["Cut dining out by 20%"]):
+        found = verify.check(ans, [], user, "en", explain=True, notes=[])
+        assert [(n["text"], n["status"]) for n in found] == [("20 %", "suggestion")]
+
+
+def test_offer_question_beats_an_earlier_answer_too():
+    found = verify.check("Would you like to see what cutting these extras by 20% saves?", [], ["Show me the extras"], "en",
+                         earlier=["A common rule of thumb is to save 20% of income."], explain=True, notes=[])
+    assert [(n["text"], n["status"]) for n in found] == [("20%", "suggestion")]
