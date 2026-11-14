@@ -306,3 +306,17 @@ body:not([data-tab="coach"]) main { padding-bottom: calc(90px + var(--safe-botto
 .ntotal { display: flex; justify-content: space-between; padding: 12px 0 4px; font-weight: 700; font-size: 15px; }
 .nfine { font-size: 12px; color: var(--muted); margin: 6px 0 0; line-height: 1.4; }
 .nparts div > span:last-child { white-space: nowrap; }
+
+/* Coach: two personal questions to ask next, under each answer */
+.anext { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.anext > span { width: 100%; font-size: 13px; color: var(--muted); }
+.anext .chip, #chips .chip { display: inline-flex; gap: 6px; align-items: center; text-align: left; }
+.anext .spark, #chips .spark { width: 11px; height: 11px; flex: none; fill: var(--green-2); }
+
+/* Two periods side by side in one bar chart */
+.pairleg { margin: 6px 0 2px; } .pairleg i.b0 { background: #b9dcc7; } .pairleg i.b1 { background: var(--green-2); }
+.cbars.pairs .hrow { align-items: center; }
+.ptracks { display: grid; gap: 3px; } .ptracks .htrack { height: 7px; } .ptracks .htrack.b0 span { background: #b9dcc7; }
+.cbars.pairs .hval { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
+.cbars.pairs .hval small { font-weight: 500; color: var(--muted); font-size: 11px; }
+.anext .chip { white-space: normal; max-width: 100%; }

@@ -207,11 +207,11 @@ def line_facts(cid: str, lang: str = "en") -> dict:
 # so the labels are always correct in every language and on every model.
 NOTE_PHRASES = {
     "en": {"biggest_day": "Biggest day {v} €", "big_day": "Big day {v} €", "no_spend_days": "{n} no-spend days",
-           "payday_week": "Payday week +{p} %", "below_zero": "Below zero here", "payday": "Payday {v} €"},
+           "payday_week": "After payday: {x}× extras", "below_zero": "Below zero here", "payday": "Payday {v} €"},
     "fi": {"biggest_day": "Suurin menopäivä {v} €", "big_day": "Iso menopäivä {v} €", "no_spend_days": "{n} ostotonta päivää",
-           "payday_week": "Palkkaviikko +{p} %", "below_zero": "Tili miinukselle", "payday": "Palkkapäivä {v} €"},
+           "payday_week": "Palkan jälkeen: {x}× extroja", "below_zero": "Tili miinukselle", "payday": "Palkkapäivä {v} €"},
     "sv": {"biggest_day": "Största dagen {v} €", "big_day": "Stor dag {v} €", "no_spend_days": "{n} köpfria dagar",
-           "payday_week": "Löneveckan +{p} %", "below_zero": "Kontot på minus", "payday": "Lönedag {v} €"},
+           "payday_week": "Efter lönen: {x}× extra", "below_zero": "Kontot på minus", "payday": "Lönedag {v} €"},
 }
 NOTE_KINDS = list(NOTE_PHRASES["en"])
 
@@ -235,7 +235,8 @@ def _render_note(kind: str, d: str, f: dict, lang: str) -> dict | None:
         return {"date": d, "kind": kind, "text": ph[kind].format(n=n)} if n >= 2 and d <= f["today"] else None
     if kind == "payday_week":
         p = f["extras_per_day_week_after_vs_before_payday_percent"]
-        return {"date": d, "kind": kind, "text": ph[kind].format(p=round(p))} if p is not None and p >= 10 and d <= f["today"] else None
+        x = f"{1 + p / 100:.1f}"  # +177 % reads as "2.8× extras": per day, the week after payday vs the week before
+        return {"date": d, "kind": kind, "text": ph[kind].format(x=x if lang == "en" else x.replace(".", ","))} if p is not None and p >= 10 and d <= f["today"] else None
     if kind == "below_zero":
         return {"date": d, "kind": kind, "text": ph[kind]} if d == f["goes_below_zero_on"] else None
     if kind == "payday":

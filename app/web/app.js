@@ -41,12 +41,19 @@ const closeSheet = () => ($("#sheet-root").innerHTML = "");
 
 /* ---------- charts (HTML, from tool results) ---------- */
 function barsChart(a) {
+  if (a.pair) {  // two periods side by side: the earlier one light, the later one green
+    const max = Math.max(...a.items.flatMap((i) => [i.value, i.before]), 1), [p0, p1] = a.pair.map((p) => periodText(p));
+    return `<div class="legend pairleg"><span><i class="b0"></i>${esc(p0)}</span><span><i class="b1"></i>${esc(p1)}</span></div>
+      <div class="hbars cbars pairs">${a.items.map((i) => `<div class="hrow"><div class="hlab">${esc(label(i.label))}</div>
+      <div class="ptracks"><div class="htrack b0"><span style="width:${(i.before / max) * 100}%"></span></div><div class="htrack"><span style="width:${(i.value / max) * 100}%"></span></div></div>
+      <div class="hval"><small>${eur0(i.before)}</small>${eur0(i.value)}</div></div>`).join("")}</div>`;
+  }
   const max = Math.max(...a.items.map((i) => i.value), 1);
   if (a.vertical) {
     return `<div class="vbars">${a.items.map((i) => `<div class="vbar"><div class="vval">${eur0(i.value)}</div>
       <div class="vcol"><span style="height:${(i.value / max) * 100}%"></span></div><div class="vlab">${esc(label(i.label))}</div></div>`).join("")}</div>`;
   }
-  return `<div class="hbars">${a.items.map((i) => `<div class="hrow"><div class="hlab">${esc(label(i.label))}</div>
+  return `<div class="hbars cbars">${a.items.map((i) => `<div class="hrow"><div class="hlab">${esc(label(i.label))}</div>
     <div class="htrack"><span style="width:${(i.value / max) * 100}%"></span></div><div class="hval">${eur0(i.value)}</div></div>`).join("")}</div>`;
 }
 function basketsChart(items) {
@@ -605,6 +612,7 @@ async function ask(text) {
     pending.classList.remove("working");
     pending.innerHTML = answerHtml(r);
     if (window.learnAfterAnswer) window.learnAfterAnswer(r, pending);  // Money Detective: a new question lights up the map
+    if (!r.error && window.afterAnswer) window.afterAnswer(pending);    // two personal questions to ask next
     if (r.error) { pending.classList.add("err"); history.pop(); } else if (r.refused) { history.pop(); } else history.push({ role: "assistant", text: r.answer });
   } catch (e) {
     pending.classList.add("err"); pending.textContent = T().wentWrong; history.pop();

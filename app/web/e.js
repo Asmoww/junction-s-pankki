@@ -3,13 +3,13 @@
 const ES = {
   en: { euOn: "AI in Finland", euOff: "AI: Claude", euToast: (l) => `AI now runs on ${l}, an open model hosted in Finland. Numbers still come from code.`, claudeToast: "AI now runs on Claude.", pl: { card: "Play your next two weeks", cardB: "Can you reach payday above zero?", go: "Play", title: "Your next two weeks",
       onPayday: (d) => `On payday, ${d}`, usual: (v) => `At your usual pace: ${v}`, goal: "Reach payday above zero", rules: "Your likely days, one card at a time. The three baskets are the rules:",
-      r1: "Fixed must-pays can't be skipped. Rent can be moved.", r2: "The surprise buffer stays: surprises come anyway.", r3: "Everyday extras are your choice: keep or skip.",
+      r1: "Fixed must-pays can't be skipped. Rent can move only if your landlord agrees, and it's still owed.", r2: "The surprise buffer stays: surprises come anyway.", r3: "Everyday extras are your choice: keep or skip.",
       tryTip: (v) => `Try the coach's plan (${v})`, start: (n) => `Play it myself · ${n} cards`, groceries: "Groceries and commuting", surprises: "Surprise buffer",
       rent: "Rent", bills: "Bills", rest: "Everything else, small buys", wholePeriod: "Until payday", hours: (h) => `= ${h} h of your work`,
       ruleExtra: "An everyday extra: your choice. Swipe or tap.", ruleBuffer: "The dentist, a broken phone: surprises come anyway, so this stays.",
       ruleFixed: "A fixed must-pay: it can't be skipped.", ruleRent: "You can't skip rent. Ask your landlord first whether paying it after payday is OK; it is still due.",
       skip: "Skip", keep: "Keep", move: "Ask to pay after payday", payOnTime: "Pay on time", ok: "OK", win: "You made it to payday", lose: "Still short on payday",
-      skipped: "Extras skipped", rentMoved: "Rent moved", yes: "Yes", no: "No", showGraph: "Show on my graph", again: "Play again", altLine: (p, src) => `An HSL 30-day ticket costs ${p} today (${src})`, gapLine: (a) => `This gets you to payday. Your months still run about ${a} short on average, so the gap comes back next month unless spending or income changes.`, gapAsk: "How do I close the monthly gap", gapQ: "My months run short on average. How could I close the gap for good?", swapBtn: (p) => `Swap parking and taxis for an HSL ticket, ${p}`, swapNote: (d, src) => `30 days, until ${d} · price read live from ${src}`, swappedT: "Swapped to a ticket", planLabel: "Your two-week plan" },
+      skipped: "Extras skipped", rentMoved: "Rent moved", yes: "Yes", no: "No", showGraph: "Show on my graph", again: "Play again", altLine: (p, src) => `An HSL 30-day ticket costs ${p} today (${src})`, gapLose: (a) => `Your months also run about ${a} short on average, so the gap is bigger than these two weeks: it comes back every month unless spending or income changes.`, gapLine: (a) => `This gets you to payday. Your months still run about ${a} short on average, so the gap comes back next month unless spending or income changes.`, gapAsk: "How do I close the monthly gap", gapQ: "My months run short on average. How could I close the gap for good?", swapBtn: (p) => `Swap parking and taxis for an HSL ticket, ${p}`, swapNote: (d, src) => `30 days, until ${d} · price read live from ${src}`, swappedT: "Swapped to a ticket", planLabel: "Your two-week plan" },
     so: { card: "Your three baskets", cardB: "Where does your money really go?", go: "Sort yours with the AI", loading: "Finding the spending only you can sort…",
       none: "Nothing unclear to sort right now.", title: "Sort your money", intro: "Everything you spend lands in one of three baskets. We sorted most of it; a few things only you can sort.",
       start: (n) => `Start · ${n} questions`, habit: (n, t) => `${n} times · ${t} in 12 months`, now: (b) => `Counted now as: ${b}`, next: "Next",
@@ -69,13 +69,13 @@ const ES = {
       fam: { eating_out: "Eating out", kiosks: "Kiosks", taxis_parking: "Taxis and parking" },  missing: (a, d) => `${a} missing until ${d}, even with no extras`, perDayTo: (a, d) => `${a}/day until ${d}`, have: "Available", must: "Must-pays", mo: "mo", potSub: "on average, e.g. repairs", last12: "last 12 months", vsFin: (a) => `${a} in Finland`, moved: "moved away" },
   fi: { euOn: "Tekoäly Suomessa", euOff: "Tekoäly: Claude", euToast: (l) => `Tekoäly toimii nyt mallilla ${l}, avoin malli Suomessa. Luvut tulevat yhä koodista.`, claudeToast: "Tekoäly toimii nyt Claudella.", pl: { card: "Pelaa kaksi seuraavaa viikkoa", cardB: "Pääsetkö palkkapäivään plussalla?", go: "Pelaa", title: "Kaksi seuraavaa viikkoasi",
       onPayday: (d) => `Palkkapäivänä ${d}`, usual: (v) => `Tavallisella tahdilla: ${v}`, goal: "Pääse palkkapäivään plussalla", rules: "Todennäköiset päiväsi kortti kerrallaan. Kolme koria ovat säännöt:",
-      r1: "Kiinteitä pakollisia ei voi ohittaa. Vuokran voi siirtää.", r2: "Yllätyspuskuri pysyy: yllätyksiä tulee joka tapauksessa.", r3: "Arjen extrat ovat sinun valintasi: pidä tai ohita.",
+      r1: "Kiinteitä pakollisia ei voi ohittaa. Vuokran voi siirtää vain vuokranantajan luvalla, ja se on silti maksettava.", r2: "Yllätyspuskuri pysyy: yllätyksiä tulee joka tapauksessa.", r3: "Arjen extrat ovat sinun valintasi: pidä tai ohita.",
       tryTip: (v) => `Kokeile valmentajan suunnitelmaa (${v})`, start: (n) => `Pelaan itse · ${n} korttia`, groceries: "Ruoka ja työmatkat", surprises: "Yllätyspuskuri",
       rent: "Vuokra", bills: "Laskut", rest: "Kaikki muu, pienet ostot", wholePeriod: "Palkkapäivään asti", hours: (h) => `= ${h} h työtäsi`,
       ruleExtra: "Arjen extra: sinun valintasi. Pyyhkäise tai napauta.", ruleBuffer: "Hammaslääkäri, rikkinäinen puhelin: yllätyksiä tulee joka tapauksessa, joten tämä pysyy.",
       ruleFixed: "Kiinteä pakollinen: sitä ei voi ohittaa.", ruleRent: "Vuokraa ei voi ohittaa. Kysy ensin vuokranantajalta, sopiiko maksu palkkapäivän jälkeen; vuokra on silti maksettava.",
       skip: "Ohita", keep: "Pidä", move: "Pyydä maksuaikaa palkkaan", payOnTime: "Maksa ajallaan", ok: "OK", win: "Pääsit palkkapäivään", lose: "Palkkapäivänä yhä miinuksella",
-      skipped: "Ohitetut extrat", rentMoved: "Vuokra siirretty", yes: "Kyllä", no: "Ei", showGraph: "Näytä kuvaajassa", again: "Pelaa uudelleen", altLine: (p, src) => `HSL:n 30 päivän lippu maksaa tänään ${p} (${src})`, gapLine: (a) => `Tällä pääset palkkapäivään. Kuukautesi jäävät silti keskimäärin noin ${a} vajaiksi, joten vaje palaa ensi kuussa, ellei kulutus tai tulot muutu.`, gapAsk: "Miten saan kuukausivajeen kiinni", gapQ: "Kuukauteni jäävät keskimäärin vajaiksi. Miten saisin vajeen kiinni pysyvästi?", swapBtn: (p) => `Vaihda pysäköinti ja taksit HSL-lippuun, ${p}`, swapNote: (d, src) => `30 päivää, ${d} asti · hinta luettu suoraan: ${src}`, swappedT: "Vaihdettu lippuun", planLabel: "Kahden viikon suunnitelmasi" },
+      skipped: "Ohitetut extrat", rentMoved: "Vuokra siirretty", yes: "Kyllä", no: "Ei", showGraph: "Näytä kuvaajassa", again: "Pelaa uudelleen", altLine: (p, src) => `HSL:n 30 päivän lippu maksaa tänään ${p} (${src})`, gapLose: (a) => `Kuukautesi jäävät lisäksi keskimäärin noin ${a} vajaiksi, joten vaje on näitä kahta viikkoa suurempi: se palaa joka kuukausi, ellei kulutus tai tulot muutu.`, gapLine: (a) => `Tällä pääset palkkapäivään. Kuukautesi jäävät silti keskimäärin noin ${a} vajaiksi, joten vaje palaa ensi kuussa, ellei kulutus tai tulot muutu.`, gapAsk: "Miten saan kuukausivajeen kiinni", gapQ: "Kuukauteni jäävät keskimäärin vajaiksi. Miten saisin vajeen kiinni pysyvästi?", swapBtn: (p) => `Vaihda pysäköinti ja taksit HSL-lippuun, ${p}`, swapNote: (d, src) => `30 päivää, ${d} asti · hinta luettu suoraan: ${src}`, swappedT: "Vaihdettu lippuun", planLabel: "Kahden viikon suunnitelmasi" },
     so: { card: "Kolme koriasi", cardB: "Mihin rahasi oikeasti menevät?", go: "Lajittele omasi tekoälyn kanssa", loading: "Etsitään menoja, jotka vain sinä voit lajitella…",
       none: "Ei nyt mitään epäselvää lajiteltavaa.", title: "Lajittele rahasi", intro: "Jokainen menosi päätyy yhteen kolmesta korista. Lajittelimme suurimman osan; muutaman asian voit lajitella vain sinä.",
       start: (n) => `Aloita · ${n} kysymystä`, habit: (n, t) => `${n} kertaa · ${t} 12 kuukaudessa`, now: (b) => `Nyt laskettu: ${b}`, next: "Seuraava",
@@ -135,13 +135,13 @@ const ES = {
       fam: { eating_out: "Ulkona syöminen", kiosks: "Kioskit", taxis_parking: "Taksit ja pysäköinti" },  missing: (a, d) => `${d} asti puuttuu ${a}, vaikka extrat jäisivät pois`, perDayTo: (a, d) => `${a}/pv ${d} asti`, have: "Käytettävissä", must: "Pakolliset", mo: "kk", potSub: "keskimäärin, esim. korjaukset", last12: "viimeiset 12 kk", vsFin: (a) => `Suomessa ${a}`, moved: "siirtyi pois" },
   sv: { euOn: "AI i Finland", euOff: "AI: Claude", euToast: (l) => `AI körs nu på ${l}, en öppen modell i Finland. Siffrorna kommer fortfarande från koden.`, claudeToast: "AI körs nu på Claude.", pl: { card: "Spela dina två nästa veckor", cardB: "Klarar du lönedagen på plus?", go: "Spela", title: "Dina två nästa veckor",
       onPayday: (d) => `På lönedagen ${d}`, usual: (v) => `I din vanliga takt: ${v}`, goal: "Nå lönedagen på plus", rules: "Dina troliga dagar, ett kort i taget. De tre korgarna är reglerna:",
-      r1: "Fasta måsten kan inte hoppas över. Hyran kan flyttas.", r2: "Bufferten för överraskningar stannar: de kommer ändå.", r3: "Vardagsextra är ditt val: behåll eller hoppa över.",
+      r1: "Fasta måsten kan inte hoppas över. Hyran kan flyttas bara om hyresvärden går med på det, och den ska ändå betalas.", r2: "Bufferten för överraskningar stannar: de kommer ändå.", r3: "Vardagsextra är ditt val: behåll eller hoppa över.",
       tryTip: (v) => `Prova coachens plan (${v})`, start: (n) => `Spela själv · ${n} kort`, groceries: "Mat och pendling", surprises: "Buffert för överraskningar",
       rent: "Hyra", bills: "Räkningar", rest: "Allt annat, små köp", wholePeriod: "Till lönen", hours: (h) => `= ${h} h av ditt arbete`,
       ruleExtra: "Ett vardagsextra: ditt val. Svep eller tryck.", ruleBuffer: "Tandläkaren, en trasig telefon: överraskningar kommer ändå, så den stannar.",
       ruleFixed: "Ett fast måste: kan inte hoppas över.", ruleRent: "Hyran kan inte hoppas över. Fråga först hyresvärden om det går att betala efter lönen; hyran ska ändå betalas.",
       skip: "Hoppa över", keep: "Behåll", move: "Be om att betala efter lönen", payOnTime: "Betala i tid", ok: "OK", win: "Du klarade lönedagen", lose: "Fortfarande minus på lönedagen",
-      skipped: "Överhoppade extra", rentMoved: "Hyran flyttad", yes: "Ja", no: "Nej", showGraph: "Visa i grafen", again: "Spela igen", altLine: (p, src) => `Ett HSL-kort för 30 dagar kostar ${p} i dag (${src})`, gapLine: (a) => `Det här tar dig till lönedagen. Dina månader går ändå i snitt cirka ${a} back, så underskottet kommer tillbaka nästa månad om inte utgifterna eller inkomsten ändras.`, gapAsk: "Hur täpper jag till månadsunderskottet", gapQ: "Mina månader går i snitt back. Hur kan jag täppa till underskottet för gott?", swapBtn: (p) => `Byt parkering och taxi mot ett HSL-kort, ${p}`, swapNote: (d, src) => `30 dagar, till ${d} · priset läst direkt från ${src}`, swappedT: "Bytt till ett kort", planLabel: "Din tvåveckorsplan" },
+      skipped: "Överhoppade extra", rentMoved: "Hyran flyttad", yes: "Ja", no: "Nej", showGraph: "Visa i grafen", again: "Spela igen", altLine: (p, src) => `Ett HSL-kort för 30 dagar kostar ${p} i dag (${src})`, gapLose: (a) => `Dina månader går dessutom i snitt cirka ${a} back, så underskottet är större än de här två veckorna: det kommer tillbaka varje månad om inte utgifterna eller inkomsten ändras.`, gapLine: (a) => `Det här tar dig till lönedagen. Dina månader går ändå i snitt cirka ${a} back, så underskottet kommer tillbaka nästa månad om inte utgifterna eller inkomsten ändras.`, gapAsk: "Hur täpper jag till månadsunderskottet", gapQ: "Mina månader går i snitt back. Hur kan jag täppa till underskottet för gott?", swapBtn: (p) => `Byt parkering och taxi mot ett HSL-kort, ${p}`, swapNote: (d, src) => `30 dagar, till ${d} · priset läst direkt från ${src}`, swappedT: "Bytt till ett kort", planLabel: "Din tvåveckorsplan" },
     so: { card: "Dina tre korgar", cardB: "Vart går dina pengar egentligen?", go: "Sortera dina med AI:n", loading: "Letar efter utgifter som bara du kan sortera…",
       none: "Inget oklart att sortera just nu.", title: "Sortera dina pengar", intro: "Allt du spenderar hamnar i en av tre korgar. Vi sorterade det mesta; några saker kan bara du sortera.",
       start: (n) => `Börja · ${n} frågor`, habit: (n, t) => `${n} gånger · ${t} på 12 månader`, now: (b) => `Räknas nu som: ${b}`, next: "Nästa",
@@ -1235,7 +1235,7 @@ async function openPlay() {
       ${r.summary ? `<p class="sq">${SPARK}<span>${esc(r.summary)}</span></p>${listenBtn(r.summary)}` : ""}
       <div class="sch"><div><span>${S.skipped}</span><b>${eur0(r.extras_skipped_eur)}</b></div><div><span>${S.rentMoved}</span><b>${r.rent_moved_after_payday ? S.yes : S.no}</b></div>
       ${r.swapped_to_ticket ? `<div class="wide"><span>🚌 ${S.swappedT}</span><b>${eur(r.swapped_to_ticket.ticket_eur)} · ${esc(r.swapped_to_ticket.source)}</b></div>` : ""}</div>
-      ${r.months_still_short_by_eur ? `<div class="pgap"><p>${esc(S.gapLine(eur0(r.months_still_short_by_eur)))}</p><button class="link" data-gap>${S.gapAsk} ›</button></div>` : ""}
+      ${r.months_still_short_by_eur ? `<div class="pgap"><p>${esc((ok ? S.gapLine : S.gapLose)(eur0(r.months_still_short_by_eur)))}</p><button class="link" data-gap>${S.gapAsk} ›</button></div>` : ""}
       <div class="actions"><button class="btn" data-graph>${S.showGraph}</button><button class="btn ghost" data-again>${S.again}</button></div>`;
     const gb = body.querySelector("[data-gap]"); if (gb) gb.onclick = () => { root.remove(); askHere(S.gapQ); };
     body.querySelector("[data-again]").onclick = () => { skip.clear(); moveRent = false; swapped = false; chart(); intro(); };
@@ -1276,7 +1276,7 @@ const whyNote = (nt) => (hbT().note[nt.kind] ? hbT().note[nt.kind](day(nt.date),
   new Date(nt.date + "T12:00:00").toLocaleDateString(T().locale, { month: "long", year: "numeric" })) : "");
 window.whyQ = (id) => { const all = hb ? [...hb.questions, ...hb.more] : []; const q = all.find((x) => x.id === id); return q ? q.text : ""; };
 // Home's own questions answer on Home; anywhere else they go to the Coach tab as before
-window.askHere = (q) => (tab === "home" && $("#asks") ? askHome(q) : ask(q));
+window.askHere = (q) => ask(q);  // every question opens the Coach tab, so Home stays clean
 
 function briefHtml() {
   if (!hb) return `<div class="brief"><div class="skeleton" style="width:92%"></div><div class="skeleton" style="width:64%"></div></div>`;
@@ -1285,41 +1285,28 @@ function briefHtml() {
 function asksHtml() {
   const H = hbT();
   const row = (q) => `<button class="askq${hbAsked.has(q.text) ? " done" : ""}" data-q="${esc(q.text)}">${SPARK}<span>${esc(q.text)}</span><em>›</em></button>`;
-  if (!hb) return `<h3 class="asksT">${H.title}</h3><div class="askqs">${[1, 2].map(() => `<div class="askq sk"><div class="skeleton"></div></div>`).join("")}</div><div class="hans" hidden></div>`;
+  if (!hb) return `<h3 class="asksT">${H.title}</h3><div class="askqs">${[1, 2].map(() => `<div class="askq sk"><div class="skeleton"></div></div>`).join("")}</div>`;
   const all = [...hb.questions, ...hb.more].slice(0, 6);
   return `<h3 class="asksT">${H.title}</h3><div class="askqs">${all.slice(0, 2).map(row).join("")}
     <div class="askmore" ${qsOpen ? "" : "hidden"}>${all.slice(2).map(row).join("")}</div>
-    ${all.length > 2 ? `<button class="morel" data-toggle="qs">${qsOpen ? H.fewerQ : H.moreQ}</button>` : ""}</div><div class="hans" hidden></div>`;
+    ${all.length > 2 ? `<button class="morel" data-toggle="qs">${qsOpen ? H.fewerQ : H.moreQ}</button>` : ""}</div>`;
 }
 function nextQs(n = 2) {
   if (!hb) return [];
-  return [...hb.questions, ...hb.more].filter((q) => !hbAsked.has(q.text)).slice(0, n);
+  const asked = new Set(history.filter((h) => h.role === "user").map((h) => h.text));
+  return [...hb.questions, ...hb.more].filter((q) => !asked.has(q.text)).slice(0, n);
 }
-
-async function askHome(q) {
-  q = (q || "").trim(); if (!q || hbBusy || !cid) return;
-  const box = $("#asks .hans"); if (!box) return ask(q);
-  hbBusy = true; hbAsked.add(q);
-  $("#asks").querySelectorAll(".askq").forEach((b) => b.classList.toggle("on", b.dataset.q === q));
-  box.hidden = false;
-  box.innerHTML = `<p class="hq">${esc(q)}</p><div class="msg bot hbot working"><div class="csteps" role="status" aria-label="${esc(T().thinking)}"><ol></ol></div></div>`;
-  const msg = box.querySelector(".hbot");
-  box.scrollIntoView({ behavior: "smooth", block: "start" });
-  addStep(msg, { tool: "read" });
-  let r;
-  try { r = await chatStream(JSON.stringify({ customer_id: cid, history: [{ role: "user", text: q }], lang }), (st) => addStep(msg, st)); }
-  catch { r = { answer: T().wentWrong, error: true }; }
-  msg.classList.remove("working");
-  msg.innerHTML = answerHtml(r);
-  if (r.error) msg.classList.add("err");
-  else if (window.learnAfterAnswer) window.learnAfterAnswer(r, msg);
-  const H = hbT(), nx = nextQs();
-  box.insertAdjacentHTML("beforeend", `<div class="hnext">${nx.length ? `<span>${H.next}</span>${nx.map((x) => `<button class="chip ask" data-q="${esc(x.text)}">${SPARK}${esc(x.text)}</button>`).join("")}` : ""}
-    ${r.error ? "" : `<button class="btn ghost wide" data-cont>${H.cont} ›</button>`}</div>`);
-  hbLast = { q, r };
-  $("#asks").querySelectorAll(".askq").forEach((b) => b.classList.toggle("done", hbAsked.has(b.dataset.q)));
-  hbBusy = false;
+// Coach tab: the AI's questions for this person as the suggestions, and two fresh ones after every answer
+function paintCoachChips() {
+  const qs = nextQs(6); if (!qs.length || !$("#chips")) return;
+  $("#chips").innerHTML = qs.map((q) => `<button class="chip" data-ask="${esc(q.text)}">${SPARK}${esc(q.text)}</button>`).join("");
+  bindAsks($("#chips"));
 }
+window.afterAnswer = (msg) => {
+  const nx = nextQs(2); if (!nx.length) return;
+  msg.insertAdjacentHTML("beforeend", `<div class="anext"><span>${hbT().next}</span>${nx.map((q) => `<button class="chip ask" data-ask="${esc(q.text)}">${SPARK}${esc(q.text)}</button>`).join("")}</div>`);
+  bindAsks(msg.querySelector(".anext")); paintCoachChips();
+};
 
 async function loadBrief() {
   const want = `${cid}:${lang}`;
@@ -1337,10 +1324,9 @@ async function loadBrief() {
 function paintBrief() {
   if (!$("#brief")) return;
   $("#brief").innerHTML = briefHtml();
-  const ans = $("#asks .hans"), keep = ans && !ans.hidden ? ans.innerHTML : null;
   $("#asks").innerHTML = asksHtml();
-  if (keep) { const a = $("#asks .hans"); a.hidden = false; a.innerHTML = keep; }
   $("#cards").innerHTML = strip(); bindStrip();
+  paintCoachChips();
 }
 
 // One delegated handler for Home (it survives every repaint): questions, "why" taps, and "Continue in Coach"
@@ -1354,11 +1340,6 @@ document.addEventListener("click", (e) => {
     return;
   }
   const w = e.target.closest("[data-why],[data-q]");
-  if (w && (w.dataset.why || w.dataset.q)) { e.stopPropagation(); askHome(w.dataset.why || w.dataset.q); return; }
-  if (e.target.closest("[data-cont]") && hbLast) {
-    // Carry the question and answer into the Coach thread, so a follow-up there has the context
-    const { q, r } = hbLast;
-    if (!r.refused) history.push({ role: "user", text: q }, { role: "assistant", text: r.answer });
-    addMsg("user", esc(q)); addMsg("bot", answerHtml(r)); setTab("coach"); $("#q").focus();
-  }
+  if (w && (w.dataset.why || w.dataset.q)) { e.stopPropagation(); ask(w.dataset.why || w.dataset.q); return; }  // answers live on the Coach tab
+
 });

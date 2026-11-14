@@ -89,6 +89,11 @@ def findings(cid: str, lang: str = "en") -> dict:
     facts = {"balance_now_eur": money.customer(cid)["balance"], "next_payday": rib["next_payday"],
              "balance_at_payday_usual_pace_eur": end, "bills_before_payday_eur": bills,
              "goes_below_zero_on": rib["runs_out_around"]}
+    # Where the money until payday goes (each from code): bills + essentials + surprise buffer + extras = balance - end
+    st = sts["steps"]
+    ess, sur = round(-st[3]["eur"], 2), round(-st[4]["eur"], 2)
+    facts.update({"essentials_until_payday_eur": ess, "surprise_buffer_until_payday_eur": sur,
+                  "extras_until_payday_usual_pace_eur": round(facts["balance_now_eur"] - bills - ess - sur - end, 2)})
 
     def add(fid, concept, weight, text, **f):
         out.append({"id": fid, "concept": concept, "weight": weight, "question": text, "facts": f})
@@ -189,7 +194,7 @@ SYSTEM = (
     "own transactions and a list of findings, each a question they could ask about their money. Three jobs:\n"
     "1. headline: ONE plain sentence (max 22 words) on where their money stands right now and the main reason, in "
     "{lang}. Use at most two amounts, copied exactly from amounts_as_written (already in whole euros and the right number format; a negative balance_at_payday is written without its minus sign, so phrase it as money missing, in {lang}). Write every word in {lang}. No dates as "
-    "numbers, no advice lists, no greeting, no emojis. Name the real cause (e.g. bill timing vs. small extras). The balance is shown in large type right above your "
+    "numbers, no advice lists, no greeting, no emojis. Name the real cause. The gap to payday is made of bills + essentials + surprise buffer + extras (all in the facts): if you give an amount as the reason, it must be big enough to explain the gap on its own; otherwise name the parts without amounts. Never suggest moving rent. The balance is shown in large type right above your "
     "sentence: never restate it; say what it means or where it is heading.\n"
     "2. questions: the ids of the 3 findings most worth asking this week. importance (1-10) is how much code thinks a "
     "finding explains their situation; start from the most important, then favour concepts in not_explored_yet and "

@@ -221,7 +221,11 @@ const LABELS = {
     "Travel agencies": "Matkatoimistot", "Flights": "Lennot", "Hotels": "Hotellit", "Car rental": "Autonvuokraus", "Rent & housing": "Vuokra ja asuminen",
     "Utility bills": "Kotitalouden laskut", "Other groceries": "Muut ruokaostokset", "Other transportation": "Muu liikkuminen", "Other restaurants": "Muut ravintolat",
     "Other health": "Muu terveys", "Other entertainment": "Muu viihde", "Other lifestyle": "Muut ostokset", "Other home & tech": "Muu koti ja tekniikka", "Other travel": "Muu matkailu",
-    "Groceries": "Ruoka", "Restaurants & cafes": "Ravintolat ja kahvilat", "Transport": "Liikkuminen", "Recreation & culture": "Vapaa-aika ja kulttuuri", "Health": "Terveys" },
+    "Groceries": "Ruoka", "Restaurants & cafes": "Ravintolat ja kahvilat", "Transport": "Liikkuminen", "Recreation & culture": "Vapaa-aika ja kulttuuri", "Health": "Terveys",
+    // spending categories and the three baskets (charts and number sheets get these names straight from the data)
+    "Housing": "Asuminen", "Utilities": "Asumisen laskut", "Transportation": "Liikkuminen", "Home & Tech": "Koti ja tekniikka",
+    "Entertainment": "Viihde", "Lifestyle": "Vaatteet ja harrastukset", "Travel": "Matkailu",
+    "Fixed must-pays": "Kiinteät pakolliset", "Surprise must-pays": "Yllättävät pakolliset", "Everyday extras": "Arjen extrat" },
   sv: { "Supermarkets": "Livsmedelsbutiker", "Kiosks & convenience stores": "Kiosker och närbutiker", "Butchers & fish shops": "Kött- och fiskbutiker",
     "Bakeries & dairy shops": "Bagerier och mejeributiker", "Restaurants": "Restauranger", "Fast food & cafes": "Snabbmat och kaféer", "Bars & pubs": "Barer och pubar",
     "Public transport": "Kollektivtrafik", "Fuel": "Bränsle", "Fuel (automated)": "Bränsle (automat)", "Parking": "Parkering", "Taxis": "Taxi",
@@ -232,5 +236,8 @@ const LABELS = {
     "Travel agencies": "Resebyråer", "Flights": "Flyg", "Hotels": "Hotell", "Car rental": "Biluthyrning", "Rent & housing": "Hyra och boende",
     "Utility bills": "Hushållsräkningar", "Other groceries": "Övriga livsmedel", "Other transportation": "Övriga resor", "Other restaurants": "Övriga restauranger",
     "Other health": "Övrig hälsa", "Other entertainment": "Övrig underhållning", "Other lifestyle": "Övriga inköp", "Other home & tech": "Övrigt hem och teknik", "Other travel": "Övriga resor",
-    "Groceries": "Mat", "Restaurants & cafes": "Restauranger och kaféer", "Transport": "Transport", "Recreation & culture": "Fritid och kultur", "Health": "Hälsa" },
+    "Groceries": "Mat", "Restaurants & cafes": "Restauranger och kaféer", "Transport": "Transport", "Recreation & culture": "Fritid och kultur", "Health": "Hälsa",
+    "Housing": "Boende", "Utilities": "Boenderäkningar", "Transportation": "Transport", "Home & Tech": "Hem och teknik",
+    "Entertainment": "Nöje", "Lifestyle": "Kläder och fritid", "Travel": "Resor",
+    "Fixed must-pays": "Fasta måsten", "Surprise must-pays": "Oväntade måsten", "Everyday extras": "Vardagsextra" },
 };

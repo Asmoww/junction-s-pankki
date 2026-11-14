@@ -278,6 +278,8 @@ Rules:
 - This is a phone screen: keep answers short (usually under 90 words). Use **bold** for key amounts. Use short
   bullet lists only when listing 3+ items. End with at most one helpful follow-up suggestion.
 - Use the user's exact numbers when they give them (e.g. "cut by 20 %").
+- If you mention paying rent or a bill after payday, say it needs the landlord's or biller's OK, that it is still owed,
+  and that it doesn't close a gap that comes back every month. Never present it as solving their money.
 - "Restaurants" is both a category (all eating out: restaurants, fast food & cafes, bars & pubs) and a merchant type
   (sit-down restaurants only). Say "eating out" for the category and "restaurants" for the merchant type, and use the
   same one throughout an answer.
@@ -343,9 +345,19 @@ def _attachments(trace: list[dict], answer: str = "") -> list[dict]:
         seen.add(t["tool"])
         r, kind = t["result"], None
         if t["tool"] == "get_spending" and r.get("breakdown"):
-            kind = {"type": "bars", "title": "Spending", "period": r["period"],
-                    "vertical": t["input"].get("group_by") == "month",
-                    "items": [{"label": b["key"], "value": b["total_eur"]} for b in r["breakdown"][:8]]}
+            gb = t["input"].get("group_by")
+            same = [x for x in trace if x["tool"] == "get_spending" and not x["error"] and x["result"].get("breakdown")
+                    and x["input"].get("group_by") == gb]
+            if gb != "month" and len(same) >= 2 and same[-1]["result"]["period"] != same[-2]["result"]["period"]:
+                # The answer compares two periods (e.g. August vs September by basket): chart both, not just the last
+                a, b = sorted((same[-2]["result"], same[-1]["result"]), key=lambda x: x["period"]["start"])  # earlier first
+                av, bv = {x["key"]: x["total_eur"] for x in a["breakdown"]}, {x["key"]: x["total_eur"] for x in b["breakdown"]}
+                keys = sorted(set(av) | set(bv), key=lambda k: -max(av.get(k, 0), bv.get(k, 0)))[:8]
+                kind = {"type": "bars", "title": "Spending", "pair": [a["period"], b["period"]],
+                        "items": [{"label": k, "before": av.get(k, 0.0), "value": bv.get(k, 0.0)} for k in keys]}
+            else:
+                kind = {"type": "bars", "title": "Spending", "period": r["period"], "vertical": gb == "month",
+                        "items": [{"label": b["key"], "value": b["total_eur"]} for b in r["breakdown"][:8]]}
         elif t["tool"] == "get_three_baskets":
             kind = {"type": "baskets", "period": r["period"],
                     "items": [{"basket": b["basket"], "label": b["name"], "value": b["total_eur"]} for b in r["baskets"]]}

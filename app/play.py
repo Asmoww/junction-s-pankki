@@ -155,10 +155,10 @@ def tip(cid: str, lang: str = "en") -> dict | None:
                   "can be skipped; rent can be moved to after payday if 'movable'; fixed and buffer cards stay. If 'swap' is given, a "
                   "public-transport ticket can replace the parking and taxi cards (set swap true if that helps). Suggest the "
                   "smallest plan that reaches payday at or above zero, keeping the extras that look most valued (frequent "
-                  "habits) where possible. If skipping extras can't get there, say so and suggest moving rent. Return the "
-                  "ids to skip, move_rent, and tip: one friendly line (max 110 characters) with NO digits, explaining the "
-                  "idea (e.g. timing beats coffee). The tip must match the plan: if move_rent is true, say rent moves to "
-                  "after payday; never suggest paying rent early." + style.guide(lang))
+                  "habits) where possible. If skipping extras can't get there, say so; moving rent is a last resort that needs "
+                  "the landlord's OK, and the rent is still owed. Return the ids to skip, move_rent, and tip: one friendly "
+                  "line (max 110 characters) with NO digits, explaining the idea. The tip must match the plan: if move_rent is "
+                  "true, say it only works if the landlord agrees; never call it a fix, and never suggest paying rent early." + style.guide(lang))
         facts = {k: d[k] for k in ("keep_all_end_eur", "skip_all_end_eur", "next_payday")}
         facts["cards"] = [{k: c.get(k) for k in ("id", "kind", "label", "date", "amount_eur", "movable")} for c in d["cards"]]
         facts["swap"] = ({k: d["swap"][k] for k in ("price_eur", "replaces", "replaced_eur", "covers_until")} if d["swap"] else None)
