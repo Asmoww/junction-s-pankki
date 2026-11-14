@@ -3,6 +3,13 @@
 Status per number: "derived" (exact sum or difference of two numbers from one tool result), "yours" (the user's own
 number), "suggestion" (a percentage offered in a question, not a claim), "verified" (equals a tool value at the shown precision), "rounded" (a tool value rounded to
 tens/hundreds, e.g. "about 1,000 €" for 997 €), "unverified" (no source: flagged in the UI and counted in traps).
+
+With explain=True (the coach chat) a number that is not from the data can also be:
+"assumption" (a number the coach put into calculate or a tool argument, e.g. a 20 % savings rate or a 7 % return),
+"calculated" (a calculate result that used at least one such assumption), or "rule" (a percentage the coach marked as
+a rule of thumb in its hidden notes block, accepted only in a sentence that makes no claim about the user's money and
+presents no statistic). A calculate result whose inputs all come from the data stays "verified". Notes the coach
+writes are attached as "note" but never change a status; notes with other numbers or data claims are dropped.
 """
 from __future__ import annotations
 
@@ -59,22 +66,119 @@ def _collect(obj, path="", out=None):
     return out
 
 
+_MILLION = re.compile(r"(?:(\d+(?:[.,]\d+)?)\s*)?\b(million(?:aire|s)?|miljoon\w*|miljonä\w*|miljon\w*)\b", re.IGNORECASE)
+_NOTES = re.compile(r"\s*<number-notes>(.*?)(?:</number-notes>|$)", re.DOTALL | re.IGNORECASE)
+_DATA_CLAIM = re.compile(r"\b(you (spent|paid|earned|saved|have|had|got)|your (balance|spending|account|transactions|biggest|data)"
+                         r"|from your (account|data|transactions)|käytit|tililläsi|du (spenderade|betalade|har))\b", re.IGNORECASE)
+_STATISTIC = re.compile(r"\b(most|many|average|on average|typical(ly)?|studies|research|survey|statistic\w*|people|households|"
+                        r"finns|useimmat|keskimäärin|ihmiset|suomalaiset|tutkimu\w*|de flesta|i genomsnitt|människor|studier)\b",
+                        re.IGNORECASE)
+_PCT_UNITS = ("%", "prosenttia", "procent")
+
+
+def _word_numbers(text: str) -> list[float]:
+    """'millionaire', 'a million', '2 million', 'miljoona', 'miljon' -> euro amounts the user named in words."""
+    out = []
+    for m in _MILLION.finditer(text):
+        try:
+            k = _parse(m.group(1))[0] if m.group(1) else 1.0
+        except ValueError:
+            k = 1.0
+        out.append(k * 1_000_000)
+    return out
+
+
+def split_notes(text: str) -> tuple[str, list[dict]]:
+    """Remove the coach's hidden notes block. Lines: '<number with unit>|note|<why>' or '<number>|rule|<why>'."""
+    m = _NOTES.search(text)
+    if not m:
+        return text, []
+    notes = []
+    for line in m.group(1).strip().splitlines():
+        parts = [p.strip() for p in line.strip().lstrip("-• ").split("|", 2)]
+        if len(parts) != 3 or not parts[2]:
+            continue
+        hit = _matches(parts[0])
+        if not hit:
+            continue
+        try:
+            val = _parse(hit[0][1])[0]
+        except ValueError:
+            continue
+        notes.append({"value": val, "pct": hit[0][2] in _PCT_UNITS, "kind": parts[1].lower(), "note": parts[2][:200]})
+    return (text[:m.start()] + text[m.end():]).strip(), notes
+
+
+def _sentence(answer: str, start: int) -> str:
+    """The sentence around position start (a decimal point like 2,412.60 is not a sentence end)."""
+    cuts = [m.end() for m in re.finditer(r"[.!?](?=\s|$)|\n", answer)]
+    a = max([c for c in cuts if c <= start], default=0)
+    b = min([c for c in cuts if c > start], default=len(answer))
+    return answer[a:b]
+
+
+def _hit(val: float, dec: int, pool):
+    """First (status, source) in pool equal to val at its precision, or rounded to 10/50/100."""
+    tol = 0.5 * 10 ** -dec + 1e-6
+    for v, p in pool:
+        if abs(round(v, dec) - val) < 1e-6 or abs(v - val) <= tol:
+            return "exact", p
+    if dec == 0 and val >= 10:
+        for v, p in pool:
+            for step in (10, 50, 100):
+                if val % step == 0 and abs(v - val) <= step / 2 and abs(v - val) <= 0.06 * max(v, 1):
+                    return "rounded", p
+    return None, None
+
+
+def _operands(expr: str) -> list[float]:
+    vals = []
+    for raw in re.findall(r"\d+(?:\.\d+)?", expr.replace(",", "")):
+        v = float(raw)
+        vals.append(v)
+        if 0 < v < 1:
+            vals.append(round(v * 100, 6))  # 0.2 -> 20 %
+    return vals
+
+
 def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en",
-          context: dict | None = None) -> list[dict]:
-    """context: values the coach was given up front (e.g. the customer's balance)."""
+          context: dict | None = None, explain: bool = False, notes: list[dict] | None = None) -> list[dict]:
+    """context: values the coach was given up front (e.g. the customer's balance).
+    explain: coach chat mode (assumption / calculated / rule statuses, notes); off for captions, which must be data only."""
     sources = [(abs(float(v)), f"customer.{k}") for k, v in (context or {}).items() if isinstance(v, (int, float))]
-    per_tool = []
+    per_tool, calcs, inputs = [], [], []
     for t in trace:
-        if not t.get("error"):
-            vals = [(v, f"{t['tool']}.{p}") for v, p in _collect(t["result"])]
-            sources += vals
-            per_tool.append([(v, p) for v, p in vals if v >= 1 and " (as %)" not in p][:80])
+        if t.get("error"):
+            continue
+        if explain and t["tool"] == "calculate":
+            calcs.append(t)
+            continue
+        vals = [(v, f"{t['tool']}.{p}") for v, p in _collect(t["result"])]
+        sources += vals
+        per_tool.append([(v, p) for v, p in vals if v >= 1 and " (as %)" not in p][:80])
+        if explain:
+            inputs += [(v, f"{t['tool']}.{p}") for v, p in _collect(t.get("input") or {})]
+    data_sources = list(sources)
+    yours = []
     for u in user_texts:  # numbers the user said themselves ("cut by 20 %", "€500") are theirs, not claims
         for _, num, _ in _matches(u):
             try:
-                sources.append((_parse(num)[0], "your question"))
+                yours.append((_parse(num)[0], "your question"))
             except ValueError:
                 pass
+        if explain:
+            yours += [(v, "your question") for v in _word_numbers(u)]
+    sources += yours
+    calc_data, calc_assumed, assumed = [], [], list(inputs)
+    for t in calcs:  # a calculate result is data only if every input is data; otherwise it rests on an assumption
+        expr, res = str(t["input"].get("expression", "")), t["result"].get("result")
+        ops = _operands(expr)
+        own = [o for o in ops if o not in (0, 1, 100) and _hit(o, 2, data_sources)[0] is None]
+        src = f"{expr} = {res}" + (f" ({t['input'].get('what')})" if t["input"].get("what") else "")
+        if isinstance(res, (int, float)):
+            (calc_assumed if own else calc_data).append((abs(float(res)), src))
+        assumed += [(o, f"calculate: {expr}") for o in own]
+    sources += calc_data
     found = []
     for full, num, unit in _matches(answer):
         try:
@@ -114,5 +218,29 @@ def check(answer: str, trace: list[dict], user_texts: list[str], lang: str = "en
                 status = "suggestion"
         if src == "your question":
             status = "yours"
-        found.append({"text": full, "value": val, "status": status, "source": src})
+        if explain and status == "unverified":
+            for pool, st in ((calc_assumed, "calculated"), (assumed, "assumption")):
+                kind, p = _hit(val, dec, pool)
+                if kind:
+                    status, src = st, p
+                    break
+        entry = {"text": full, "value": val, "status": status, "source": src}
+        if explain:
+            pct = unit in _PCT_UNITS
+            at = answer.find(full)
+            for n in notes or []:
+                if abs(n["value"] - val) > 1e-6 or n["pct"] != pct:
+                    continue
+                note = n["note"]
+                others = [x for x in _matches(note) if abs(_parse(x[1])[0] - val) > 1e-6]
+                green = status in ("verified", "rounded", "derived")
+                if others or (not green and status != "calculated" and _DATA_CLAIM.search(note)):
+                    break  # a note may only explain its own number, never add numbers or facts about the user
+                if n["kind"] == "rule" and status == "unverified" and pct:
+                    sent = _sentence(answer, at)
+                    if not _DATA_CLAIM.search(sent) and not _STATISTIC.search(sent):
+                        status = entry["status"] = "rule"
+                entry["note"] = note
+                break
+        found.append(entry)
     return found

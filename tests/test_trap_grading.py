@@ -40,3 +40,18 @@ def test_other_checks_unchanged():
     r = {"answer": "Take a loan of 100 €.", "numbers": [{"text": "100 €", "value": 100.0, "status": "unverified"}]}
     f = check(case, r)
     assert "unverified numbers: 100 €" in f and "forbidden: loan" in f and "expected 250.00 € not in answer" in f
+
+
+def test_expected_value_must_come_from_data_not_a_calculation():
+    case = {"values": [450.0]}
+    laundered = {"answer": "You spent 450 € on taxis.", "numbers": [{"text": "450 €", "value": 450.0, "status": "calculated"}]}
+    assert "expected 450.00 € not in answer" in check(case, laundered)
+    real = {"answer": "You spent 450 € on taxis.", "numbers": [{"text": "450 €", "value": 450.0, "status": "verified"}]}
+    assert check(case, real) == []
+
+
+def test_assumptions_and_rules_are_not_failures():
+    r = {"answer": "x", "numbers": [{"text": "20 %", "value": 20, "status": "assumption"},
+                                    {"text": "15 %", "value": 15, "status": "rule"},
+                                    {"text": "482.52 €", "value": 482.52, "status": "calculated"}]}
+    assert check({}, r) == []

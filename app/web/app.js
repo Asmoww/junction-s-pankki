@@ -302,15 +302,41 @@ function md(text) {
   return html;
 }
 
+// Where a number comes from: green = your data, grey = your number, blue = assumption / calculation / rule of thumb,
+// amber = couldn't check. The colour comes from app/verify.py (code); the coach's note only explains, never recolours.
+const NUM_KIND = { verified: "data", rounded: "data", derived: "data", yours: "yours", assumption: "assumption",
+  calculated: "calculated", rule: "rule", unverified: "unverified" };
+const NUM_SPARK = `<svg class="nspark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8z"/></svg>`;
 function markNumbers(html, numbers) {
   let pos = 0;
   for (const n of numbers || []) {
     const t = esc(n.text), i = html.indexOf(t, pos);
     if (i < 0) continue;
-    const span = `<span class="num ${n.status}" data-status="${n.status}" data-src="${esc(n.source || "")}">${t}</span>`;
+    const span = `<span class="num ${n.status}" role="button" tabindex="0" data-status="${n.status}" data-src="${esc(n.source || "")}" data-note="${esc(n.note || "")}">${t}</span>`;
     html = html.slice(0, i) + span + html.slice(i + t.length); pos = i + span.length;
   }
   return html;
+}
+function numberBadges(nums) {
+  const S = T().ns, k = nums.map((n) => NUM_KIND[n.status] || "unverified");
+  const d = k.filter((x) => x === "data").length, a = k.filter((x) => ["assumption", "calculated", "rule"].includes(x)).length,
+    u = k.filter((x) => x === "unverified").length;
+  if (!d && !a && !u) return "";
+  let legend = "";
+  if (a || k.includes("yours")) {
+    let seen = false;
+    try { seen = localStorage.getItem("numLegend") === "1"; localStorage.setItem("numLegend", "1"); } catch { seen = false; }
+    if (!seen) legend = `<div class="nlegend">${S.legend.map((l, i) => `<span>${i < 3 ? `<i class="l${i}"></i>` : ""}${esc(l)}</span>`).join("")}</div>`;
+  }
+  return `<div class="nbadges">${d ? `<span class="nb data">${S.bData(d)}</span>` : ""}${a ? `<span class="nb asm">${S.bAsm(a)}</span>` : ""}${u ? `<span class="nb unch">${S.bUnch(u)}</span>` : ""}</div>${legend}`;
+}
+function numberSheet(el) {
+  const st = el.dataset.status, k = NUM_KIND[st] || "unverified", S = T().ns, src = el.dataset.src, note = el.dataset.note;
+  const fact = k === "data" ? (st === "rounded" ? T().numRounded : st === "derived" ? T().numDerived : T().numVerified) : S["f" + k];
+  const work = src && k !== "yours" ? `<div class="nwork"><span>${S.how}</span><code>${esc(src)}</code></div>` : "";
+  const nt = note ? `<div class="nnote"><span class="nh">${NUM_SPARK}${S.note}</span>${esc(note)}</div>` : "";
+  const s = sheet(`<div class="nsheet"><span class="nkind ${k}">${S[k]}</span><div class="nval">${el.innerHTML}</div><p class="nfact">${esc(fact)}</p>${nt}${work}</div>`);
+  s.querySelector(".nsheet").addEventListener("click", closeSheet);
 }
 
 const TOOL_LABEL = {
@@ -333,8 +359,8 @@ function traceLine(t) {
 }
 
 function answerHtml(r) {
-  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion" && n.status !== "yours"), v = nums.filter((n) => n.status !== "unverified").length;
-  const badge = nums.length ? `<div class="vbadge ${v === nums.length ? "all" : "some"}">${v === nums.length ? "✓" : "!"} ${T().verified(v, nums.length)}</div>` : "";
+  const nums = (r.numbers || []).filter((n) => n.status !== "suggestion");
+  const badge = numberBadges(nums);
   const att = (r.attachments || []).map((a) => `<div class="att">${renderAttachment(a)}</div>`).join("");
   const u = r.usage || {}, pv = r.privacy || {};
   const how = r.trace && r.trace.length ? `<details class="how"><summary>${T().howWorked}</summary><ul class="trace">${r.trace.map(traceLine).join("")}</ul></details>` : "";
@@ -436,10 +462,10 @@ $("#lang").addEventListener("click", () => {
 });
 document.querySelectorAll("#tabbar button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
 $("#thread").addEventListener("click", (e) => {
-  const n = e.target.closest(".num"); if (!n) return;
-  const st = n.dataset.status;
-  toast(st === "unverified" ? `<b>${T().numUnverified}</b>` : st === "yours" ? `<b>${T().numYours}</b>`
-    : `<b>${st === "verified" ? T().numVerified : st === "derived" ? T().numDerived : T().numRounded}</b><br><code>${esc(n.dataset.src)}</code>`);
+  const n = e.target.closest(".num"); if (n) numberSheet(n);
+});
+$("#thread").addEventListener("keydown", (e) => {
+  const n = e.target.closest(".num"); if (n && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); numberSheet(n); }
 });
 
 (async () => {
