@@ -56,7 +56,7 @@ def _post(body: dict, timeout: float = 120) -> dict:
 
 def complete(messages: list[dict], tools: list[dict] | None = None, max_tokens: int = 2000, **extra) -> dict:
     """One chat completion. Returns the message dict and usage."""
-    body = {"model": os.environ["EU_LLM_MODEL"], "messages": messages, "max_tokens": max_tokens, "temperature": 0.2, **extra}
+    body = {"model": os.environ["EU_LLM_MODEL"], "messages": messages, "max_tokens": max_tokens, "temperature": 0, **extra}
     if tools:
         body["tools"] = tools
     d = _post(body)

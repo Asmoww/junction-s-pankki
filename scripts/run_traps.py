@@ -48,7 +48,7 @@ def run_case(c):
     return {"trap": c["trap"], "question": c.get("shown", c["q"]), "persona": c["persona"], "ok": not failed, "failed": failed,
             "answer": ans if "shown" not in c else "(not stored: the question is hidden)", "tools": [t["tool"] for t in r.get("trace", [])],
             "numbers_total": len(nums), "numbers_verified": len(nums) - len(bad),
-            "cost_usd": (r.get("usage") or {}).get("cost_usd", 0), "model": (r.get("usage") or {}).get("model", "")}
+            "cost_usd": (r.get("usage") or {}).get("cost_usd") or 0, "model": (r.get("usage") or {}).get("model", "")}
 
 
 def main():
