@@ -40,6 +40,7 @@ agreement; record the change in `docs/DECISIONS.md`.
 ## Rules for every session
 1. Start: `git pull`, read `docs/STATUS.md` and `docs/DECISIONS.md` (or run `/sync`).
    Ideas still under discussion go in `docs/IDEAS.md`; add your feedback there, signed.
+   On sync, check PR #1 in Asmoww/junction-s-pankki for messages from Rasmus's Claude.
    **Cross-project reading routine (Rasmus, standing):** before any work on either GitHub repo (S-Pankki or Valio),
    read the latest Codex/Rasmus notes across BOTH projects and follow links to the full notes (a summary is not a
    substitute). S-Pankki: PR #1 discussion, `docs/TRACKER.md`, and on `review/rasmus-research-coach`
