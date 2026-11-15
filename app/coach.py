@@ -5,14 +5,16 @@ Returns the answer plus a trace of the tool calls, so the UI can show "How I wor
 from __future__ import annotations
 
 import ast
+import re
 import json
 import logging
 import operator
 import os
+import re
 
 import anthropic
 
-from . import insights, money, verify
+from . import learning, charts, drains, eu, homeplan, insights, live, money, psd2, saving, verify
 from .taxonomy import BASKETS, SPEND_CATEGORIES
 
 log = logging.getLogger("coach")
@@ -87,9 +89,66 @@ TOOLS = [
      "description": "A friendly spender type label with the measured signals behind it. Use for 'what kind of "
                     "spender am I', together with get_spender_profile.",
      "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "check_purchase",
+     "description": "Live prices for something the user wants to buy, from Finnish online shops. Each price is "
+                    "confirmed on the shop's own product page (less than an hour old). Only the item name is sent. "
+                    "Use confirmed prices only; if none are confirmed, the price is unknown.",
+     "input_schema": {"type": "object", "properties": {"item": {"type": "string", "description": "Short item name, e.g. 'iPhone 17 256 GB'"}},
+                      "required": ["item"], "additionalProperties": False}},
+    {"name": "plan_home",
+     "description": "Home purchase plan: loan, equity and costs needed, months to the goal, extra collateral. Uses live "
+                    "rules (loan cap, transfer tax, Euribor) with their sources; anything not confirmed is unknown.",
+     "input_schema": {"type": "object", "properties": {"price": {"type": "number"},
+                      "property_type": {"type": "string", "enum": ["apartment", "house"]}},
+                      "required": ["price"], "additionalProperties": False}},
+    {"name": "show_chart",
+     "description": "Draw a chart in the chat from the customer's own transactions. Use whenever the user asks to see, "
+                    "plot, chart, graph, compare over time or see a trend or trendline. For a vague request use "
+                    "monthly_spend for 12 months. month_runway = this pay month's balance and the forecast to payday.",
+     "input_schema": {"type": "object", "properties": {
+         "kind": {"type": "string", "enum": charts.KINDS}, "months": {"type": "integer", "minimum": 3, "maximum": 24},
+         **_area}, "required": ["kind"], "additionalProperties": False}},
+    {"name": "forecast_with_events",
+     "description": "Costs or income the user mentions (a dentist next Thursday, tickets on Friday, a gift on the 10th), "
+                    "each on its own date: what is safe until payday and this week afterwards, and the balance at payday. "
+                    "Use it instead of subtracting amounts yourself. Today is 2026-09-30 (Wednesday). Pass the date "
+                    "in the user's own words (e.g. 'next Thursday', 'Friday', 'tomorrow', 'the 10th') and the tool works "
+                    "out the day; always say that day in your answer (e.g. 'Thursday 8 October') so the user can correct it.",
+     "input_schema": {"type": "object", "properties": {
+         "events": {"type": "array", "items": {"type": "object", "properties": {
+             "label": {"type": "string"}, "amount": {"type": "number"},
+             "date": {"type": "string", "description": "The user's words ('next Thursday', 'Friday', 'tomorrow', 'the 10th') or an ISO date"},
+             "kind": {"type": "string", "enum": ["spend", "income"]}}, "required": ["label", "amount", "date"],
+             "additionalProperties": False}},
+         "pause_extras": {"type": "boolean"}}, "required": ["events"], "additionalProperties": False}},
+    {"name": "money_health",
+     "description": "The money fitness score (call it 'money fitness' in English, 'Rahakunto' in Finnish, 'Pengakondition' in Swedish), a 0-100 money health score from four measured indicators (spend less than you earn, no "
+                    "days below zero, buffer before payday, long-term saving) with tier, trend and at most two next steps. "
+                    "Use for 'how am I doing overall'. Never compare the person with others.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "get_safe_to_save",
+     "description": "Safe to save: how much the customer could move to savings on payday without running short before "
+                    "the next salary, from their own last 12 pay months (safe in at least 3 of 4 months; stretch in "
+                    "about half), after a buffer for surprise must-pays. Also says if they already move money to savings. "
+                    "Use for 'how much can I save', 'how much should I put aside', 'safe to save'.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "get_monthly_drains",
+     "description": "What leaves the account every month without a decision: recurring bills, subscriptions (a merchant "
+                    "charging a steady amount most months) and habits that work like a subscription (everyday extras in "
+                    "at least 6 of 12 months, e.g. eating out), with euros per month and year and hours of work. Use for "
+                    "'what subscriptions do I have', 'what drains my account', 'recurring payments'. Brand names are "
+                    "not in the data.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
+    {"name": "get_other_accounts",
+     "description": "The customer's account in another bank, if they connected it with PSD2 consent: its balance (demo "
+                    "data from a mock API; say so), this account's balance, the total, and how much moves there each "
+                    "month. If nothing is connected it says so. Use for 'how much money do I have in total', 'my other "
+                    "bank', 'the whole picture'.",
+     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False}},
     {"name": "calculate",
      "description": "Exact arithmetic on numbers you got from other tools (e.g. 675.71 + 150.04, 235.5 * 0.2). "
-                    "Use it for every sum, difference or percentage you state. Only + - * / and parentheses.",
+                    "Use it for every sum, difference, percentage or average you state (e.g. a yearly total / 12 for "
+                    "'about X a month'). Only + - * / ** and parentheses.",
      "input_schema": {"type": "object", "properties": {
          "expression": {"type": "string"}, "what": {"type": "string", "description": "What the result means."}},
          "required": ["expression", "what"], "additionalProperties": False}},
@@ -110,6 +169,16 @@ _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, as
         ast.USub: operator.neg, ast.UAdd: operator.pos}
 
 
+def _pow(base, exp):
+    # Compound growth needs powers; bounded so a result can't blow up (e.g. 1.0067 ** 600 is fine, 10 ** 999 isn't).
+    if abs(exp) > 600 or abs(base) > 1e6:
+        raise money.ToolError("Power too large: keep the exponent within 600 and the base within 1,000,000.")
+    return operator.pow(base, exp)
+
+
+_OPS[ast.Pow] = _pow
+
+
 def _calc(node):
     if isinstance(node, ast.Expression):
         return _calc(node.body)
@@ -119,20 +188,39 @@ def _calc(node):
         return _OPS[type(node.op)](_calc(node.left), _calc(node.right))
     if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
         return _OPS[type(node.op)](_calc(node.operand))
-    raise money.ToolError("Only numbers, + - * / and parentheses are allowed.")
+    raise money.ToolError("Only numbers, + - * / ** and parentheses are allowed.")
+
+
+_NUM = re.compile(r"\d[\d\u00a0\u202f ,.]*\d|\d")
+
+
+def _normalize_numbers(expression: str) -> str:
+    """Read every number the way verify.py reads answers: '412,30' = 412.30, '1,234.50' = 1234.50, '985 280,02' =
+    985280.02. (Stripping all commas turned (412,30+380,10)/2 into 39,620 and the check then matched it.)"""
+    return _NUM.sub(lambda m: repr(verify._parse(m.group(0))[0]), expression)
 
 
 def calculate(cid: str, expression: str, what: str = "") -> dict:
     if len(expression) > 200:
         raise money.ToolError("Expression too long.")
     try:
-        val = _calc(ast.parse(expression.replace(",", ""), mode="eval"))
-    except (SyntaxError, ZeroDivisionError) as e:
+        val = _calc(ast.parse(_normalize_numbers(expression), mode="eval"))
+    except (SyntaxError, ZeroDivisionError, OverflowError) as e:
         raise money.ToolError(f"Can't calculate: {e}")
+    if isinstance(val, complex):
+        raise money.ToolError("Can't calculate: no real result.")
     return {"expression": expression, "what": what, "result": round(val, 2)}
 
 
 _FUNCS["calculate"] = calculate
+_FUNCS["get_safe_to_save"] = saving.get_safe_to_save
+_FUNCS["get_monthly_drains"] = drains.drains
+_FUNCS["get_other_accounts"] = psd2.get_other_accounts
+_FUNCS["show_chart"] = charts.show_chart
+_FUNCS["money_health"] = insights.money_health
+_FUNCS["forecast_with_events"] = charts.forecast_with_events
+_FUNCS["check_purchase"] = lambda cid, item: live.check_purchase(item)
+_FUNCS["plan_home"] = homeplan.plan_home
 
 
 LANGS = {"en": "English. Format amounts like 1,234.50 €.",
@@ -147,22 +235,71 @@ money by talking with their real transaction data. Today is {money.TODAY.isoform
 2024-10-01 to 2026-09-30.
 
 Rules:
-- Every number you state must come from a tool result in this conversation. Never estimate, add up or invent
-  amounts yourself. If you need a number, call a tool; for sums, differences or percentages use calculate.
+- Every number must come from a tool result in this conversation or from the user's message, or be an explicit
+  assumption you put into calculate and list in the notes block. Never state rates, prices, rules or other facts
+  about the world from memory (use the live tools where they exist). Never estimate, add up or invent amounts
+  yourself. If you need a number, call a tool; for sums, differences or percentages use calculate.
+  That includes "small" steps such as a monthly average from a yearly total: call calculate for it too.
   If no tool can answer, say what you can't see.
 - Always say which period an amount covers (e.g. "in August 2026").
+- Within one answer, use the same unit for every amount you compare: all per month or all totals for the period, and
+  say which ("a month" / "in total, July-September"). If a tool gives totals and you talk per month, use the tool's
+  per-month field or calculate (total / months); never mix an average and totals in one list.
 - Answer exactly what was asked, in the user's own words and categories. Do not swap their question for another.
+- Be precise about labels: "fixed must-pays" groceries are supermarkets, butchers and bakeries; kiosk and convenience-store
+  purchases are everyday extras. Say so when someone asks about groceries or the baskets.
 - Teach with the three baskets: {'; '.join(f"{b['name']} = {b['explain']}" for b in BASKETS.values())}
   Mention the basket when it helps the user understand where money goes.
 - Transfers to the customer's own savings or investments are saving, not spending.
 - If the user is short of money or overdrawn, say so kindly and plainly, with one concrete next step.
+- Prices of things to buy and outside rules (loan cap, transfer tax, Euribor) come only from check_purchase and
+  plan_home, with the shop or source named. If a value is unknown, say it is unknown; never use 0 or a guess.
+- If the user wants to change how something counts ("taxis are essential for me"), say you can't change it from the
+  chat, but they can in "Sort with the AI" (Home → Your three baskets), and their answer then counts everywhere.
+- If you offer to connect another bank, say it is a demo connection in this prototype.
+- Monthly averages: use the tool's average_per_month_eur. Never average the rows of a month breakdown yourself, and
+  a month with no spending counts as 0.
+- Numbers you gave earlier in this chat may be repeated; numbers from your earlier answers count as known.
+- Quick loans and payday loans: say plainly they are expensive (high interest and fees), suggest talking to S-Bank
+  first, and show a cheaper way through the numbers.
+- Money the user says they have elsewhere (another account or bank) is not visible to you: check get_other_accounts.
+  If no bank is connected, say you can only see this account, never add the claimed money to any figure, and offer to
+  connect the other bank (PSD2). If one is connected, use its balance only as the full picture, say it is demo data,
+  and keep it out of safe-to-spend and forecasts.
 - Keep the two shortfalls apart: "at your usual pace" (get_payday_forecast, extras included) vs "even with no
   extras" (get_safe_to_spend). Say which one you mean.
 - Explain financial terms in plain language. Be warm and practical, never preachy.
 - No investment, loan or tax product advice; suggest talking to S-Bank for those.
+- Growth and savings plans ("X a month for N years at R %"): compute them with calculate (it supports **, e.g.
+  4000 * ((1 + 0.08/12) ** 48 - 1) / (0.08/12)); say the return is an assumption, not a promise. Then check the
+  plan against their own money (get_cashflow, get_safe_to_save): if the monthly amount is more than they can
+  safely save, or more than their income, say so plainly and show the version that fits what they can save.
+- You can draw charts: call show_chart; the app draws it under your answer. Never write chart data, JSON, code or
+  tables of chart points in the answer. Never say you can't draw charts. Under a chart, write at most two sentences
+  from its summary (trend, highest month) and describe the trend without judging it.
+- When the user mentions a future cost or income with a day, use forecast_with_events; never subtract it yourself.
+- For "what if I paused / stopped my extras" (or any what-if until payday), call forecast_with_events with
+  pause_extras true (events may be empty): the app then draws the balance line with and without the change.
 - This is a phone screen: keep answers short (usually under 90 words). Use **bold** for key amounts. Use short
   bullet lists only when listing 3+ items. End with at most one helpful follow-up suggestion.
 - Use the user's exact numbers when they give them (e.g. "cut by 20 %").
+- If you mention paying rent or a bill after payday, say it needs the landlord's or biller's OK, that it is still owed,
+  and that it doesn't close a gap that comes back every month. Never present it as solving their money.
+- "Restaurants" is both a category (all eating out: restaurants, fast food & cafes, bars & pubs) and a merchant type
+  (sit-down restaurants only). Say "eating out" for the category and "restaurants" for the merchant type, and use the
+  same one throughout an answer.
+- Never state statistics about other people ("most people save 15 %", "on average Finns…") unless a tool returned
+  them (e.g. get_benchmark). Give general advice as a rule of thumb ("a common rule of thumb is to save 10-20 %") or
+  as a what-if you calculate with ("say you save 20 %": put the 20 % into calculate).
+- After the answer, add a hidden block the app removes, one line per number that is NOT straight from a tool result
+  (your assumptions, rules of thumb, calculations), at most 20 words each, giving only the reason for the number:
+  <number-notes>
+  20 %|note|A common savings target that still leaves room for bills.
+  15 %|rule|A widely used savings guideline for long-term goals.
+  </number-notes>
+  Write each number exactly as in the answer. Use "rule" only for a general rule of thumb that the sentence calls one ("a common rule of thumb is…"), never for anything about
+  the user. A note never contains other numbers or facts about the user's money. Leave the block out if every number
+  comes straight from a tool.
 """
 
 
@@ -176,24 +313,56 @@ def _run_tool(cid: str, name: str, args: dict) -> tuple[dict, bool]:
         return {"error": f"unknown tool {name}"}, True
     try:
         return fn(cid, **args), False
-    except money.ToolError as e:
+    except (money.ToolError, ValueError) as e:
         return {"error": str(e)}, True
+    except live.LiveUnavailable:
+        return {"error": "Live web data is not connected right now; prices and rules are unknown."}, True
     except TypeError as e:
         return {"error": f"bad arguments: {e}"}, True
 
 
-def _attachments(trace: list[dict]) -> list[dict]:
+def _amount_forms(x: float) -> set[str]:
+    """How an amount can appear in an answer: 818.42 / 818,42 / 818 (EN, FI/SV, rounded)."""
+    two = f"{x:.2f}"
+    return {two, two.replace(".", ","), f"{round(x):d}", f"{x:,.2f}", f"{x:,.2f}".replace(",", " ").replace(".", ",")}
+
+
+def _pick_cut(trace: list[dict], answer: str) -> dict | None:
+    """The simulate_cut the answer is about: the one whose monthly saving appears in the answer text; if none or
+    several match, the last call. (Rasmus's Claude, feature/home-readiness: the slider showed restaurants while the
+    answer was about all extras.)"""
+    cuts = [t for t in trace if t["tool"] == "simulate_cut" and not t["error"]]
+    if not cuts:
+        return None
+    hits = [t for t in cuts if any(f in answer for f in _amount_forms(t["result"].get("saving_per_month_eur") or 0))]
+    return hits[-1] if hits else cuts[-1]
+
+
+def _attachments(trace: list[dict], answer: str = "") -> list[dict]:
     """Charts and widgets for the UI, built from tool results (never from model text)."""
     out, seen = [], set()
+    cut = _pick_cut(trace, answer)
     for t in reversed(trace):
         if t["error"] or t["tool"] in seen:
+            continue
+        if t["tool"] == "simulate_cut" and t is not cut:
             continue
         seen.add(t["tool"])
         r, kind = t["result"], None
         if t["tool"] == "get_spending" and r.get("breakdown"):
-            kind = {"type": "bars", "title": "Spending", "period": r["period"],
-                    "vertical": t["input"].get("group_by") == "month",
-                    "items": [{"label": b["key"], "value": b["total_eur"]} for b in r["breakdown"][:8]]}
+            gb = t["input"].get("group_by")
+            same = [x for x in trace if x["tool"] == "get_spending" and not x["error"] and x["result"].get("breakdown")
+                    and x["input"].get("group_by") == gb]
+            if gb != "month" and len(same) >= 2 and same[-1]["result"]["period"] != same[-2]["result"]["period"]:
+                # The answer compares two periods (e.g. August vs September by basket): chart both, not just the last
+                a, b = sorted((same[-2]["result"], same[-1]["result"]), key=lambda x: x["period"]["start"])  # earlier first
+                av, bv = {x["key"]: x["total_eur"] for x in a["breakdown"]}, {x["key"]: x["total_eur"] for x in b["breakdown"]}
+                keys = sorted(set(av) | set(bv), key=lambda k: -max(av.get(k, 0), bv.get(k, 0)))[:8]
+                kind = {"type": "bars", "title": "Spending", "pair": [a["period"], b["period"]],
+                        "items": [{"label": k, "before": av.get(k, 0.0), "value": bv.get(k, 0.0)} for k in keys]}
+            else:
+                kind = {"type": "bars", "title": "Spending", "period": r["period"], "vertical": gb == "month",
+                        "items": [{"label": b["key"], "value": b["total_eur"]} for b in r["breakdown"][:8]]}
         elif t["tool"] == "get_three_baskets":
             kind = {"type": "baskets", "period": r["period"],
                     "items": [{"basket": b["basket"], "label": b["name"], "value": b["total_eur"]} for b in r["baskets"]]}
@@ -213,6 +382,12 @@ def _attachments(trace: list[dict]) -> list[dict]:
             kind = {"type": "compare", "age_group": r["age_group"], "source": r["source"],
                     "items": [{"label": a["area"], "you": a["you_per_month_eur"],
                                "finland": a["finland_same_age_per_month_eur"]} for a in r["areas"]]}
+        elif t["tool"] == "show_chart":
+            kind = {"type": "chart", "spec": r}
+        elif t["tool"] == "forecast_with_events" and r.get("_future"):
+            f = r["_future"]
+            kind = {"type": "chart", "spec": {"kind": "month_runway", "title": "", "future": [{"x": p["date"], "v": p["balance_eur"]} for p in f["base"]["path"]],
+                                              "scenario": [{"x": p["date"], "v": p["balance_eur"]} for p in f["scenario"]["path"]], "past": []}}
         if kind:
             out.append(kind)
         if len(out) == 2:
@@ -229,25 +404,136 @@ def _privacy(trace: list[dict]) -> dict:
             "never_sent": "Name, customer id, account number, merchant names (not in the data)."}
 
 
-def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
-    """history: [{"role": "user"|"assistant", "text": str}, ...] ending with the user's new message."""
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+REFUSAL_TEXT = "I can't help with that one. Try asking about your spending, saving or bills."
+
+
+# A closed code block anywhere, or an unclosed one that starts a line (a cut-off answer); a stray ``` inside a
+# sentence is left alone so it can't swallow the rest of the answer.
+_FENCE = re.compile(r"```.*?```|(?m:^)```.*\Z", re.DOTALL)
+
+
+def strip_data_dumps(text: str) -> str:
+    """Remove code blocks and raw JSON (e.g. a chart spec the model wrote out) from an answer. Charts are drawn by the
+    app from show_chart results; a phone chat must never show data structures."""
+    text = _FENCE.sub("", text)
+    out, i = [], 0
+    while i < len(text):
+        line_start = i == 0 or text[i - 1] == "\n"
+        if line_start and text[i] in "{[":
+            depth, j, in_str = 0, i, False
+            while j < len(text):
+                ch = text[j]
+                if in_str:
+                    in_str = not (ch == '"' and text[j - 1] != "\\")
+                elif ch == '"':
+                    in_str = True
+                elif ch in "{[":
+                    depth += 1
+                elif ch in "}]":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                j += 1
+            block = text[i:j + 1]
+            if depth == 0 and '":' in block and len(block) > 20:
+                i = j + 1
+                continue
+        out.append(text[i])
+        i += 1
+    return re.sub(r"\n{3,}", "\n\n", "".join(out)).strip()
+
+
+def _drop_refused(history: list[dict]) -> list[dict]:
+    """Remove refused exchanges (user turn + the refusal reply) so they are never resent to the model; the newest user
+    message is always kept. (Rasmus's Claude: one refused message made every later question fail.)"""
+    out, i = [], 0
+    while i < len(history):
+        h, nxt = history[i], history[i + 1] if i + 1 < len(history) else None
+        if h.get("role") == "user" and nxt and nxt.get("role") == "assistant" and nxt.get("text") == REFUSAL_TEXT:
+            i += 2
+            continue
+        out.append(h)
+        i += 1
+    return out
+
+
+def _chat_eu(cid: str, history: list[dict], lang: str, c: dict, system: str, messages: list[dict], progress=None) -> dict:
+    """The same coach on the open model we host in Europe (eu.py): same tools, same numbers check."""
+    progress = progress or (lambda step, args: None)
+    msgs = [{"role": "system", "content": system}] + [{"role": m["role"], "content": m["content"]} for m in messages]
+    tools, trace = eu.tools_openai(TOOLS), []
+    usage = {"input_tokens": 0, "output_tokens": 0, "calls": 0}
+    for step in range(MAX_STEPS + 1):
+        # Last round: no more tools, write the answer from what the tools already returned (as on the Claude path)
+        last = {"tool_choice": "none"} if step == MAX_STEPS else {}
+        try:
+            out = eu.complete(msgs, tools=tools, max_tokens=2000, **last)
+        except Exception as e:  # noqa: BLE001
+            log.warning("EU model error: %s", e)
+            return {"answer": "The coach in EU mode isn't reachable right now. Please try again.", "trace": trace, "error": True}
+        m, u = out["message"], out["usage"]
+        usage["input_tokens"] += u.get("prompt_tokens", 0)
+        usage["output_tokens"] += u.get("completion_tokens", 0)
+        usage["calls"] += 1
+        log.info("coach eu model=%s finish=%s in=%s out=%s", out["model"], out["finish"], u.get("prompt_tokens"), u.get("completion_tokens"))
+        calls = m.get("tool_calls") or []
+        msgs.append({"role": "assistant", "content": m.get("content") or "", **({"tool_calls": calls} if calls else {})})
+        if not calls:
+            text = (m.get("content") or "").strip()
+            usage.update({"model": out["model"], "where": eu.label(), "cost_usd": None})
+            text, notes = verify.split_notes(strip_data_dumps(text))
+            progress("check", {})
+            numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
+                                   {"balance": c["balance"], "age": c["age"]}, earlier=[h["text"] for h in history if h["role"] == "assistant"],
+                                   explain=True, notes=notes)
+            bad = [n["text"] for n in numbers if n["status"] == "unverified"]
+            if bad:
+                log.warning("unverified numbers (eu) %s in answer to %r", bad, history[-1]["text"][:80])
+            return {"answer": text, "trace": trace, "error": False, "model": out["model"], "numbers": numbers,
+                    "attachments": _attachments(trace, text), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang, "eu": True}
+        for call in calls:
+            fn = call.get("function", {})
+            try:
+                args = json.loads(fn.get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args, out_t, is_err = {}, {"error": "arguments were not valid JSON"}, True
+            else:
+                progress(fn.get("name", ""), args)
+                out_t, is_err = _run_tool(cid, fn.get("name", ""), args)
+            trace.append({"tool": fn.get("name"), "input": args, "result": out_t, "error": is_err})
+            msgs.append({"role": "tool", "tool_call_id": call.get("id"),
+                         "content": json.dumps({k: v for k, v in out_t.items() if not k.startswith("_")} if isinstance(out_t, dict) else out_t, default=str)})
+    return {"answer": "That took too many steps. Could you ask in a simpler way?", "trace": trace, "error": True}
+
+
+def chat(cid: str, history: list[dict], lang: str = "en", progress=None) -> dict:
+    """history: [{"role": "user"|"assistant", "text": str}, ...] ending with the user's new message.
+    progress(step, args), if given, is called before each tool runs and with "check" before the numbers check, so the
+    app can show what the coach is really doing while it waits."""
+    progress = progress or (lambda step, args: None)
+    if not os.environ.get("ANTHROPIC_API_KEY") and not eu.active():
         return {"answer": "The coach is not connected yet (no API key on the server).", "trace": [], "error": True}
     c = money.customer(cid)
-    messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in history[-12:] if h.get("text")]
+    messages: list[dict] = [{"role": h["role"], "content": h["text"]} for h in _drop_refused(history)[-12:] if h.get("text")]
     lang = lang if lang in LANGS else "en"
     system = [{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}},
-              {"type": "text", "text": f"Reply in {LANGS[lang]}\nCustomer: age {c['age']}, postal code "
+              {"type": "text", "text": f"App language: {LANGS[lang]} If the user's latest message is clearly written in "
+                                       "another of English, Finnish or Swedish, reply in that language and its number "
+                                       f"format instead.\nCustomer: age {c['age']}, postal code "
                                        f"{c['postal_code']}, balance now {c['balance']} €."}]
+    if eu.active():
+        return _chat_eu(cid, history, lang, c, "\n\n".join(b["text"] for b in system), messages, progress)
     trace = []
     usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "calls": 0}
     client = _client()
-    for _ in range(MAX_STEPS):
+    for step in range(MAX_STEPS + 1):
+        # Last round: no more tools, write the answer from what the tools already returned.
+        last = {"tool_choice": {"type": "none"}} if step == MAX_STEPS else {}
         try:
             # No refusal fallback on purpose: it may retry on a bigger model, and the team caps the app at Sonnet.
             resp = client.messages.create(
                 model=MODEL, max_tokens=4000, system=system, tools=TOOLS, messages=messages,
-                output_config={"effort": "low"})
+                output_config={"effort": "low"}, **last)
         except anthropic.RateLimitError:
             return {"answer": "The coach is busy right now. Please try again in a moment.", "trace": trace, "error": True}
         except anthropic.APIStatusError as e:
@@ -256,8 +542,10 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
         except anthropic.APIConnectionError:
             return {"answer": "No connection to the coach right now. Please try again.", "trace": trace, "error": True}
         if resp.stop_reason == "refusal":
-            return {"answer": "I can't help with that one. Try asking about your spending, saving or bills.",
-                    "trace": trace, "error": False}
+            log.info("coach refusal (model-level) for customer %s", cid)
+            # refused=True: the client drops this turn from its history, so one refused message can't make every
+            # later question fail too
+            return {"answer": REFUSAL_TEXT, "trace": trace, "error": False, "refused": True}
         u = resp.usage
         usage["input_tokens"] += u.input_tokens
         usage["output_tokens"] += u.output_tokens
@@ -271,21 +559,26 @@ def chat(cid: str, history: list[dict], lang: str = "en") -> dict:
         if resp.stop_reason != "tool_use" or not uses:
             text = "\n".join(b.text for b in resp.content if b.type == "text").strip()
             usage["model"] = resp.model
+            progress("check", {})
             usage["cost_usd"] = round((usage["input_tokens"] * PRICE_IN + usage["output_tokens"] * PRICE_OUT
                                        + usage["cache_read_tokens"] * PRICE_CACHE_READ
                                        + usage["cache_write_tokens"] * PRICE_CACHE_WRITE) / 1e6, 4)
+            text, notes = verify.split_notes(strip_data_dumps(text))
             numbers = verify.check(text, trace, [h["text"] for h in history if h["role"] == "user"], lang,
-                                   {"balance": c["balance"], "age": c["age"]})
+                                   {"balance": c["balance"], "age": c["age"]}, earlier=[h["text"] for h in history if h["role"] == "assistant"],
+                                   explain=True, notes=notes)
             bad = [n for n in numbers if n["status"] == "unverified"]
             if bad:
                 log.warning("unverified numbers %s in answer to %r", [n["text"] for n in bad], history[-1]["text"][:80])
             return {"answer": text, "trace": trace, "error": False, "model": resp.model, "numbers": numbers,
-                    "attachments": _attachments(trace), "usage": usage, "privacy": _privacy(trace), "lang": lang}
+                    "attachments": _attachments(trace, text), "concepts": learning.concepts_for_tools([t["tool"] for t in trace]), "usage": usage, "privacy": _privacy(trace), "lang": lang}
         results = []
         for u in uses:
+            progress(u.name, dict(u.input))
             out, is_err = _run_tool(cid, u.name, dict(u.input))
             trace.append({"tool": u.name, "input": dict(u.input), "result": out, "error": is_err})
-            results.append({"type": "tool_result", "tool_use_id": u.id, "content": json.dumps(out, default=str),
+            results.append({"type": "tool_result", "tool_use_id": u.id,
+                            "content": json.dumps({k: v for k, v in out.items() if not k.startswith("_")} if isinstance(out, dict) else out, default=str),
                             "is_error": is_err})
         messages.append({"role": "user", "content": results})
     return {"answer": "That took too many steps. Could you ask in a simpler way?", "trace": trace, "error": True}

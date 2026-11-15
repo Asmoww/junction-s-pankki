@@ -58,7 +58,10 @@ agreement; record the change in `docs/DECISIONS.md`.
 7. Discord update on real milestones only: a short title line, then one bullet per change. Concise,
    no emojis. Example: `python scripts/notify.py $'S-Pankki demo: safe-to-spend live\n- Added: weekly safe-to-spend\n- Tests: 20 offline, 8/8 traps'`
 8. Everything in English: code, comments, docs, commit messages, UI text.
-9. App model: Claude Sonnet 5.5 (`claude-sonnet-5-5`) at most; never Opus (Pyry). Compare on a small eval before switching.
+9. App model: since 14 Nov every AI job runs on Gemma 4 31B that we host on a Verda GPU in Finland (`AI_PROVIDER=eu`,
+   `app/eu.py`, SSH tunnel `verda-tunnel`; the header shows a fixed "AI in Finland" badge). The Claude path stays in the
+   code, switched off; if it is ever switched back on: Claude Sonnet 5.5 (`claude-sonnet-5-5`) at most, never Opus (Pyry).
+   Compare on a small eval (the trap suite, `scripts/run_traps.py --eu`) before switching.
 
 ## Data
 Challenge data is challenge-only: it lives in `data/raw/` (gitignored). `scripts/fetch_data.sh` downloads it
@@ -66,7 +69,8 @@ and checks the hash. 3.6 M transactions, 5,100 customers (one account each), 202
 Quirks and handling: `docs/ASSUMPTIONS.md`.
 
 ## Stack and how to run
-Python 3.12, DuckDB over `data/tx.parquet`, FastAPI, Anthropic SDK, vanilla JS mobile UI, pytest.
+Python 3.12, DuckDB over `data/tx.parquet`, FastAPI, Gemma 4 via vLLM (OpenAI-compatible, `app/eu.py`; Anthropic SDK for the
+switched-off Claude path), vanilla JS mobile UI, pytest.
 ```bash
 python3 -m venv .venv && .venv/bin/pip install duckdb fastapi 'uvicorn[standard]' anthropic python-multipart pytest
 scripts/fetch_data.sh                          # dataset into data/raw/ (hash-checked)
@@ -78,10 +82,16 @@ scripts/fetch_data.sh                          # dataset into data/raw/ (hash-ch
 ## Code map
 - `app/money.py` every number: spending, transactions, cashflow, three baskets, safe-to-spend, what-if cut, spender profile, overview. "Today" is 2026-09-30.
 - `app/insights.py` surprise pot, payday pattern + forecast, Statistics Finland benchmark, spender type, basket game, PSD2 signal, home cards.
-- `app/coach.py` Claude tool-use loop (Sonnet 5.5, effort low, no fallback to bigger models; model logged per call), `calculate` tool for any
+- `app/coach.py` tool-use loop on Gemma in Finland (`_chat_eu`; the Claude path is kept but off), `calculate` tool for any
   arithmetic, charts/widgets built from tool results, usage + cost, privacy summary. EN/FI/SV answers.
-- `app/verify.py` verified numbers: every € and % in an answer is matched to tool results (verified / rounded / suggestion / unverified).
-- `app/main.py` password gate, `/api/home|overview|chat|game|traps|personas`, asset versioning (Cloudflare caches /static).
+- `app/verify.py` verified numbers: every € and % in an answer is matched to tool results: verified / rounded / derived (exact
+  sum or difference of two numbers from one tool result) / yours (the user's own number) / suggestion / unverified.
+- `app/charts.py` coach tools `show_chart` (monthly spend, category trend, income vs spend, month runway) and
+  `forecast_with_events` (user-mentioned costs on their own dates).
+- `insights.money_health` Rahakunto score (Spend/Save pillars of the FHN framework, 4 of 8 indicators), Home card + sheet.
+- `app/live.py`, `app/homeplan.py` Context.dev: confirmed purchase prices, rules registry, monitors (branch feature/context-dev).
+- `app/brief.py` Home's AI layer: code findings → the AI picks questions, orders cards, writes one checked sentence.
+- `app/main.py` password gate, `/api/home|overview|chat|chat/stream|brief|game|traps|personas`, asset versioning (Cloudflare caches /static).
 - `app/web/` mobile UI, tabs Home / Coach / Learn; `i18n.js` holds every UI string in en, fi, sv.
   Design E is the main page `/` (`e.html` + `e.css` + `e.js`, same `app.js` with `window.UI = "e"`): balance graph with
   forecast, AI notes (`future.annotations`), what-if scenarios (`future.parse_whatif`, `future.simulate`). The first
@@ -89,7 +99,7 @@ scripts/fetch_data.sh                          # dataset into data/raw/ (hash-ch
 - `app/bench_statfin.json` Statistics Finland 2022 table 14q4 (open data), rebuilt by `scripts/fetch_benchmarks.py`.
 - `tests/traps/cases.py` + `scripts/run_traps.py` trap suite against the live coach (~$0.15/run) -> `state/traps.json`, shown on Learn.
   Nightly: user timer `spankki-traps.timer` (03:17).
-- `app/personas.py` four demo customers (real ids, invented names).
+- `app/personas.py` five demo customers (real ids, invented names); Ville (CUST04138) is the home-purchase demo.
 
 ## Deployment
 https://spankki.psavela.com (password in team chat). User service `spankki-coach` (port 5202, MemoryMax 600M):

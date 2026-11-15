@@ -57,7 +57,7 @@ full files (sha256 of the transactions CSV `49b3265d…6f1e63`).
   timestamp, then by the order that makes the balance chain consistent. The latest balance = `balance_after_eur`
   of the last row in that order.
 - **Data ends 2026-09-30.** "Today" in the demo is 2026-09-30 (or a chosen date inside the data), not the real
-  date. "Last month" = September 2026. Every answer states the period it used.
+  date. "Last month" = August 2026 (demo today is 2026-09-30; see DECISIONS.md). Every answer states the period it used.
 
 ## Special customers
 - `CUST05001`–`CUST05100` (100 customers, average age 55 vs 43) hold 124 of the 136 extreme one-offs and many odd
@@ -83,3 +83,5 @@ full files (sha256 of the transactions CSV `49b3265d…6f1e63`).
 - Extras +30 % per day in the week after payday vs the week before; weekend days 1.45x weekdays.
 - Half of all negative-balance transactions happen within 7 days before payday.
 - Only 15 % of extras are under 10 €; median cafe/fast-food purchase 23 € (no "latte factor" in this data).
+
+- 2026-11-14 "Restaurants" is both a category and a merchant type (the only such clash). The category is all eating out: Restaurants, Fast food & cafes, Bars & pubs, Other restaurants. Evidence: CUST04588, Jul-Sep 2026: merchant type Restaurants 926.41 € (20 payments), category Restaurants 1,400.60 € (30). The coach and charts call the category "eating out"; get_spending adds a note when filtered by it.

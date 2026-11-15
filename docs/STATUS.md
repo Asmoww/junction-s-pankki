@@ -17,6 +17,10 @@ Update at the end of every session (or run `/handoff`).
 - Team: module owners
 
 ## Done
+- 2026-11-14 Trap suite: hateful-request case no longer fails correct refusals and stereotypes no longer slip through (32 offline grading tests); Money year receipt loader (Joona's Claude)
+- 2026-11-14 Loading scenes everywhere; the coach shows its real steps live while it works (`/api/chat/stream`)
+- 2026-11-14 Home led by the AI: a checked one-line briefing, three questions picked for the person and answered in place, "why" taps on the graph, cards ordered by the AI (`app/brief.py`)
+- 2026-11-14 Number sources in the coach chat (PR #3, merged with review fixes): colours by source, plain-words sheet for data numbers, "See the payments" (`/api/payments`), coach's notes
 - 2026-11-13 Repo set up, dataset profiled (ASSUMPTIONS.md) (Pyry's Claude)
 - 2026-11-13 Money tools, Claude coach, mobile UI live at spankki.psavela.com (Pyry's Claude)
 - 2026-11-13 Verified numbers, surprise pot, payday-week + overdraft forecast cards with push mockup, inline charts and
@@ -24,3 +28,4 @@ Update at the end of every session (or run `/handoff`).
   EN/FI/SV, "What the AI saw" (model, tokens, cost, data sent), PSD2 connect mock for Jussi, spender type,
   Statistics Finland benchmark (Pyry's Claude)
 - 2026-11-14 Design E (money ribbon) live at /e: real balance since payday + forecast to next payday, drag readout, EN/FI/SV (Pyry's Claude)
+- 2026-11-14 Smoke-test defects fixed (charts in chat, badge counting the user's numbers, dated costs, reply language, basket labels, shortfall headline); Rahakunto card; Ville persona; traps 22/22, 92/92 numbers (Pyry's Claude)

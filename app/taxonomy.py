@@ -20,9 +20,9 @@ SPEND_CATEGORIES = ["Housing", "Utilities", "Groceries", "Transportation", "Heal
 
 BASKETS = {
     1: {"name": "Fixed must-pays", "short": "Must-pays",
-        "explain": "Mandatory and regular: rent, utilities, groceries, commuting."},
+        "explain": "Mandatory and regular: rent, bills, supermarket groceries (also butchers and bakeries), public transport and fuel."},
     2: {"name": "Surprise must-pays", "short": "Surprises",
         "explain": "Mandatory but irregular: health, repairs, appliances, big one-off costs."},
     3: {"name": "Everyday extras", "short": "Extras",
-        "explain": "Small choices that slip through your fingers: eating out, coffee, fun, shopping, taxis."},
+        "explain": "Small choices that slip through your fingers: eating out, kiosks and convenience stores, fun, shopping, taxis, parking, travel."},
 }
