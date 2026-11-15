@@ -4,7 +4,7 @@ A mobile coach for S-mobiili that lets you talk with your own transactions and s
 not only where it went. Every number is computed from the data by code; the AI picks the calculation and explains it.
 
 ## Try it
-- Live demo: https://spankki.psavela.com (password from the team). Pick a demo customer: Emma (23, first job, short
+- Live demo: https://spankki.psavela.com. Pick a demo customer: Emma (23, first job, short
   before payday) carries the story; Mikko, Aino, Jussi (salary moves to another bank) and Ville (saving for a home).
   They are synthetic customers from the challenge data with invented names.
 - Five-minute path: `docs/DEMO.md`, section P.
