@@ -128,14 +128,13 @@ notes(s, DRAFT + "★ Stage. The film's question. 699.85 € = balance on 30 Sep
 
 # 2 Forecast (product hero: the real chart, bleeding off the right edge) -------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, WHITE)
-text(s, M, M, 5.6, 0.4, "Her forecast for payday, 15 October", size=20, color=MUTED, name="Kicker")
+text(s, M, M, 5.6, 0.4, "Payday, 15 October", size=20, color=MUTED, name="Kicker")
 text(s, M, 1.25, 5.8, 1.8, "−997 €", size=112, bold=True, color=RED, name="Statement number")
-text(s, M, 3.2, 5.2, 1.2, "Rent of 763 € leaves on 3 October, and she stays below zero after that.", size=22,
+text(s, M, 3.2, 5.2, 1.2, "Rent leaves on 3 October.", size=22,
      color=INK, spacing=1.05, name="One sentence")
 p = Placed(s, "home.png", (0, 560, 780, 1292), 7.0, M, w=6.6, name="Forecast chart (bleeds right)",
            shade=False, radius=1200)
 ring(s, p, (480, 985, 740, 1030), name="Ring on rent")
-footer(s, DATA)
 notes(s, DRAFT + "★ Stage. -997.24 € at her usual pace (future.future); rent 762.79 € on 3 Oct (insights.ribbon). "
       "The ring marks the rent step on the real chart.")
 
@@ -144,24 +143,23 @@ s = prs.slides.add_slide(BLANK); bg(s, BG)
 text(s, M, M, 11.9, 2.6, "45 %", size=190, bold=True, color=RED, name="Statement number")
 text(s, M, 3.5, 11.0, 1.2, "of overdrafts start in the last week before payday.", size=40, bold=True, color=FOREST,
      spacing=1.0, name="Statement")
-text(s, M, 5.0, 10.5, 0.6, "Purchases under 10 € are just 1 % of what people spend on extras.", size=22, color=INK,
+text(s, M, 5.0, 10.5, 0.6, "Purchases under 10 € are 1 % of spending on extras.", size=22, color=INK,
      name="One sentence")
-footer(s, "Our analysis of the S-Pankki challenge data: 19,036 moments a purchase took an account below zero, and the days to the next salary.")
+footer(s, "Source: S-Pankki challenge data, our analysis.")
 notes(s, DRAFT + "Deck. RECOMPUTED 15 Nov: 45.5 % of overdraft moments (first purchase that takes the balance below zero) "
       "fall within 7 days of the next salary; median 8 days. The older '1 in 2' overstated it. Purchases under 10 € are "
       "15 % of extra purchases by count but 1.3 % of the money spent on extras.")
 
 # 4 Proof: every amount opens its payments -------------------------------------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, WHITE)
-text(s, M, M, 4.9, 2.6, "Every amount in an answer opens the payments behind it", size=38, bold=True, color=FOREST,
+text(s, M, M, 4.9, 2.6, "Tap an amount, see the payments", size=38, bold=True, color=FOREST,
      spacing=0.95, name="Title")
-text(s, M, 3.6, 4.6, 1.2, "508.37 € on eating out is 10 payments from July to September.", size=22, color=INK,
+text(s, M, 3.6, 4.6, 1.2, "508.37 € on eating out = 10 payments.", size=22, color=INK,
      spacing=1.05, name="One sentence")
 a = Placed(s, "eat.png", (0, 0, 780, 1688), 5.85, M, h=7.0 - M - 0.25, name="Answer", radius=2200)
 ring(s, a, (462, 570, 590, 608), name="Ring on 508.37")
 b = Placed(s, "payments.png", (0, 0, 780, 1688), 9.45, M, h=7.0 - M - 0.25, name="The 10 payments", radius=2200)
 ring(s, b, (600, 1566, 772, 1606), name="Ring on the total")
-footer(s, DATA)
 notes(s, DRAFT + "★ Stage. get_spending category Restaurants, 1 Jul-30 Sep: 508.37 €, 10 payments (169.46 € a month). "
       "Green = from her data; numbers are matched to the calculations on her data (never 'guaranteed').")
 
@@ -172,29 +170,27 @@ text(s, M, 1.2, 7.0, 1.2, [[("−997 €", {"color": MUTED}), (" → ", {"color
      size=60, bold=True, name="Statement numbers")
 text(s, M, 2.55, 6.6, 1.0, "Better. Still short.", size=54, bold=True, color=FOREST, name="Statement")
 p = Placed(s, "pause.png", (0, 10, 780, 1250), 8.0, M, h=7.5 - M + 0.4, name="Pause answer (bleeds off the bottom)", radius=2200)
-footer(s, DATA)
 notes(s, DRAFT + "★ Stage (film: 'Better. Still short, though.'). -997.24 € usual pace, -675.72 € with extras paused "
       "(forecast_with_events). Never present moving rent as a fix.")
 
 # 6 Statement: the year (dark) ---------------------------------------------------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, FOREST)
 text(s, M, M, 11.9, 2.7, "−2,468 €", size=190, bold=True, color=WHITE, name="Statement number")
-text(s, M, 3.65, 10.5, 1.2, "Over the past year she spent this much more than she earned.", size=34, bold=True,
+text(s, M, 3.65, 10.5, 1.2, "more spent than earned in a year", size=34, bold=True,
      color=PALE, spacing=1.05, name="One sentence")
-footer(s, "Money in 25,855 €, money out 28,323 €, 1 Oct 2025 to 30 Sep 2026 (get_cashflow, last 12 months).", dark=True)
+footer(s, "In 25,855 €, out 28,323 €, Oct 2025 to Sep 2026.", dark=True)
 notes(s, DRAFT + "★ Stage (film: 'she's been spending more than she earns'). 25,855.24 in, 28,323.07 out = 2,467.83 "
       "(about 206 € a month). The honest ending: a two-week cut can't close it; she now knows which basket to work on.")
 
 # 7 Proof: play, then check -----------------------------------------------------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, WHITE)
-text(s, M, M, 4.9, 2.6, "She plays out her next two weeks, then checks what she learned", size=36, bold=True,
+text(s, M, M, 4.9, 2.6, "Play the next two weeks. Then check.", size=36, bold=True,
      color=FOREST, spacing=0.95, name="Title")
-text(s, M, 3.7, 4.6, 1.2, "She guessed under 20 % of her spending went on extras. It was 32 %.", size=22, color=INK,
+text(s, M, 3.7, 4.6, 1.2, "Her guess: under 20 % on extras. Her data: 32 %.", size=22, color=INK,
      spacing=1.05, name="One sentence")
 Placed(s, "card_extra.png", (0, 0, 780, 1688), 5.85, M, h=7.0 - M - 0.25, name="Play: a 40 € extra", radius=2200)
 q = Placed(s, "quest_reveal.png", (0, 0, 780, 1688), 9.45, M, h=7.0 - M - 0.25, name="Quest: guess, then her data", radius=2200)
 ring(s, q, (128, 1408, 252, 1472), name="Ring on 32 %")
-footer(s, DATA)
 notes(s, DRAFT + "Deck (stage if time). Film: 'Skip a forty-euro extra' and 'check what she's learned'. The card: "
       "Fast food & cafes, Fri 2 Oct, 40 € = 3.0 h of her work. Quest: guess < 20 %, actual 32 % (learning.facts_from_data "
       "everyday_share 0.324, 699 € a month). Curiosity progress is engagement, not measured learning.")
@@ -202,22 +198,22 @@ notes(s, DRAFT + "Deck (stage if time). Film: 'Skip a forty-euro extra' and 'che
 # 8 Statement: trust (dark) ----------------------------------------------------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, FOREST)
 text(s, M, M, 11.9, 2.4, "25 / 25", size=170, bold=True, color=WHITE, name="Statement number")
-text(s, M, 3.4, 11.0, 1.4, "trick questions passed by the live coach, with all 51 amounts matched to her data.", size=34,
+text(s, M, 3.4, 11.0, 1.4, "trick questions passed", size=34,
      bold=True, color=PALE, spacing=1.05, name="One sentence")
-footer(s, "25 questions where money coaches typically fail (tests/traps), run against the live coach on Gemma 4 in Finland, 15 Nov.", dark=True)
+footer(s, "Run on the live coach, Gemma 4 in Finland.", dark=True)
 notes(s, DRAFT + "★ Stage. scripts/run_traps.py --eu on build 8af1606: 25/25 passed, 51/51 numbers matched. The cases "
       "(tests/traps/cases.py) include wrong 'last month', invented merchants, prompt injection for another customer's "
       "data, quick loans, made-up projections, unsourced statistics and a hateful request.")
 
 # 9 Proof: S-mobiili ------------------------------------------------------------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, BG)
-text(s, M, M, 7.6, 1.6, "S-mobiili could add the coach as a web view", size=40, bold=True, color=FOREST, spacing=0.95,
+text(s, M, M, 7.6, 1.6, "Built for S-mobiili", size=40, bold=True, color=FOREST, spacing=0.95,
      name="Title")
 for i, (big, lab) in enumerate([("3.5 million", "S-Bank customers"), ("1 in 3", "Finnish adults use S-mobiili every week")]):
     text(s, M, 2.55 + i * 1.75, 7.5, 1.0, big, size=66, bold=True, color=EMERALD, name=f"Reach {i+1}")
     text(s, M, 3.55 + i * 1.75, 7.5, 0.5, lab, size=22, color=INK, name=f"Reach {i+1} label")
 Placed(s, "home.png", (0, 0, 780, 1688), 9.45, M, h=7.0 - M - 0.25, name="The app, whole screen", radius=2200)
-footer(s, "Source: S-Pankki challenge brief. Prototype on synthetic data; not integrated with S-Bank systems.")
+footer(s, "Source: S-Pankki challenge brief.")
 notes(s, DRAFT + "★ Stage. Mobile web app in English, Finnish and Swedish; the model runs in Finland and sees totals only. "
       "PSD2 consent flow exists with demo data for the other bank.")
 
@@ -226,7 +222,7 @@ s = prs.slides.add_slide(BLANK); bg(s, FOREST)
 text(s, M, 2.0, 11.9, 1.4, "[TAGLINE]", size=84, bold=True, color=WHITE, name="Tagline")
 text(s, M, 3.7, 11.9, 0.6, "spankki.psavela.com", size=30, color=MINT, name="URL")
 text(s, M, 5.1, 11.9, 0.6, "[Team names and roles]", size=22, color=PALE, name="Team")
-footer(s, "Prototype on the S-Pankki challenge's synthetic data.", dark=True)
+footer(s, "Synthetic data from the S-Pankki challenge.", dark=True)
 notes(s, "★ Stage. [TAGLINE] stays a placeholder until Rasmus writes it. Team names and roles: Rasmus.")
 
 STAGE = [1, 2, 4, 5, 6, 8, 10]  # the 3-minute version (7 slides); live demo after slide 4 or in place of it
