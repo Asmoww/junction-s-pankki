@@ -22,7 +22,7 @@ Every team will build "chat with your transactions". Ours differs in five ways, 
 
 **One sentence:** *Ask your own money anything: every number is one tap from the payments behind it, and you see
 what's coming before payday and what would really change it.*
-Tagline: *See your money's future, and change it.*
+**Tagline (chosen by Pyry, 15 Nov):** *Ask your money. It answers with receipts.* (Rasmus's earlier line: *See your money's future, and change it.*)
 
 ## Story (Emma, 23, first job)
 She thinks coffee is the problem. Her money says otherwise: rent lands before payday, extras add up, and she spends

@@ -2,7 +2,7 @@
 Follows the v4 editorial studies and HANDOFF-SLIDES.md by Rasmus's Claude (review/rasmus-slides, cbd213a): three
 families only (statement, product hero, proof with an emerald ring), 0.7 in margins, footer at 7.0 in, at most one
 sentence per slide, real app screens only (no generated UI), Geologica. Same story and numbers as the film.
-Headlines are DRAFTS for Rasmus (his rule: no AI-written slide text without his OK). Tagline stays [TAGLINE].
+Headlines are DRAFTS for Rasmus (his rule: no AI-written slide text without his OK). Tagline: TAGLINE below.
 Run: python docs/slides/build_editorial.py  ->  docs/slides/S-Pankki-editorial.pptx (export to PDF from any office app)
 """
 import os
@@ -117,6 +117,7 @@ def notes(s, t):
 DRAFT = "DRAFT HEADLINE for Rasmus to approve. "
 DATA = "Real app screens, final build, 15 Nov. Emma is a synthetic customer from the S-Pankki challenge data."
 M = 0.7  # margin and shared top line
+TAGLINE = "Ask your money. It answers with receipts."  # chosen by Pyry, 15 Nov; also in docs/PITCH.md
 
 # 1 Cover (statement + screen entering from the right edge, bleeding off the bottom) ------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, BG)
@@ -219,11 +220,11 @@ notes(s, DRAFT + "★ Stage. Mobile web app in English, Finnish and Swedish; the
 
 # 10 Close ------------------------------------------------------------------------------------------------------------
 s = prs.slides.add_slide(BLANK); bg(s, FOREST)
-text(s, M, 2.0, 11.9, 1.4, "[TAGLINE]", size=84, bold=True, color=WHITE, name="Tagline")
-text(s, M, 3.7, 11.9, 0.6, "spankki.psavela.com", size=30, color=MINT, name="URL")
+text(s, M, 1.6, 11.9, 2.2, [TAGLINE.split(". ", 1)[0] + ".", TAGLINE.split(". ", 1)[1]], size=66, bold=True, color=WHITE, spacing=0.95, name="Tagline")
+text(s, M, 4.0, 11.9, 0.6, "spankki.psavela.com", size=30, color=MINT, name="URL")
 text(s, M, 5.1, 11.9, 0.6, "[Team names and roles]", size=22, color=PALE, name="Team")
 footer(s, "Synthetic data from the S-Pankki challenge.", dark=True)
-notes(s, "★ Stage. [TAGLINE] stays a placeholder until Rasmus writes it. Team names and roles: Rasmus.")
+notes(s, "★ Stage. Tagline chosen by Pyry on 15 Nov (Rasmus may still swap it; edit TAGLINE at the top). Team names and roles: Rasmus.")
 
 STAGE = [1, 2, 4, 5, 6, 8, 10]  # the 3-minute version (7 slides); live demo after slide 4 or in place of it
 out = os.path.join(HERE, "S-Pankki-editorial.pptx"); prs.save(out)
